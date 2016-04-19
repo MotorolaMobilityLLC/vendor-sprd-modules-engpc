@@ -56,6 +56,11 @@
 #endif
 #include "eng_busmonitor.h"
 
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+#include "tee_production.h"
+#endif
+#define ENG_TEE_RSP_LEN (1024*2)
+
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
 #define NVITEM_ERROR_E int
 #define NVERR_NONE 0
@@ -240,6 +245,9 @@ static int eng_diag_set_ipconfigure(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_read_register(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_write_register(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_get_time_sync_info(char *buf,int len,char *rsp, int rsplen);
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+static int eng_diag_tee_production(char *buf, int len, char *rsp, int rsplen);
+#endif
 
 static const char *at_sadm = "AT+SADM4AP";
 static const char *at_spenha = "AT+SPENHA";
@@ -1340,6 +1348,20 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
       return 0;
+#if defined(TEE_PRODUCTION_CONFIG)
+    case CMD_USER_TEE_PRODUCTION:
+      ENG_LOG("%s: CMD_USER_TEE_PRODUCTION Req!\n", __FUNCTION__);
+      memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
+      rlen = eng_diag_tee_production(buf, len, eng_diag_buf,
+              sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      for(i=0;i<eng_diag_len;i++)
+      {
+          ENG_LOG("%s: eng_diag_buf[%d]=%x\n",__FUNCTION__, i,eng_diag_buf[i]);
+      }
+      eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
+      return 0;
+#endif
 #endif
     case CMD_USER_GET_MODEM_MODE:
       rlen = eng_diag_get_modem_mode(buf, len, rsp, sizeof(rsp));
@@ -4194,6 +4216,8 @@ static int eng_diag_ap_req(char *buf, int len) {
     ret = CMD_USER_MODEM_DB_ATTR;
   } else if (DIAG_AP_CMD_MODEM_DB_READ == apcmd->cmd) {
     ret = CMD_USER_MODEM_DB_READ;
+  } else if (DIAG_AP_CMD_TEE_PRODUCTION == apcmd->cmd) {
+    ret = CMD_USER_TEE_PRODUCTION;
   } else {
     ret = CMD_USER_APCALI;
   }
@@ -6123,3 +6147,54 @@ static int parse_config(void)
 
   return ret;
 }
+
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+static int eng_diag_tee_production(char *buf, int len, char *rsp, int rsplen)
+{
+  uint8_t *tee_msg;
+  uint32_t tee_msg_len;
+  uint8_t tee_rsp[ENG_TEE_RSP_LEN] = {0};
+  uint32_t tee_rsp_len = 0;
+  char *rsp_ptr;
+  int ret = -1;
+  unsigned short status = 0x01;
+  TOOLS_DIAG_AP_CNF_T *aprsp;
+  MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T*)(buf + 1);
+  TOOLS_DIAG_AP_CMD_T *apbuf = (TOOLS_DIAG_AP_CMD_T *)(buf + 1 + sizeof(MSG_HEAD_T));
+
+  if(NULL == buf){
+    ENG_LOG("%s: null pointer",__FUNCTION__);
+    return 0;
+  }
+
+  tee_msg = (uint8_t*)(buf + 1 + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_CMD_T));
+  tee_msg_len = apbuf->length;
+
+  ret =  TEECex_SendMsg_To_TEE(tee_msg, tee_msg_len, tee_rsp, &tee_rsp_len);
+
+  if(0 != ret) {
+    ENG_LOG("%s: TEECex_SendMsg_To_TEE() error ret=%d\n", __FUNCTION__, ret);
+  } else {
+    ENG_LOG("%s: TEECex_SendMsg_To_TEE() success\n", __FUNCTION__);
+    status = 0x00;
+  }
+
+  rsplen = sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_CNF_T) + tee_rsp_len;
+  rsp_ptr = (char*)malloc(rsplen);
+  if(NULL == rsp_ptr){
+    ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+    return 0;
+  }
+
+  memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
+  ((MSG_HEAD_T*)rsp_ptr)->len = rsplen;
+  aprsp = (TOOLS_DIAG_AP_CNF_T*)(rsp_ptr + sizeof(MSG_HEAD_T));
+  aprsp->length = tee_rsp_len;
+  aprsp->status = status;
+  memcpy(rsp_ptr + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_CNF_T), tee_rsp, tee_rsp_len);
+
+  rsplen = translate_packet(rsp,(unsigned char*)rsp_ptr,((MSG_HEAD_T*)rsp_ptr)->len);
+  free(rsp_ptr);
+  return rsplen;
+}
+#endif

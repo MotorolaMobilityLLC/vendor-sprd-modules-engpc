@@ -26,6 +26,13 @@ else
 LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libvbeffect libvbpga libnvexchange libatci libefuse libgpspc libbm \
                            libeng-audio
 endif
+ifeq ($(strip $(BOARD_TEE_CONFIG)), watchdata)
+LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
+LOCAL_SHARED_LIBRARIES  += libteeproduction
+else ifeq ($(strip $(BOARD_TEE_CONFIG)), beanpod)
+LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
+LOCAL_SHARED_LIBRARIES  += libteeproduction
+endif
 endif
 
 LOCAL_STATIC_LIBRARIES  := libbt-utils

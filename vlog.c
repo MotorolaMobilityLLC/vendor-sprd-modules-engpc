@@ -247,6 +247,19 @@ static int eng_retry_open_device(char *path, int mode) {
 
 }
 
+inline size_t agdsp_get_diag_data_len(size_t len) {
+  size_t diag_len;
+
+  // The max diag frame length is 65535
+  if (len > 65535) {
+      diag_len = 65535 - 20;
+  } else {
+      diag_len = len - 20;
+  }
+
+  return diag_len;
+}
+
 void* eng_agdsp_log_thread(void* x) {
   int ser_fd;
   int r_cnt = -1;
@@ -260,6 +273,11 @@ void* eng_agdsp_log_thread(void* x) {
   int log_fd = -1;
   int pcm_fd = -1;
   int mem_fd = -1;
+  int rbuf_size = 0;
+  int poll_flag = 1; // 0:Start dump memory, poll ag_mem_chan one time; 1:Non dump state, loop poll
+  int poll_num = 3;
+  int timeout = -1;
+  int ret = -1;
 
   eng_dev_info_t* dev_info = (eng_dev_info_t*)x;
 
@@ -314,13 +332,23 @@ void* eng_agdsp_log_thread(void* x) {
     }
     sem_wait(&g_armlog_sem);
 
-    if (poll(fds, 3, -1) <= 0) {
+    if(poll_flag) { // Normal case
+        poll_num = 3;
+        timeout = -1;
+    } else { // AG-DSP asserted
+        poll_num = 2;
+        timeout = 0;
+    }
+
+    ret = poll(fds, poll_num, timeout);
+    if (ret < 0 || (ret == 0 && timeout == -1)) {
         ENG_LOG("%s: ERROR: poll error(%s)\n", __FUNCTION__, strerror(errno));
         goto out;
     }
 
     if (fds[0].revents & POLLIN) {
-        r_log_cnt = read(fds[0].fd, log_data + 20, remain_len - 20);
+        rbuf_size = agdsp_get_diag_data_len(remain_len);
+        r_log_cnt = read(fds[0].fd, log_data + 20, rbuf_size);
         if (r_log_cnt > 0) {
             ag_dsplog_add_headers((uint8_t *)log_data, r_log_cnt, AUDIO_DSP_LOG);
             r_offset += r_log_cnt + 20;
@@ -336,7 +364,8 @@ void* eng_agdsp_log_thread(void* x) {
     }
 
     if (remain_len >= 2068 && (fds[1].revents & POLLIN)) {
-        r_pcm_cnt = read(fds[1].fd, log_data + 20 + r_offset, remain_len - 20);
+        rbuf_size = agdsp_get_diag_data_len(remain_len);
+        r_pcm_cnt = read(fds[1].fd, log_data + 20 + r_offset, rbuf_size);
         if (r_pcm_cnt > 0) {
             ag_dsplog_add_headers((uint8_t *)log_data + r_offset, r_pcm_cnt, AUDIO_DSP_PCM);
             r_offset += r_pcm_cnt + 20;
@@ -351,18 +380,24 @@ void* eng_agdsp_log_thread(void* x) {
         }
     }
 
-    if (remain_len >= 2068 && (fds[2].revents & POLLIN)) {
-        r_mem_cnt = read(fds[2].fd, log_data + 20 + r_offset, remain_len - 20);
+    if (remain_len >= 2068 && (!poll_flag || (fds[2].revents & POLLIN))) {
+        rbuf_size = agdsp_get_diag_data_len(remain_len);
+        r_mem_cnt = read(fds[2].fd, log_data + 20 + r_offset, rbuf_size);
         if(r_mem_cnt > 0) {
             ag_dsplog_add_headers((uint8_t *)log_data + r_offset, r_mem_cnt, AUDIO_DSP_MEM);
             r_offset += r_mem_cnt + 20;
+            poll_flag = 0;
         } else {
             if (r_mem_cnt < 0) {
-                if (EAGAIN != errno && EINTR != errno)
+                poll_flag = 0;
+                if (EAGAIN != errno && EINTR != errno) {
                     ENG_LOG("%s: ERROR: read ag_mem_chan error(%s)\n", __FUNCTION__, strerror(errno));
+                    sleep(1);
+                }
             } else {
                 // Dump finished
                 ioctl(fds[2].fd, DSPLOG_CMD_DSPASSERT, 0);
+                poll_flag = 1;
                 ENG_LOG("%s: AG-DSP memory dump finished\n", __FUNCTION__);
             }
         }

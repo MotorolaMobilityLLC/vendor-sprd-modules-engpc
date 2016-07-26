@@ -85,8 +85,9 @@ LOCAL_SRC_FILES     := eng_pcclient.c  \
                        backlight.c \
                        eng_util.c \
                        eng_autotest.c \
-                       eng_uevent.c\
-                       eng_debug.c
+                       eng_uevent.c \
+                       eng_debug.c \
+                       eng_ap_modem_time_sync.c
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_SRC_FILES += eng_busmonitor.c

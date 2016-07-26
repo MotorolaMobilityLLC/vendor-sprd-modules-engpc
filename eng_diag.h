@@ -213,6 +213,7 @@ struct eng_autotestcmd_str {
 #define MAX_DIAG_TRANSMIT_FILE_LEN 8192
 
 #define TIME_SERVER_SOCK_NAME "cp_time_sync_server"
+#define MODEM_SOCKET_NAME "modemd"
 
 #define SHA1_SIZE 20
 #define ENG_MODEMDB_DIAG_SIZE (64 * 1024)
@@ -382,6 +383,12 @@ typedef struct __attribute__((packed)) {
   uint16_t status;  // Operation status,  0: success, others fail
 } TOOLS_DIAG_AP_CNF_MD_T;
 
+typedef struct cp_event_notify
+{
+  uint8_t subsys; // 0,事件涉及整个手机系统或多个子系统;1,3G/4G MOOEM;2,WCN;3,GNSS;4,PM和Sensor Hub;>4,reserve;
+  uint8_t event; // 0,启动成功;1,发生assert;2,发生重启;3,发生BLOCK;>3,reserve;
+}__attribute__((packed))CP_EVENT_NOTIFY_T;
+
 typedef struct __attribute__((packed)) {
   uint32_t type_flags;
   uint32_t offset;
@@ -402,6 +409,7 @@ void *eng_vlog_thread(void *x);
 void *eng_agdsp_log_thread(void *x);
 void *eng_vdiag_wthread(void *x);
 void *eng_vdiag_rthread(void *x);
+void *eng_timesync_thread(void *x);
 void *eng_sd_log(void *args);
 void *eng_gps_log_thread(void *x);
 int eng_diag_decode7d7e(char *buf, int len);

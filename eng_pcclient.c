@@ -29,6 +29,7 @@ sem_t g_armlog_sem;
 eng_dev_info_t *g_dev_info = 0;
 int g_ap_cali_flag = 0;
 int g_agdsp_flag = 0;//ag dsp log flag
+pthread_mutex_t g_time_sync_lock = PTHREAD_MUTEX_INITIALIZER;
 extern int g_armlog_enable;
 extern int disconnect_vbus_charger(void);
 extern int turnoff_calibration_backlight(void);
@@ -484,11 +485,11 @@ static void eng_check_whether_iqfeed(void) {
 int main(int argc, char** argv) {
   char cmdline[ENG_CMDLINE_LEN];
   char run_type[32] = {'t'};
-  eng_thread_t t0, t1, t2, t3, t4;
+  eng_thread_t t0, t1, t2, t3, t4, t5;
   int fd;
   char set_propvalue[] = {"1"};
   char get_propvalue[PROPERTY_VALUE_MAX] = {0};
-  eng_dev_info_t dev_info = {{"/dev/ttyGS0", "/dev/vser", 0, 1}, {0, 0, 0}};
+  eng_dev_info_t dev_info = {{"/dev/ttyGS0", "/dev/vser", {0}, 1, 0}, {{0}, {0}, {0}}};
 
   g_dev_info = &dev_info;
 
@@ -566,6 +567,12 @@ int main(int argc, char** argv) {
         }
       } else {
         eng_file_unlock(fd);
+      }
+
+      if (0 == cmdparam.califlag) {
+        if (0 != eng_thread_create(&t5, eng_timesync_thread, NULL)) {
+          ENG_LOG("time sync thread start error");
+        }
       }
     }
   }

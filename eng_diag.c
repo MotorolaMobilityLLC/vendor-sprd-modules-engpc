@@ -43,6 +43,7 @@
 #include "calibration.h"
 #include "eng_cmd4linuxhdlr.h"
 #include "wifi_eut_sprd.h"
+#include "eng_ap_modem_time_sync.h"
 
 #if defined(ENGMODE_EUT_BCM)
 #include "bt_eut_pandora.h"
@@ -153,6 +154,9 @@ static int parse_config(void);
 extern struct eng_bt_eutops bt_eutops;
 extern struct eng_wifi_eutops wifi_eutops;
 extern struct eng_gps_eutops gps_eutops;
+
+extern TIME_SYNC_T g_time_sync;
+extern pthread_mutex_t g_time_sync_lock;
 
 static unsigned char tun_data[376];
 static int diag_pipe_fd = 0;
@@ -4839,35 +4843,6 @@ static int eng_diag_read_efuse(char *buf, int len, char *rsp, int rsplen) {
   return rsplen;
 }
 
-static int get_timezone() {
-  time_t t1;
-  struct tm* p;
-  struct tm local_tm;
-  struct tm gm_tm;
-
-  t1 = time(0);
-  if ((time_t)(-1) == t1) {
-    return 0;
-  }
-  p = gmtime_r(&t1, &gm_tm);
-  if (!p) {
-    return 0;
-  }
-  p = localtime_r(&t1, &local_tm);
-  if (!p) {
-    return 0;
-  }
-
-  int tz = local_tm.tm_hour - gm_tm.tm_hour;
-  if (tz > 12) {
-    tz -= 24;
-  } else if (tz < -12) {
-    tz += 24;
-  }
-
-  return tz;
-}
-
 static int eng_diag_get_time_sync_info(char *buf,int len,char *rsp, int rsplen)
 {
   int ret = 0, n = 0, fd = -1, tz;
@@ -4877,10 +4852,9 @@ static int eng_diag_get_time_sync_info(char *buf,int len,char *rsp, int rsplen)
   char *rsp_ptr;
   TOOLS_DIAG_AP_CNF_T *aprsp;
   MODEM_TIMESTAMP_T time_stamp;
-  TIME_SYNC_T time_sync;
-  struct timeval time_now;
-  struct sysinfo sinfo;
   int sleep_time = 0;
+  int valid = 0;
+  TIME_SYNC_T tsync;
 
   if(NULL == buf){
     ENG_LOG("%s: null pointer",__FUNCTION__);
@@ -4896,78 +4870,31 @@ static int eng_diag_get_time_sync_info(char *buf,int len,char *rsp, int rsplen)
   }
 
   memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
-  ((MSG_HEAD_T*)rsp_ptr)->len = rsplen;
+  ((MSG_HEAD_T*)rsp_ptr)->len = rsplen - sizeof(MODEM_TIMESTAMP_T);
   aprsp = rsp_ptr + sizeof(MSG_HEAD_T);
   aprsp->status = 0x01;
   aprsp->length = sizeof(MODEM_TIMESTAMP_T);
 
-  /*socket client connect*/
-  while (sleep_time < 1000000) {
-    fd = socket_local_client(TIME_SERVER_SOCK_NAME,
-        ANDROID_SOCKET_NAMESPACE_ABSTRACT,
-        SOCK_STREAM);
-    if (fd >= 0) {
-      break;
-    }
-    usleep(100000);
-    sleep_time += 100000;
+  pthread_mutex_lock(&g_time_sync_lock);
+  if (g_time_sync.sys_cnt || g_time_sync.uptime) {
+    memcpy(&tsync, &g_time_sync, sizeof(TIME_SYNC_T));
+    valid = 1;
+  }
+  pthread_mutex_unlock(&g_time_sync_lock);
+
+  if (valid) {
+    current_ap_time_stamp_handle(&tsync, &time_stamp);
+    memcpy(rsp_ptr + sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MSG_HEAD_T), &time_stamp, sizeof(MODEM_TIMESTAMP_T));
+    ((MSG_HEAD_T*)rsp_ptr)->len = rsplen;
+    aprsp->status = 0x00;
+  } else {
+    ENG_LOG("%s: time sync error: g_time_sync={0}\n", __FUNCTION__);
   }
 
-  if (fd < 0) {
-    ENG_LOG("%s: connect time sync server socket error(%s)\n", __FUNCTION__, strerror(errno));
-    goto out;
-  }
-
-  fds.fd = fd;
-  fds.events = POLLIN;
-  fds.revents = 0;
-
-  if (poll(&fds, 1, 3000) <= 0) {
-    ENG_LOG("%s: ERROR: socket error(%s)\n", __FUNCTION__, strerror(errno));
-    goto out;
-  }
-
-  if (fds.revents & POLLIN) {
-    n = read(fd, &time_sync, sizeof(TIME_SYNC_T));
-  }
-
-  if(n != sizeof(TIME_SYNC_T)) {
-    ENG_LOG("%s: read %d bytes, can't read time info\n", __FUNCTION__, n);
-    goto out;
-  }
-
-  gettimeofday(&time_now, 0);
-  sysinfo(&sinfo);
-  time_stamp.sys_cnt = time_sync.sys_cnt + (sinfo.uptime - time_sync.uptime) * 1000;
-  time_stamp.tv_sec = (uint32_t)(time_now.tv_sec);
-  time_stamp.tv_usec = (uint32_t)(time_now.tv_usec);
-
-  //add timezone
-  tz = get_timezone();
-  time_stamp.tv_sec += (3600 * tz);
-  ENG_LOG("%s: tv_sec=%d, tv_usec=%d, sys_cnt=%d\n", __FUNCTION__, time_stamp.tv_sec, time_stamp.tv_usec, time_stamp.sys_cnt);
-
-#if 0
-  struct timeval tv;
-  struct tm *tmp;
-  char strTime[32] = {0};
-
-  tv.tv_sec = time_stamp.tv_sec;
-  tv.tv_usec = time_stamp.tv_usec;
-  tmp = gmtime(&tv.tv_sec);
-  strftime(strTime, 32, "%F %T", tmp);
-  ENG_LOG("%s: %s %d Micorseconds\n", __FUNCTION__, strTime, tv.tv_usec);
-#endif
-
-  memcpy(rsp_ptr + sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MSG_HEAD_T), &time_stamp, sizeof(MODEM_TIMESTAMP_T));
-  aprsp->status = 0x00;
 
 out:
   rsplen = translate_packet(rsp,(unsigned char*)rsp_ptr,((MSG_HEAD_T*)rsp_ptr)->len);
   free(rsp_ptr);
-  if(fd >= 0) {
-    close(fd);
-  }
   return rsplen;
 }
 

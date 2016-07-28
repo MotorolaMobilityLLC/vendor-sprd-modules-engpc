@@ -247,14 +247,25 @@ static int eng_parse_cmdline(struct eng_param* cmdvalue) {
 
           property_get("ro.radio.modemtype", modemtype, "not_find");
           if (0 == strcmp(modemtype, "not_find")) {
-              property_get("persist.radio.ssda.mode", ssda_mode, "not_find");
+              property_get("persist.radio.modem.config", ssda_mode, "not_find");
+              if(0 == strcmp(ssda_mode, "not_find")) {
+                  property_get("persist.radio.ssda.mode", ssda_mode, "not_find");
 
-              if (0 == strcmp(ssda_mode, "tdd-csfb")) {
-                  strcpy(cmdvalue->cp_type, "tl");
-              } else if (0 == strcmp(ssda_mode, "fdd-csfb")) {
-                  strcpy(cmdvalue->cp_type, "lf");
-              } else if (0 == strcmp(ssda_mode, "csfb")) {
-                  strcpy(cmdvalue->cp_type, "l");
+                  if (0 == strcmp(ssda_mode, "tdd-csfb")) {
+                      strcpy(cmdvalue->cp_type, "tl");
+                  } else if (0 == strcmp(ssda_mode, "fdd-csfb")) {
+                      strcpy(cmdvalue->cp_type, "lf");
+                  } else if (0 == strcmp(ssda_mode, "csfb")) {
+                      strcpy(cmdvalue->cp_type, "l");
+                  }
+              } else {
+                  if (0 == strcmp(ssda_mode, "TL_TD_G,G")) {
+                      strcpy(cmdvalue->cp_type, "tl");
+                  } else if (0 == strcmp(ssda_mode, "TL_LF_W_G,G")) {
+                      strcpy(cmdvalue->cp_type, "lf");
+                  } else if (0 == strcmp(ssda_mode, "TL_LF_TD_W_G,G")) {
+                      strcpy(cmdvalue->cp_type, "l");
+                  }
               }
           } else {
               strcpy(cmdvalue->cp_type, modemtype);

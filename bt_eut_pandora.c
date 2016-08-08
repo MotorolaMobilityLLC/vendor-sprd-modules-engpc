@@ -1,9 +1,8 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "eut_opt.h"
-#include "bt_eut_sprd.h"
+#include "bt_eut_pandora.h"
 #include "engopt.h"
 #include <fcntl.h>
 #include <hardware/bluetooth.h>
@@ -14,7 +13,7 @@
 #undef LOG_TAG
 #endif
 
-#define LOG_TAG ("SPRDENG")
+#define LOG_TAG ("BRCMENG")
 /* driver MACRO */
 #define HCI_DUT_GET_RXDATA (0xFCE3)
 #define HCI_DUT_SET_TXPWR (0xFCE1)
@@ -41,6 +40,10 @@ static unsigned char g_bteut_bt_enabled = 0;
 /* current is Classic or BLE */
 static bteut_bt_mode g_bt_mode = BTEUT_BT_MODE_OFF;
 static bteut_eut_running g_bteut_runing = BTEUT_EUT_RUNNING_OFF;
+int scan_enable = BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE;
+bt_property_t scan_enable_property = {
+    BT_PROPERTY_ADAPTER_SCAN_MODE, 1, &scan_enable,
+};
 
 /**************************Static Function*******************************/
 static void bt_set_default(void);
@@ -1071,11 +1074,9 @@ int bt_tx_set(int on_off, int instru_tx_mode, unsigned int pktcnt, char *rsp) {
         ENG_LOG("ADL %s(), g_bt_mode is ERROR, g_bt_mode = %d, goto err;", __func__, g_bt_mode);
         goto err;
     }
-#ifdef SPRD_WCN_MARLIN
     char instru_type = (char)(instru_tx_mode >> 8);
     ENG_LOG("ADL %s(), instru_type = %x", __func__, instru_type);
     g_bteut_tx.pkttype |= (int)instru_type << 8;
-#endif
     ENG_LOG("ADL %s(), on_off = %d, is_ble = %d", __func__, on_off, is_ble);
     if (0 == on_off) {
         if (BTEUT_TXRX_STATUS_TXING != g_bteut_txrx_status) {
@@ -1087,9 +1088,9 @@ int bt_tx_set(int on_off, int instru_tx_mode, unsigned int pktcnt, char *rsp) {
         ENG_LOG("ADL %s(), call set_nonsig_tx_testmode(), enable = 0, is_ble = %d, g_bt_mode = %d, "
                 "the rest of other parameters all 0.",
                 __func__, is_ble, g_bt_mode);
-#if defined(SPRD_WCNBT_MARLIN) || defined(SPRD_WCNBT_SR2351)
+
         ret = g_sBtInterface->set_nonsig_tx_testmode(0, is_ble, 0, 0, 0, 0, 0, 0, 0);
-#endif
+
         ENG_LOG("ADL %s(), called set_nonsig_tx_testmode(), ret = %d", __func__, ret);
 
         if (0 == ret) {
@@ -1111,11 +1112,11 @@ int bt_tx_set(int on_off, int instru_tx_mode, unsigned int pktcnt, char *rsp) {
             "%d, pac_type = %d, pac_len = %d, pwr_type = %d, pwr_value = %d, pkt_cnt = %d",
             __func__, is_ble, (int)g_bteut_tx.pattern, g_bteut_tx.channel, g_bteut_tx.pkttype,
             g_bteut_tx.pktlen, g_bteut_tx.txpwr.power_type, g_bteut_tx.txpwr.power_value, pktcnt);
-#if defined(SPRD_WCNBT_MARLIN) || defined(SPRD_WCNBT_SR2351)
+
         ret = g_sBtInterface->set_nonsig_tx_testmode(
             1, is_ble, g_bteut_tx.pattern, g_bteut_tx.channel, g_bteut_tx.pkttype,
             g_bteut_tx.pktlen, g_bteut_tx.txpwr.power_type, g_bteut_tx.txpwr.power_value, pktcnt);
-#endif
+
         ENG_LOG("ADL %s(), called set_nonsig_tx_testmode(), ret = %d", __func__, ret);
 
         if (0 == ret) {
@@ -1230,9 +1231,9 @@ int bt_rx_set(int on_off, char *rsp) {
         ENG_LOG("ADL %s(), call set_nonsig_rx_testmode(), enable = 0, le = 0, the rest of other "
                 "parameters all 0.",
                 __func__);
-#if defined(SPRD_WCNBT_MARLIN) || defined(SPRD_WCNBT_SR2351)
+
         ret = g_sBtInterface->set_nonsig_rx_testmode(0, is_ble, 0, 0, 0, 0, addr);
-#endif
+
         ENG_LOG("ADL %s(), called set_nonsig_rx_testmode(), ret = %d", __func__, ret);
 
         if (0 == ret) {
@@ -1262,11 +1263,11 @@ int bt_rx_set(int on_off, char *rsp) {
                 "channel = %d, pac_type = %d, rxgain_value = %d, addr = %s",
                 __func__, (int)g_bteut_rx.pattern, g_bteut_rx.channel, g_bteut_rx.pkttype,
                 rxgain_value, g_bteut_rx.addr);
-#if defined(SPRD_WCNBT_MARLIN) || defined(SPRD_WCNBT_SR2351)
+
         ret = g_sBtInterface->set_nonsig_rx_testmode(1, is_ble, g_bteut_rx.pattern,
                                                      g_bteut_rx.channel, g_bteut_rx.pkttype,
                                                      rxgain_value, addr);
-#endif
+
         ENG_LOG("ADL %s(), called set_nonsig_rx_testmode(), ret = %d", __func__, ret);
 
         if (0 == ret) {
@@ -1373,9 +1374,9 @@ int bt_rxdata_get(char *rsp) {
             }
 
             ENG_LOG("ADL %s(), call get_nonsig_rx_data(), ble = %d", __func__, ble);
-#if defined(SPRD_WCNBT_MARLIN) || defined(SPRD_WCNBT_SR2351)
+
             ret = g_sBtInterface->get_nonsig_rx_data(ble);
-#endif
+
             ENG_LOG("ADL %s(), called get_nonsig_rx_data(), ret = %d", __func__, ret);
 
             if (0 != ret) {
@@ -1480,7 +1481,7 @@ void nonsig_test_rx_rece_callback(bt_status_t status, uint8_t rssi, uint32_t pkt
         g_bt_rx_data.error_packets = pkt_err_cnt;
         g_bt_rx_data.total_packets = pkt_cnt;
 
-        g_bt_rx_data.is_update = 1;  //用来标记改组数据是否得到更新,即,是否是从底层取得的有效值.
+        g_bt_rx_data.is_update = 1;  //\D3\C3\C0\B4\B1\EA\BC歉\C4\D7\E9\CA\FD\BE\DD\CA欠\F1\B5玫\BD\B8\FC\D0\C2,\BC\B4,\CA欠\F1\CA谴拥撞\E3取\B5玫\C4\D3\D0效值.
     } else {
         /* Try get data from Chip */
         ENG_LOG("ADL %s(), status is 1, try again.", __func__);
@@ -1494,9 +1495,9 @@ void nonsig_test_rx_rece_callback(bt_status_t status, uint8_t rssi, uint32_t pkt
                 ble = 1;
             }
 
-#if defined(SPRD_WCNBT_MARLIN) || defined(SPRD_WCNBT_SR2351)
+
             g_sBtInterface->get_nonsig_rx_data(ble);
-#endif
+
         }
     }
 
@@ -1694,7 +1695,7 @@ static int bteut_enable_bt(void) {
         return -1;
     }
 
-    g_bt_status = g_sBtInterface->enable(false);
+    g_bt_status = g_sBtInterface->enable();
 
     if (BT_STATUS_SUCCESS == g_bt_status || BT_STATUS_DONE == g_bt_status) {
         ret = 0;
@@ -1757,6 +1758,9 @@ static void bt_adapter_state_changed(bt_state_t state) {
 
     if (state == BT_STATE_ON) {
         g_bteut_bt_enabled = 1;
+// is or not
+        g_sBtInterface->set_adapter_property(&scan_enable_property);
+
     } else {
         g_bteut_bt_enabled = 0;
     }

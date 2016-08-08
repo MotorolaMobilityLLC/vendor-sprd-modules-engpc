@@ -13,8 +13,7 @@
 
 #include <stdio.h>
 
-unsigned short crc16(unsigned short crc, const unsigned char *buffer, unsigned int len);
-
+unsigned short crc16(unsigned short crc, const unsigned char *buffer,
+                     unsigned int len);
 
 #endif /* __CRC16_H */
-

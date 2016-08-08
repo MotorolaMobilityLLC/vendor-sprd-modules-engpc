@@ -9,23 +9,23 @@
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #ifndef uchar
 typedef unsigned char uchar;
-#endif // uchar
+#endif  // uchar
 
-int eng_autotestStart( void );
+int eng_autotestStart(void);
 
-int eng_autotestIsConnect( void );
+int eng_autotestIsConnect(void);
 
-int eng_autotestDoTest(const uchar * req, int req_len, uchar * rsp, int rsp_size);
+int eng_autotestDoTest(const uchar* req, int req_len, uchar* rsp, int rsp_size);
 
-//int eng_autotestStop( void );
+// int eng_autotestStop( void );
 
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif  // __cplusplus
 
-#endif // _ENGAUTOTEST_20130220_H__
+#endif  // _ENGAUTOTEST_20130220_H__

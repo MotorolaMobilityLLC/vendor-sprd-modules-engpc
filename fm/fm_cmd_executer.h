@@ -28,8 +28,8 @@ extern "C" int fm_runcommand(int client_fd, int argc, char **argv);
 #define LOG_TAG "FMENG"
 
 #define FMENG_DEBUG
-#define FMENG_LOGD(x...) ALOGD( x )
-#define FMENG_LOGE(x...) ALOGE( x )
+#define FMENG_LOGD(x...) ALOGD(x)
+#define FMENG_LOGE(x...) ALOGE(x)
 
 #define OK_STR "OK"
 #define FAIL_STR "FAIL"
@@ -38,14 +38,12 @@ extern "C" int fm_runcommand(int client_fd, int argc, char **argv);
 extern struct fmr_ds *pfmr_data[FMR_MAX_IDX];
 
 /*  errno */
-typedef enum
-{
-    FM_ENG_NONE_ERROR,
-    FM_ENG_CMD_INVALID,
-    FM_ENG_INIT_ERROR,
-    FM_ENG_ENABLE_ERROR,
-    FM_ENG_DISABLE_ERROR,
-    FM_ENG_TUNE_ERROR,
-    FM_ENG_GETRSSI_ERROR
-}FM_ENG_ERROR_E;
-
+typedef enum {
+  FM_ENG_NONE_ERROR,
+  FM_ENG_CMD_INVALID,
+  FM_ENG_INIT_ERROR,
+  FM_ENG_ENABLE_ERROR,
+  FM_ENG_DISABLE_ERROR,
+  FM_ENG_TUNE_ERROR,
+  FM_ENG_GETRSSI_ERROR
+} FM_ENG_ERROR_E;

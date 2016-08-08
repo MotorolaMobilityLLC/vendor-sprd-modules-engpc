@@ -1,7 +1,6 @@
 #ifndef _AUDIO_SERVER_
 #define _AUDIO_SERVER_
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,4 +15,3 @@ int setVolume(int volume);
 #endif
 
 #endif
-

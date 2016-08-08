@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-int eng_read_productnvdata(char *databuf,  int data_len);
-int eng_write_productnvdata(char *databuf,  int data_len);
+int eng_read_productnvdata(char *databuf, int data_len);
+int eng_write_productnvdata(char *databuf, int data_len);
 
 #ifdef __cplusplus
 }

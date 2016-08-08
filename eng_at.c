@@ -10,111 +10,45 @@
 
 static eng_dev_info_t* s_dev_info;
 static int at_mux_fd = -1;
-static int pc_fd=-1;
+static int pc_fd = -1;
 
-#ifdef CONFIG_BQBTEST
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/poll.h>
 #include <sys/un.h>
 #include <cutils/str_parms.h>
 #include <cutils/sockets.h>
+#include <dlfcn.h>
 
-#define BQB_CTRL_PATH "/data/misc/.bqb_ctrl"
-#define ROUTE_BQB   0
-#define ROUTE_AT    1
-#define ENABLE_BQB_TEST "AT+SPBQBTEST=1"
-#define DISABLE_BQB_TEST "AT+SPBQBTEST=0"
-#define TRIGGER_BQB_TEST "AT+SPBQBTEST=?"
-#define NOTIFY_BQB_ENABLE "\r\n+SPBQBTEST OK: ENABLED\r\n"
-#define NOTIFY_BQB_DISABLE "\r\n+SPBQBTEST OK: DISABLE\r\n"
-#define TRIGGER_BQB_ENABLE "\r\n+SPBQBTEST OK: BQB\r\n"
-#define TRIGGER_BQB_DISABLE "\r\n+SPBQBTEST OK: AT\r\n"
-#define UNKNOW_COMMAND "\r\n+SPBQBTEST ERROR: UNKNOW COMMAND\r\n"
+#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
+#include "bqb.h"
 
-static current_route = ROUTE_AT;
+static const char *VENDOR_LIBRARY_NAME = "libbqbbt.so";
+static const char *VENDOR_LIBRARY_SYMBOL_NAME = "BLUETOOTH_BQB_INTERFACE";
+static void *lib_handle;
+static bt_bqb_interface_t *lib_interface = NULL;
+static bool bqb_vendor_open() {
+  lib_handle = dlopen(VENDOR_LIBRARY_NAME, RTLD_NOW);
+  if (!lib_handle) {
+    ALOGD("%s unable to open %s: %s", __func__, VENDOR_LIBRARY_NAME, dlerror());
+    goto error;
+  }
 
-static inline int create_server_socket(const char* name)
-{
-    int s = socket(AF_LOCAL, SOCK_STREAM, 0);
-	if (s < 0) {
-		ENG_LOG("socket(AF_LOCAL, SOCK_STREAM, 0) failed \n");
-		return -1;
-	}
-    ENG_LOG("bqb covert name to android abstract name:%s", name);
-    if (socket_local_server_bind(s, name, ANDROID_SOCKET_NAMESPACE_ABSTRACT) >= 0) {
-        if (listen(s, 5) == 0) {
-            ENG_LOG("bqb listen to local socket:%s, fd:%d", name, s);
-            return s;
-        } else {
-            ENG_LOG("bqb listen to local socket:%s, fd:%d failed, errno:%d", name, s, errno);
-        }
-    } else {
-        ENG_LOG("bqb create local socket:%s fd:%d, failed, errno:%d", name, s, errno);
-    }
-    close(s);
-    return -1;
-}
+  lib_interface = (bt_bqb_interface_t *)dlsym(lib_handle, VENDOR_LIBRARY_SYMBOL_NAME);
+  if (!lib_interface) {
+    ALOGD("%s unable to find symbol %s in %s: %s", __func__, VENDOR_LIBRARY_SYMBOL_NAME, VENDOR_LIBRARY_NAME, dlerror());
+    goto error;
+  }
+  lib_interface->init();
 
-static int accept_server_socket(int sfd)
-{
-    struct sockaddr_un remote;
-    struct pollfd pfd;
-    int fd;
-    socklen_t len = sizeof(struct sockaddr_un);
+  return true;
 
-    //ENG_LOG("accept fd %d", sfd);
-
-    /* make sure there is data to process */
-    pfd.fd = sfd;
-    pfd.events = POLLIN;
-
-    if (poll(&pfd, 1, 0) == 0) {
-        ENG_LOG("accept poll timeout");
-        return -1;
-    }
-
-    //ENG_LOG("poll revents 0x%x", pfd.revents);
-
-    if ((fd = accept(sfd, (struct sockaddr *)&remote, &len)) == -1) {
-         ENG_LOG("sock accept failed (%s)", strerror(errno));
-         return -1;
-    }
-
-    //ENG_LOG("new fd %d", fd);
-
-    return fd;
-}
-
-int eng_controller2tester(char * controller_buf, unsigned int data_len)
-{
-    int len = 0;
-    len = write(pc_fd,controller_buf,data_len);
-    ENG_LOG("bqb test eng_controller2tester %d", len);
-    return len;
-}
-
-static void bqb_service_enable(int pc_fd) {
-	struct termios ser_settings;
-    int ret = 0;
-    ENG_LOG("bqb bqb_service_enable");
-    tcgetattr(pc_fd, &ser_settings);
-    cfmakeraw(&ser_settings);
-    ser_settings.c_lflag = 0;
-    tcsetattr(pc_fd, TCSANOW, &ser_settings);
-    ret = eng_controller_bqb_start();
-}
-
-static void bqb_service_disable(int pc_fd) {
-	struct termios ser_settings;
-    int ret = 0;
-    ENG_LOG("bqb bqb_service_disable");
-    tcgetattr(pc_fd, &ser_settings);
-    cfmakeraw(&ser_settings);
-    ser_settings.c_lflag |= (ECHO | ECHONL);
-    ser_settings.c_lflag &= ~ECHOCTL;
-    tcsetattr(pc_fd, TCSANOW, &ser_settings);
-    ret = eng_controller_bqb_stop();
+error:;
+  lib_interface = NULL;
+  if (lib_handle)
+    dlclose(lib_handle);
+  lib_handle = NULL;
+  return false;
 }
 #endif
 
@@ -134,25 +68,24 @@ static int start_gser(char* ser_path)
         return -1;
     }
 
+#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
+    if(lib_interface !=NULL)
+        lib_interface->set_fd(pc_fd);
+#endif
+
     tcgetattr(pc_fd, &ser_settings);
     cfmakeraw(&ser_settings);
 
-#ifdef CONFIG_BQBTEST
-    if (current_route == ROUTE_BQB) {
-        ser_settings.c_lflag = 0;
-    } else {
-        ser_settings.c_lflag |= (ECHO | ECHONL);
-        ser_settings.c_lflag &= ~ECHOCTL;
-    }
-#else
     ser_settings.c_lflag |= (ECHO | ECHONL);
     ser_settings.c_lflag &= ~ECHOCTL;
-#endif
+
 
     tcsetattr(pc_fd, TCSANOW, &ser_settings);
 
     return 0;
 }
+
+
 
 
 static void *eng_readpcat_thread(void *par)
@@ -164,26 +97,13 @@ static void *eng_readpcat_thread(void *par)
     char databuf[ENG_BUFFER_SIZE];
     int i, offset_read, length_read, status;
     eng_dev_info_t* dev_info = (eng_dev_info_t*)par;
-#ifdef CONFIG_BQBTEST
-    int bs_fd, ret;
+    int ret;
     int max_fd = pc_fd;
     fd_set read_set;
-
-    /* init bqb server socket */
-    bs_fd = create_server_socket(BQB_CTRL_PATH);
-
-    if (bs_fd < 0) {
-        ENG_LOG("creat bqb server socket error(%s)", strerror(errno));
-    } else {
-        max_fd = bs_fd > pc_fd ? bs_fd : pc_fd;
-    }
 
     for (;;) {
         ENG_LOG("wait for command / byte stream");
         FD_ZERO(&read_set);
-        if (bs_fd > 0) {
-            FD_SET(bs_fd, &read_set);
-        }
 
         if (pc_fd > 0) {
             FD_SET(pc_fd, &read_set);
@@ -201,45 +121,7 @@ static void *eng_readpcat_thread(void *par)
             ENG_LOG("select failed %s", strerror(errno));
             continue;
         }
-        if (FD_ISSET(bs_fd, &read_set)) {
-            ENG_LOG("bs_fd got");
-            int fd = accept_server_socket(bs_fd);
-            if (fd < 0) {
-                ENG_LOG("bqb get service socket fail");
-                sleep(1);
-                continue;
-            }
-            memset(engbuf, 0, ENG_BUFFER_SIZE);
-            len = read(fd, engbuf, ENG_BUFFER_SIZE);
-            ENG_LOG("bqb control: %s: len: %d", engbuf, len);
-            if (strstr(engbuf, ENABLE_BQB_TEST)) {
-                if (current_route == ROUTE_AT) {
-                    bqb_service_enable(pc_fd);
-                    write(fd, NOTIFY_BQB_ENABLE, strlen(NOTIFY_BQB_ENABLE));
-                    current_route = ROUTE_BQB;
-                } else if (current_route == ROUTE_BQB) {
-                    write(fd, NOTIFY_BQB_ENABLE, strlen(NOTIFY_BQB_ENABLE));
-                }
-            } else if (strstr(engbuf, DISABLE_BQB_TEST)) {
-                if (current_route == ROUTE_BQB) {
-                    bqb_service_disable(pc_fd);
-                    write(fd, NOTIFY_BQB_DISABLE, strlen(NOTIFY_BQB_DISABLE));
-                    current_route = ROUTE_AT;
-                } else if (current_route == ROUTE_AT) {
-                    write(fd, NOTIFY_BQB_DISABLE, strlen(NOTIFY_BQB_DISABLE));
-                }
-            } else if (strstr(engbuf, TRIGGER_BQB_TEST)) {
-                if (current_route == ROUTE_BQB) {
-                    write(fd, TRIGGER_BQB_ENABLE, strlen(TRIGGER_BQB_ENABLE));
-                } else if (current_route == ROUTE_AT) {
-                    write(fd, TRIGGER_BQB_DISABLE, strlen(TRIGGER_BQB_DISABLE));
-                }
-            } else {
-                    write(fd, UNKNOW_COMMAND, strlen(UNKNOW_COMMAND));
-            }
-            close(fd);
-            continue;
-        } else if (FD_ISSET(pc_fd, &read_set)) {
+        if (FD_ISSET(pc_fd, &read_set)) {
             memset(engbuf, 0, ENG_BUFFER_SIZE);
             len = read(pc_fd, engbuf, ENG_BUFFER_SIZE);
             if (len <= 0) {
@@ -250,40 +132,20 @@ static void *eng_readpcat_thread(void *par)
             }
 
             ENG_LOG("pc got: %s: %d", engbuf, len);
-            if (strstr(engbuf, ENABLE_BQB_TEST)) {
-                if (current_route == ROUTE_AT) {
-                    bqb_service_enable(pc_fd);
-                    write(pc_fd, NOTIFY_BQB_ENABLE, strlen(NOTIFY_BQB_ENABLE));
-                    current_route = ROUTE_BQB;
-                } else if (current_route == ROUTE_BQB) {
-                    write(pc_fd, NOTIFY_BQB_ENABLE, strlen(NOTIFY_BQB_ENABLE));
-                }
+
+#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
+            if(lib_interface->check_received_str(pc_fd, engbuf, len))
                 continue;
-            } else if (strstr(engbuf, DISABLE_BQB_TEST)) {
-                if (current_route == ROUTE_BQB) {
-                    bqb_service_disable(pc_fd);
-                    write(pc_fd, NOTIFY_BQB_DISABLE, strlen(NOTIFY_BQB_DISABLE));
-                    current_route = ROUTE_AT;
-                } else if (current_route == ROUTE_AT) {
-                    write(pc_fd, NOTIFY_BQB_DISABLE, strlen(NOTIFY_BQB_DISABLE));
-                }
-                continue;
-            } else if (strstr(engbuf, TRIGGER_BQB_TEST)) {
-                if (current_route == ROUTE_BQB) {
-                    write(pc_fd, TRIGGER_BQB_ENABLE, strlen(TRIGGER_BQB_ENABLE));
-                } else if (current_route == ROUTE_AT) {
-                    write(pc_fd, TRIGGER_BQB_DISABLE, strlen(TRIGGER_BQB_DISABLE));
-                }
-            }
+#endif
         } else {
             ENG_LOG("warning !!!");
         }
-
-        if (current_route == ROUTE_BQB) {
-            eng_send_data(engbuf, len);
-        }
-
-        if (current_route == ROUTE_AT) {
+#ifdef CONFIG_BQBTEST
+        if (lib_interface->get_bqb_state() == BQB_OPENED) {
+            lib_interface->eng_send_data(engbuf, len);
+        } else
+#endif
+        {
             if(at_mux_fd >= 0) {
                 cur = 0;
                 while(cur < len) {
@@ -303,48 +165,6 @@ static void *eng_readpcat_thread(void *par)
             }
         }
     }
-#else
-    for(;;){
-        ENG_LOG("%s: wait pcfd=%d\n",__func__,pc_fd);
-
-read_again:
-        memset(engbuf, 0, ENG_BUFFER_SIZE);
-        if (pc_fd >= 0){
-            len = read(pc_fd, engbuf, ENG_BUFFER_SIZE);
-            ENG_LOG("%s: wait pcfd=%d buf=%s len=%d",__func__,pc_fd,engbuf,len);
-
-            if (len <= 0) {
-                ENG_LOG("%s: read length error %s",__FUNCTION__,strerror(errno));
-                sleep(1);
-                start_gser(dev_info->host_int.dev_at);
-                goto read_again;
-            }else{
-                ENG_LOG("bqb write to at_mux_fd...., engbuf: %s", engbuf);
-                // Just send to modem transparently.
-                if(at_mux_fd >= 0) {
-                    cur = 0;
-                    while(cur < len) {
-                        do {
-                            written = write(at_mux_fd, engbuf + cur, len -cur);
-                            ENG_LOG("muxfd=%d, written=%d\n", at_mux_fd, written);
-                        }while(written < 0 && errno == EINTR);
-
-                        if(written < 0) {
-                            ENG_LOG("%s: write length error %s\n", __FUNCTION__, strerror(errno));
-                            break;
-                        }
-                        cur += written;
-                    }
-                }else {
-                    ENG_LOG("muxfd fail?");
-                }
-            }
-        }else{
-            sleep(1);
-            start_gser(dev_info->host_int.dev_at);
-        }
-    }
-#endif
     return NULL;
 }
 
@@ -385,9 +205,9 @@ write_again:
 int eng_at_pcmodem(eng_dev_info_t* dev_info)
 {
     eng_thread_t t1,t2;
-
-    ENG_LOG("%s ",__func__);
-
+#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
+    bqb_vendor_open();
+#endif
     start_gser(dev_info->host_int.dev_at);
 
     at_mux_fd = open(dev_info->modem_int.at_chan, O_RDWR);

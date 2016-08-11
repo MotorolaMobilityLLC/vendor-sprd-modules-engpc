@@ -151,6 +151,7 @@ static int s_cmd_index = -1;
 static int s_cp_ap_proc = 0;
 static int s_cur_filepos = 0;
 static eng_thread_t gps_thread_hdlr;
+static int loop_enable,loop_route;
 
 static int write_productnvdata(char *buffer, int size);
 static int read_productnvdata(char *buffer, int size);
@@ -226,6 +227,7 @@ static const char *at_sadm = "AT+SADM4AP";
 static const char *at_spenha = "AT+SPENHA";
 static const char *at_calibr = "AT+CALIBR";
 static const char *at_phoneinfo = "AT+PEINFO";
+static const char *at_phoneloop = "AT+PELOOP";
 
 // static int at_sadm_cmd_to_handle[] = {7,8,9,10,11,12,-1};
 static int at_sadm_cmd_to_handle[] = {7, 8, 9, 10, 11, 12, -1};
@@ -3325,6 +3327,16 @@ int is_audio_at_cmd_need_to_handle(char *buf, int len) {
     ENG_LOG("%s,PEINFO", __FUNCTION__);
     return 1;
   }
+  // AT+PELOOP
+  ENG_LOG("%s,ptr:%s",__FUNCTION__,ptr);
+  ret = strncmp(ptr,at_phoneloop,strlen(at_phoneloop));
+  if (0 == ret) {
+      at_tok_equel_start(&ptr);
+      at_tok_nextint(&ptr,&loop_enable);
+      at_tok_nextint(&ptr,&loop_route);
+      ENG_LOG("%s,PELOOP : enable %d, route:%d",__FUNCTION__,loop_enable,loop_route);
+      return 1;
+  }
   ENG_LOG("%s,cmd don't need to handle", __FUNCTION__);
 
   return 0;
@@ -3441,6 +3453,11 @@ static int eng_notify_mediaserver_updatapara(int ram_ops, int index,
         ALOGE("%s open audio FIFO_2 error %s,fifo_id:%d\n", __FUNCTION__,
               strerror(errno), fifo_id);
       }
+    }
+    if (ram_ops & ENG_PHONELOOP_OPS) {
+        ALOGE("eng_notify_mediaserver_updatapara,loop entry, enable:%d, loop_route:%d!!!\n",loop_enable, loop_route);
+        result = write(fifo_id,&loop_enable,sizeof(int));
+        result = write(fifo_id,&loop_route,sizeof(int));
     }
     close(fifo_id);
     fifo_id = -1;
@@ -3636,6 +3653,19 @@ int eng_diag_audio(char *buf, int len, char *rsp) {
 
     sprintf(rsp, "\r\nOK\r\n");
     goto out;
+  }
+
+  //if ptr points to "AT+PELOOP" 3026
+  ret = strncmp(ptr,at_phoneloop,strlen(at_phoneloop));
+  if ( 0 == ret ) {
+      int length = 0;
+      char bin_tmp[2*ENG_DIAG_SIZE];
+      memcpy(rsp,"+PELOOP:",sizeof("+PELOOP:"));
+      length = eng_notify_mediaserver_updatapara(ENG_PHONELOOP_OPS,0, bin_tmp);
+      if(length > 0)
+          sprintf(rsp,"\r\nOK\r\n");
+      else
+          goto out;
   }
 
   // if ptr points to "AT+SADM4AP"

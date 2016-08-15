@@ -1,6 +1,9 @@
 #ifndef __ENG_DIAG_H__
 #define __ENG_DIAG_H__
 
+#include <linux/ioctl.h>
+#include <linux/types.h>
+
 /*got it from tool*/
 #define DIAG_CHANGE_MODE_F 12
 typedef enum {
@@ -172,6 +175,13 @@ struct eng_autotestcmd_str {
 #define ENG_ANDROID_VER "ro.build.version.release"
 #define ENG_AUDIO "/sys/class/vbc_param_config/vbc_param_store"
 #define ENG_FM_DEVSTAT "/sys/class/fm_devstat_config/fm_devstat_store"
+
+#define DSPLOG_CMD_MAGIC 'X'
+#define DSPLOG_CMD_LOG_ENABLE           _IOW(DSPLOG_CMD_MAGIC, 0, int)
+#define DSPLOG_CMD_LOG_PATH_SET         _IOW(DSPLOG_CMD_MAGIC, 1, int)
+#define DSPLOG_CMD_PCM_PATH_SET         _IOW(DSPLOG_CMD_MAGIC, 3, int)
+#define DSPLOG_CMD_PCM_ENABLE           _IOW(DSPLOG_CMD_MAGIC, 4, int)
+#define DSPLOG_CMD_DSPASSERT            _IOW(DSPLOG_CMD_MAGIC, 6, int)
 
 /*the add the file result*/
 #define BBAT_TEST_FILE_PATH "/productinfo/BBATtest.txt"

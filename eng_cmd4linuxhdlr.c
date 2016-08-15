@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/reboot.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #include <utils/Log.h>
 #include <cutils/android_reboot.h>
@@ -45,6 +46,10 @@
 #define DISABLE_WCN_LOG_CMD  "DISABLE_LOG WCN\n"
 #define ENABLE_GNSS_LOG_CMD  "ENABLE_LOG GNSS\n"
 #define DISABLE_GNSS_LOG_CMD  "DISABLE_LOG GNSS\n"
+
+//AGDSP LOG, PCM DUMP status
+static int g_agdsp_log_status = 0; // 0: Log Disabled, 1: To UART, 2: To AP
+static int g_agdsp_pcm_status = 0; // 0: PCM disabled, 1: PCM enabled
 
 extern int g_reset;
 extern int g_setuart_ok;
@@ -94,6 +99,7 @@ static int eng_linuxcmd_rtctest(char *req, char *rsp);
 static int eng_linuxcmd_setuartspeed(char* req, char* rsp);
 static int eng_linuxcmd_wiqpb(char *req, char *rsp);
 static int eng_linuxcmd_property(char *req, char *rsp);
+static int eng_linuxcmd_audiologctl(char *req, char *rsp);
 
 static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SENDKEY, CMD_TO_AP, "AT+SENDKEY", eng_linuxcmd_keypad},
@@ -130,6 +136,7 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SPWIQ, CMD_TO_AP, "AT+SPWIQ", eng_linuxcmd_wiqpb},
     {CMD_PROP, CMD_TO_AP, "AT+PROP", eng_linuxcmd_property},
     {CMD_SETUARTSPEED, CMD_TO_AP, "AT+SETUARTSPEED", eng_linuxcmd_setuartspeed},
+    {CMD_AUDIOLOGCTL, CMD_TO_AP, "AT+SPAUDIOOP", eng_linuxcmd_audiologctl}
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -1426,4 +1433,159 @@ int eng_linuxcmd_setuartspeed(char *req,char *rsp)
   }
   ENG_LOG("%s: set speed=%d fail\n", __FUNCTION__, speed);
   return -1;
+}
+
+int eng_linuxcmd_audiologctl(char *req, char *rsp) {
+  /* AT+SPAUDIOOP=<log_dest>[,<pcm_enable>]
+   * log_dest     : 0 - disable AGDSP log
+   *                1 - enable AGDSP log to UART
+   *                2 - enable AGDSP log to AP
+   *
+   * pcm_enable   : 0 - disable pcm dump,
+   *                    if not specified, 0 is by default.
+   *                1 - <log_dest> must be non-zero to
+   *                    enable pcm dump
+   *
+   * if <log_dest> = 0, <pcm_enable> = 0.
+   */
+  const char* preq = req;
+  while (' ' == *preq) {
+    ++preq;
+  }
+
+  preq += 12;
+
+  char ag_log_chan[ENG_DEV_PATH_LEN] = {0};
+  char ag_pcm_chan[ENG_DEV_PATH_LEN] = {0};
+  int log_fd = -1;
+  int pcm_fd = -1;
+  int ret = -1;
+  int len = 0;
+
+  property_get("ro.modem.ag.log", ag_log_chan, "");
+  if (!ag_log_chan[0]) {
+    ENG_LOG("%s fail to get agdsp log device file.", __FUNCTION__);
+    goto out;
+  }
+
+  property_get("ro.modem.ag.pcm", ag_pcm_chan, "");
+  if (!ag_pcm_chan[0]) {
+    ENG_LOG("%s fail to get agdsp pcm device file.", __FUNCTION__);
+    goto out;
+  }
+
+  log_fd = open(ag_log_chan, O_WRONLY);
+  if (-1 == log_fd) {
+    ENG_LOG("fail to open agdsp log device.");
+    goto out;
+  }
+
+  pcm_fd = open(ag_pcm_chan, O_WRONLY);
+  if (-1 == pcm_fd) {
+    ENG_LOG("fail to open agdsp pcm device.");
+    goto out;
+  }
+
+  if ('=' == *preq) {
+    ++preq;
+    if ('?' == *preq) {
+      ++preq;
+      if ('\0' == *preq) {
+        len = sprintf(rsp, "%s+SPAUDIOOP: (0,1,2),(0,1)%s",
+                      ENG_STREND, ENG_STREND);
+        ret = 0;
+      }
+    } else {
+      switch (*preq) {
+        case '0':
+          if (',' == (*(++preq))) {
+            // +SPAUDIOOP=0,0
+            ++preq;
+            if ('0' != *preq) {
+              break;
+            }
+
+            if ('\0' != *(++preq)) {
+              break;
+            }
+          } else if ('\0' != (*preq)) {
+            // +SPAUDIOOP=0
+            break;
+          }
+
+          if (!ioctl(log_fd, DSPLOG_CMD_LOG_ENABLE, 0)) {
+            g_agdsp_log_status = 0;
+            g_agdsp_pcm_status = 0;
+            ret = 0;
+          } else {
+            ENG_LOG("AG-DSP log ioctl(DSPLOG_CMD_LOG_ENABLE, %d) error.", 0);
+          }
+          break;
+        case '1':  // +SPAUDIOOP=(1,2)[,(0,1)]
+        case '2':;
+          int enable_log_status = *preq - '0';
+          int set_pcm_status = -1;
+
+          if (',' == (*(++preq))) {
+            set_pcm_status = *(++preq) - '0';
+
+            if ((0 != set_pcm_status) &&
+                (1 != set_pcm_status)) {
+              break;
+            }
+
+            if ('\0' != (*(++preq))) {
+              break;
+            }
+          } else if ('\0' == *preq) {
+            // +SPAUDIOOP=(1,2)
+            set_pcm_status = 0;
+          } else {
+            break;
+          }
+
+          if (!ioctl(log_fd, DSPLOG_CMD_LOG_ENABLE, (void*)enable_log_status)) {
+            g_agdsp_log_status = enable_log_status;
+
+            if (!ioctl(pcm_fd, DSPLOG_CMD_PCM_ENABLE, (void*)set_pcm_status)) {
+              g_agdsp_pcm_status = set_pcm_status;
+              ret = 0;
+            } else {
+              ENG_LOG("AG-DSP pcm ioctl(DSPLOG_CMD_PCM_ENABLE, %d) error.",
+                      set_pcm_status);
+            }
+          } else {
+            ENG_LOG("AG-DSP log ioctl(DSPLOG_CMD_LOG_ENABLE, %d) error.",
+                    enable_log_status);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  } else if ('?' == *preq) {
+    if ('\0' == *(++preq)) {
+      len = sprintf(rsp, "%s+SPAUDIOOP: %d,%d%s",
+                    ENG_STREND, g_agdsp_log_status,
+                    g_agdsp_pcm_status, ENG_STREND);
+      ret = 0;
+    }
+  }
+
+out:
+  if (-1 != log_fd) {
+    close(log_fd);
+  }
+
+  if (-1 != pcm_fd) {
+    close(pcm_fd);
+  }
+
+  if (-1 == ret) {
+    len = sprintf(rsp, "%s%s%s", ENG_STREND, SPRDENG_ERROR, ENG_STREND);
+  } else if (0 == ret) {
+    len += sprintf(rsp + len, "%s%s%s", ENG_STREND, SPRDENG_OK, ENG_STREND);
+  }
+
+  return len;
 }

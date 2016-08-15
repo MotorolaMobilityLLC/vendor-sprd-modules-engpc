@@ -5,7 +5,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_PRELINK_MODULE    := false
 
-CONFIG_MINIENGPC := true
+CONFIG_MINIENGPC := false
 
 ifeq ($(CONFIG_MINIENGPC), true)
 LOCAL_CFLAGS += -DCONFIG_MINIENGPC
@@ -19,10 +19,10 @@ LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy
 else
 ifeq ($(USE_AUDIO_WHALE_HAL), true)
 LOCAL_CFLAGS += -DUSE_AUDIO_WHALE_HAL
-LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libgpspc libbm \
+LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libgpspc libbm \
                            libeng-audio
 else
-LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libvbeffect libvbpga libnvexchange libatci libgpspc libbm \
+LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libvbeffect libvbpga libnvexchange libatci libefuse libgpspc libbm \
                            libeng-audio
 endif
 endif

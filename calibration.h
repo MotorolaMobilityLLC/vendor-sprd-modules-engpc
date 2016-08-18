@@ -3,6 +3,9 @@
 #define ADC_CHANNEL_PATH "/sys/class/misc/sprd-adc/adc_channel"
 #define ADC_SCALE_PATH "/sys/class/misc/sprd-adc/adc_scale"
 #define ADC_DATA_RAW_PATH "/sys/class/misc/sprd-adc/adc_data_raw"
+#define ADC_CHANNEL_PATH_NEW "/sys/bus/iio/devices/iio:device0/adc_channel_set"
+#define ADC_SCALE_PATH_NEW "/sys/bus/iio/devices/iio:device0/adc_scale_set"
+#define ADC_DATA_RAW_PATH_NEW "/sys/bus/iio/devices/iio:device0/adc_info"
 #define BATTERY_VOL_PATH "/sys/class/power_supply/battery/real_time_voltage"
 #define BATTERY_ADC_PATH "/sys/class/power_supply/battery/real_time_vbat_adc"
 #define CHARGER_STOP_PATH "/sys/class/power_supply/battery/stop_charge"
@@ -44,6 +47,8 @@ typedef enum {
   DIAG_AP_CMD_GET_MODEM_MODE = 0x0012,
   DIAG_AP_CMD_MODEM_DB_ATTR = 0x000e,
   DIAG_AP_CMD_MODEM_DB_READ = 0x000f,
+  DIAG_AP_CMD_READ_MMI = 0x0013, //Read MMI
+  DIAG_AP_CMD_WRITE_MMI = 0x0014, //Write MMI
   MAX_DIAG_AP_CMD
 } DIAG_AP_CMD_E;
 
@@ -89,6 +94,12 @@ typedef struct {
   unsigned short status;  // ==0: success, != 0: fail
   unsigned short length;  // length of  result
 } TOOLS_DIAG_AP_CNF_T;
+
+typedef struct
+{
+  unsigned short  uType; //00: whole phone test; 01: PCBA test ; 02: BBAT test
+  char uBuff[256]; //16*16
+}TOOLS_DIAG_MMI_CIT_T;
 
 typedef struct {
   int charging;

@@ -41,12 +41,12 @@ AUDIO_TOTAL_T *audio_total = NULL;
 #endif
 
 static int s_speed_arr[] = {
-    B921600, B115200, B38400, B19200, B9600, B4800, B2400, B1200, B300,
-    B921600, B115200, B38400, B19200, B9600, B4800, B2400, B1200, B300,
+    B921600, B460800, B230400, B115200, B38400, B19200, B9600, B4800, B2400, B1200, B300,
+    B921600, B460800, B230400, B115200, B38400, B19200, B9600, B4800, B2400, B1200, B300,
 };
 static int s_name_arr[] = {
-    921600, 115200, 38400, 19200, 9600, 4800, 2400, 1200, 300,
-    921600, 115200, 38400, 19200, 9600, 4800, 2400, 1200, 300,
+    921600, 460800, 230400, 115200, 38400, 19200, 9600, 4800, 2400, 1200, 300,
+    921600, 460800, 230400, 115200, 38400, 19200, 9600, 4800, 2400, 1200, 300,
 };
 
 static void print_log_data(int cnt) {
@@ -229,6 +229,7 @@ void set_raw_data_speed(int fd, int speed) {
 
   tcgetattr(fd, &Opt);
   for (i = 0; i < sizeof(s_speed_arr) / sizeof(int); i++) {
+    ENG_LOG("%s: enum speed=%d", __FUNCTION__, s_name_arr[i]);
     if (speed == s_name_arr[i]) {
       /*set raw data mode */
       Opt.c_iflag &=
@@ -243,8 +244,9 @@ void set_raw_data_speed(int fd, int speed) {
       /* set baudrate*/
       cfsetispeed(&Opt, s_speed_arr[i]);
       cfsetospeed(&Opt, s_speed_arr[i]);
+      ENG_LOG("%s: set speed=%d", __FUNCTION__, speed);
       status = tcsetattr(fd, TCSANOW, &Opt);
-      if (status != 0) perror("tcsetattr fd1");
+      if (status != 0) ENG_LOG("%s: tcsetattr error:%s\n", __FUNCTION__, strerror(errno));
       break;
     }
   }

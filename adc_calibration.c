@@ -720,10 +720,21 @@ static int get_other_ch_adc_value(int channel, int scale) {
   int i = 0, len = 0, fd = -1;
   char data_buf[16] = {0};
   char ch[8] = {0};
+  char path[128] = {0};
+  char buf[128] = {0};
+  char *start_ptr;
+  char *end_ptr;
+  int adc_ver_flag = 0;
 
-  fd = open(ADC_CHANNEL_PATH, O_WRONLY);
+  if(0 == access(ADC_CHANNEL_PATH, F_OK)) {
+    sprintf(path, "%s", ADC_CHANNEL_PATH);
+  } else {
+    sprintf(path, "%s", ADC_CHANNEL_PATH_NEW);
+  }
+
+  fd = open(path, O_WRONLY);
   if (fd < 0) {
-    ENG_LOG("%s: open %s failed, err: %s\n", __func__, ADC_CHANNEL_PATH,
+    ENG_LOG("%s: open %s failed, err: %s\n", __func__, path,
             strerror(errno));
     return -1;
   }
@@ -731,16 +742,22 @@ static int get_other_ch_adc_value(int channel, int scale) {
   sprintf(ch, "%d", channel);
   len = write(fd, ch, strlen(ch));
   if (len <= 0) {
-    ENG_LOG("%s: write %s failed, err: %s\n", __func__, ADC_CHANNEL_PATH,
+    ENG_LOG("%s: write %s failed, err: %s\n", __func__, path,
             strerror(errno));
     close(fd);
     return -1;
   }
   close(fd);
 
-  fd = open(ADC_SCALE_PATH, O_WRONLY);
+  if(0 == access(ADC_SCALE_PATH, F_OK)) {
+    sprintf(path, "%s", ADC_SCALE_PATH);
+  } else {
+    sprintf(path, "%s", ADC_SCALE_PATH_NEW);
+  }
+
+  fd = open(path, O_WRONLY);
   if (fd < 0) {
-    ENG_LOG("%s: open %s failed, err: %s\n", __func__, ADC_SCALE_PATH,
+    ENG_LOG("%s: open %s failed, err: %s\n", __func__, path,
             strerror(errno));
     return -1;
   }
@@ -748,24 +765,49 @@ static int get_other_ch_adc_value(int channel, int scale) {
   sprintf(ch, "%d", scale);
   len = write(fd, ch, strlen(ch));
   if (len <= 0) {
-    ENG_LOG("%s: write %s failed, err: %s\n", __func__, ADC_SCALE_PATH,
+    ENG_LOG("%s: write %s failed, err: %s\n", __func__, path,
             strerror(errno));
     close(fd);
     return -1;
   }
   close(fd);
 
+  if(0 == access(ADC_DATA_RAW_PATH, F_OK)) {
+    sprintf(path, "%s", ADC_DATA_RAW_PATH);
+    adc_ver_flag = 0;
+  } else {
+    sprintf(path, "%s", ADC_DATA_RAW_PATH_NEW);
+    adc_ver_flag = 1;
+  }
+
   for (i = 0; i < 16; i++) {
-    fd = open(ADC_DATA_RAW_PATH, O_RDONLY);
+    fd = open(path, O_RDONLY);
     if (fd < 0) {
-      ENG_LOG("%s: open %s failed, err: %s\n", __func__, ADC_DATA_RAW_PATH,
+      ENG_LOG("%s: open %s failed, err: %s\n", __func__, path,
               strerror(errno));
       return -1;
     }
 
-    len = read(fd, data_buf, sizeof(data_buf));
+    if(adc_ver_flag) {
+      len = read(fd, buf, sizeof(buf));
+      start_ptr = strstr(buf, "adc_data = ");
+      if(NULL == start_ptr) {
+        ENG_LOG("%s: strstr() [adc_data = ], not found\n", __func__);
+        close(fd);
+        return -1;
+      }
+      end_ptr = strstr(start_ptr, ",");
+      if(NULL == end_ptr) {
+          ENG_LOG("%s: strstr() [,], not found\n", __func__);
+          close(fd);
+          return -1;
+      }
+      memcpy(data_buf, start_ptr + strlen("adc_data = "), end_ptr - start_ptr - strlen("adc_data = "));
+    } else {
+      len = read(fd, data_buf, sizeof(data_buf));
+    }
     if (len < 0) {
-      ENG_LOG("%s: read %s failed, err: %s\n", __func__, ADC_DATA_RAW_PATH,
+      ENG_LOG("%s: read %s failed, err: %s\n", __func__, path,
               strerror(errno));
       close(fd);
       return -1;

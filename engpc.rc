@@ -39,3 +39,10 @@ service engpcclientlf /system/bin/engpc -p lf -a /dev/ttyGS5 -d /dev/ttyGS6 -l /
     group system radio shell
     disabled
     oneshot
+
+service engpcclientag /system/bin/engpc -p ag -l /dev/ttyGS4
+    class core
+    user root
+    group system radio shell
+    disabled
+    oneshot

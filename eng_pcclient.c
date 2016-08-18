@@ -26,11 +26,13 @@
 #define DEVICE_SOC_USB_MAXIMUM_SPEED "/sys/devices/soc/soc:ap-ahb/20500000.usb3/maximum_speed"
 
 sem_t g_armlog_sem;
+eng_dev_info_t *g_dev_info = 0;
 int g_ap_cali_flag = 0;
 int g_agdsp_flag = 0;//ag dsp log flag
 extern int g_armlog_enable;
 extern int disconnect_vbus_charger(void);
 extern int turnoff_calibration_backlight(void);
+extern int eng_init_test_file(void);
 static int eng_iqfeed_start(int num);
 static void eng_check_whether_iqfeed(void);
 void eng_usb_maximum_speed(USB_DEVICE_SPEED_ENUM speed);
@@ -477,6 +479,8 @@ int main(int argc, char** argv) {
   char get_propvalue[PROPERTY_VALUE_MAX] = {0};
   eng_dev_info_t dev_info = {{"/dev/ttyGS0", "/dev/vser", 0, 1}, {0, 0, 0}};
 
+  g_dev_info = &dev_info;
+
   eng_get_usb_int(argc, argv, dev_info.host_int.dev_at,
                   dev_info.host_int.dev_diag, dev_info.host_int.dev_log,
                   run_type);
@@ -531,6 +535,7 @@ int main(int argc, char** argv) {
           0 != strcmp(get_propvalue, set_propvalue)) {
         property_set("sys.onemodem.start.enable", set_propvalue);
         eng_file_unlock(fd);
+        eng_init_test_file();
         eng_sqlite_create();
         if (cmdparam.califlag != 1) {
           if (cmdparam.normal_cali) {

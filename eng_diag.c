@@ -11,6 +11,9 @@
 #include <sys/wait.h>  //-- for system command
 #include <semaphore.h>
 #include <cutils/android_reboot.h>
+#include <cutils/sockets.h>
+#include <poll.h>
+#include <sys/sysinfo.h>
 #include "engopt.h"
 #include "eng_attok.h"
 #include "eng_pcclient.h"
@@ -57,6 +60,7 @@
 #define NVITEM_ERROR_E int
 #define NVERR_NONE 0
 #define IMEI_NUM 4
+#define MAX_LINE_LEN 256
 
 #define CMD_SECURESTRING "securesha1="
 #define CMD_PUBLICKEYPATH "primpukpath="
@@ -96,6 +100,9 @@
 #define VLR_INFO_SIZE (512)
 #endif
 
+#define ENG_PCBA_SUPPORT_CONFIG "/system/etc/factorytest/PCBA.conf"
+#define ENG_BBAT_SUPPORT_CONFIG "/system/etc/engmode/BBAT.conf"
+
 // SIPC interfaces in AP linux for AT CMD
 char *at_sipc_devname[] = {
     "/dev/stty_td30",  // AT channel in TD mode
@@ -103,6 +110,7 @@ char *at_sipc_devname[] = {
 };
 
 int g_reset = 0;
+int g_setuart_ok = 0;
 sem_t g_gps_sem;
 int g_gps_log_enable = 0;
 int g_assert_cmd = 0;
@@ -131,6 +139,12 @@ extern int connect_vbus_charger(void);
 extern int  start_fm_test(char *,int,char *);
 #endif
 
+static int eng_diag_read_mmi(char *buf, int len, char *rsp, int rsplen);
+static int eng_diag_write_mmi(char *buf, int len, char *rsp, int rsplen);
+int eng_init_test_file(void);
+
+static int parse_config(void);
+
 extern struct eng_bt_eutops bt_eutops;
 extern struct eng_wifi_eutops wifi_eutops;
 extern struct eng_gps_eutops gps_eutops;
@@ -152,6 +166,8 @@ static int s_cp_ap_proc = 0;
 static int s_cur_filepos = 0;
 static eng_thread_t gps_thread_hdlr;
 static int loop_enable,loop_route;
+static hardware_result support_result[64];
+static hardware_result bbat_support_result[64];
 
 static int write_productnvdata(char *buffer, int size);
 static int read_productnvdata(char *buffer, int size);
@@ -222,6 +238,7 @@ static int eng_diag_set_powermode(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_set_ipconfigure(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_read_register(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_write_register(char *buf, int len, char *rsp, int rsplen);
+static int eng_diag_get_time_sync_info(char *buf,int len,char *rsp, int rsplen);
 
 static const char *at_sadm = "AT+SADM4AP";
 static const char *at_spenha = "AT+SPENHA";
@@ -635,7 +652,9 @@ int eng_diag_parse(char *buf, int len, int *num) {
       if (head_ptr->subtype == 0x4) {
         ENG_LOG("%s: Handle DIAG_CMD_ASSERT", __FUNCTION__);
         g_assert_cmd = 1;
-      } else if (head_ptr->subtype == 0x20)
+      }else if(head_ptr->subtype==0x11)
+        ret = CMD_USER_GET_TIME_SYNC_INFO;
+      else if(head_ptr->subtype==0x20)
         ret = CMD_USER_READ_EFUSE;
       else if (head_ptr->subtype == 0x21)
         ret = CMD_USER_WRITE_EFUSE;
@@ -1324,6 +1343,27 @@ int eng_diag_user_handle(int type, char *buf, int len) {
     case CMD_USER_GET_MODEM_MODE:
       rlen = eng_diag_get_modem_mode(buf, len, rsp, sizeof(rsp));
       eng_diag_write2pc(rsp, rlen, fd);
+      return 0;
+    case CMD_USER_READ_MMI:
+      ENG_LOG("%s: CMD_USER_READ_MMI Req!\n", __FUNCTION__);
+      memset(eng_diag_buf,0,sizeof(eng_diag_buf));
+      rlen = eng_diag_read_mmi(buf, len, eng_diag_buf,sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf,eng_diag_len ,fd);
+      return 0;
+    case CMD_USER_WRITE_MMI:
+      ENG_LOG("%s: CMD_USER_READ_MMI Req!\n", __FUNCTION__);
+      memset(eng_diag_buf,0,sizeof(eng_diag_buf));
+      rlen = eng_diag_write_mmi(buf, len, eng_diag_buf,sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf,eng_diag_len ,fd);
+      return 0;
+    case CMD_USER_GET_TIME_SYNC_INFO:
+      ENG_LOG("%s: CMD_USER_GET_TIME_SYNC_INFO Req!\n", __FUNCTION__);
+      memset(eng_diag_buf,0,sizeof(eng_diag_buf));
+      rlen = eng_diag_get_time_sync_info(buf, len, eng_diag_buf,sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf,eng_diag_len ,fd);
       return 0;
     case CMD_USER_BKLIGHT:
       ENG_LOG("%s: CMD_USER_BKLIGHT Req!\n", __FUNCTION__);
@@ -2713,6 +2753,7 @@ int eng_diag(char *buf, int len) {
 
   memset(rsp, 0, sizeof(rsp));
   fd = get_ser_diag_fd();
+  g_setuart_ok=0;
   type = eng_diag_parse(buf, len, &num);
 
   ENG_LOG("%s:write type=%d,num=%d\n", __FUNCTION__, type, num);
@@ -2721,7 +2762,7 @@ int eng_diag(char *buf, int len) {
     ret_val = eng_diag_user_handle(type, buf, len - num);
     ENG_LOG("%s:ret_val=%d\n", __FUNCTION__, ret_val);
 
-    if (ret_val) {
+    if (ret_val && !g_setuart_ok) {
       eng_diag_buf[0] = 0x7e;
 
       sprintf(rsp, "%s", "\r\nOK\r\n");
@@ -4131,6 +4172,10 @@ static int eng_diag_ap_req(char *buf, int len) {
     ret = CMD_USER_GET_CHARGE_CURRENT;
   } else if (DIAG_AP_CMD_GET_MODEM_MODE == apcmd->cmd) {
     ret = CMD_USER_GET_MODEM_MODE;
+  }else if(DIAG_AP_CMD_READ_MMI == apcmd->cmd){
+    ret = CMD_USER_READ_MMI;
+  }else if(DIAG_AP_CMD_WRITE_MMI == apcmd->cmd){
+    ret = CMD_USER_WRITE_MMI;
   } else if (DIAG_AP_CMD_BKLIGHT == apcmd->cmd) {
     ret = CMD_USER_BKLIGHT;
   } else if (DIAG_AP_CMD_PWMODE == apcmd->cmd) {
@@ -4757,6 +4802,138 @@ static int eng_diag_read_efuse(char *buf, int len, char *rsp, int rsplen) {
   rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr,
                             ((MSG_HEAD_T *)rsp_ptr)->len);
   free(rsp_ptr);
+  return rsplen;
+}
+
+static int get_timezone() {
+  time_t t1;
+  struct tm* p;
+  struct tm local_tm;
+  struct tm gm_tm;
+
+  t1 = time(0);
+  if ((time_t)(-1) == t1) {
+    return 0;
+  }
+  p = gmtime_r(&t1, &gm_tm);
+  if (!p) {
+    return 0;
+  }
+  p = localtime_r(&t1, &local_tm);
+  if (!p) {
+    return 0;
+  }
+
+  int tz = local_tm.tm_hour - gm_tm.tm_hour;
+  if (tz > 12) {
+    tz -= 24;
+  } else if (tz < -12) {
+    tz += 24;
+  }
+
+  return tz;
+}
+
+static int eng_diag_get_time_sync_info(char *buf,int len,char *rsp, int rsplen)
+{
+  int ret = 0, n = 0, fd = -1, tz;
+  struct pollfd fds;
+  char buffer[16] = {0};
+  MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T*)(buf + 1);
+  char *rsp_ptr;
+  TOOLS_DIAG_AP_CNF_T *aprsp;
+  MODEM_TIMESTAMP_T time_stamp;
+  TIME_SYNC_T time_sync;
+  struct timeval time_now;
+  struct sysinfo sinfo;
+  int sleep_time = 0;
+
+  if(NULL == buf){
+    ENG_LOG("%s: null pointer",__FUNCTION__);
+    return 0;
+  }
+
+  rsplen = sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MODEM_TIMESTAMP_T) + sizeof(MSG_HEAD_T);
+  rsp_ptr = (char*)malloc(rsplen);
+  memset(rsp_ptr, 0, rsplen);
+  if(NULL == rsp_ptr){
+    ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+    return 0;
+  }
+
+  memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
+  ((MSG_HEAD_T*)rsp_ptr)->len = rsplen;
+  aprsp = rsp_ptr + sizeof(MSG_HEAD_T);
+  aprsp->status = 0x01;
+  aprsp->length = sizeof(MODEM_TIMESTAMP_T);
+
+  /*socket client connect*/
+  while (sleep_time < 1000000) {
+    fd = socket_local_client(TIME_SERVER_SOCK_NAME,
+        ANDROID_SOCKET_NAMESPACE_ABSTRACT,
+        SOCK_STREAM);
+    if (fd >= 0) {
+      break;
+    }
+    usleep(100000);
+    sleep_time += 100000;
+  }
+
+  if (fd < 0) {
+    ENG_LOG("%s: connect time sync server socket error(%s)\n", __FUNCTION__, strerror(errno));
+    goto out;
+  }
+
+  fds.fd = fd;
+  fds.events = POLLIN;
+  fds.revents = 0;
+
+  if (poll(&fds, 1, 3000) <= 0) {
+    ENG_LOG("%s: ERROR: socket error(%s)\n", __FUNCTION__, strerror(errno));
+    goto out;
+  }
+
+  if (fds.revents & POLLIN) {
+    n = read(fd, &time_sync, sizeof(TIME_SYNC_T));
+  }
+
+  if(n != sizeof(TIME_SYNC_T)) {
+    ENG_LOG("%s: read %d bytes, can't read time info\n", __FUNCTION__, n);
+    goto out;
+  }
+
+  gettimeofday(&time_now, 0);
+  sysinfo(&sinfo);
+  time_stamp.sys_cnt = time_sync.sys_cnt + (sinfo.uptime - time_sync.uptime) * 1000;
+  time_stamp.tv_sec = (uint32_t)(time_now.tv_sec);
+  time_stamp.tv_usec = (uint32_t)(time_now.tv_usec);
+
+  //add timezone
+  tz = get_timezone();
+  time_stamp.tv_sec += (3600 * tz);
+  ENG_LOG("%s: tv_sec=%d, tv_usec=%d, sys_cnt=%d\n", __FUNCTION__, time_stamp.tv_sec, time_stamp.tv_usec, time_stamp.sys_cnt);
+
+#if 0
+  struct timeval tv;
+  struct tm *tmp;
+  char strTime[32] = {0};
+
+  tv.tv_sec = time_stamp.tv_sec;
+  tv.tv_usec = time_stamp.tv_usec;
+  tmp = gmtime(&tv.tv_sec);
+  strftime(strTime, 32, "%F %T", tmp);
+  ENG_LOG("%s: %s %d Micorseconds\n", __FUNCTION__, strTime, tv.tv_usec);
+#endif
+
+  memcpy(rsp_ptr + sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MSG_HEAD_T), &time_stamp, sizeof(MODEM_TIMESTAMP_T));
+  aprsp->status = 0x00;
+
+out:
+  rsplen = translate_packet(rsp,(unsigned char*)rsp_ptr,((MSG_HEAD_T*)rsp_ptr)->len);
+  free(rsp_ptr);
+  if(fd >= 0) {
+    close(fd);
+  }
   return rsplen;
 }
 
@@ -5488,4 +5665,308 @@ out:
                             ((MSG_HEAD_T *)rsp_ptr)->len);
   free(rsp_ptr);
   return rsplen;
+}
+
+static int eng_diag_read_mmi(char *buf, int len, char *rsp, int rsplen)
+{
+  int fd = -1;
+  int read_len;
+  char buffer[256];
+  char *rsp_ptr;
+  MSG_HEAD_T* msg_head_ptr;
+  TOOLS_DIAG_AP_CNF_T* aprsp;
+  TOOLS_DIAG_MMI_CIT_T* test_result,*req_ptr;
+
+  if(NULL == buf){
+    ENG_LOG("%s,null pointer",__FUNCTION__);
+    return 0;
+  }
+
+  msg_head_ptr = (MSG_HEAD_T*)(buf + 1);
+  req_ptr = (TOOLS_DIAG_MMI_CIT_T*)(buf + 1 + sizeof(MSG_HEAD_T)+sizeof(TOOLS_DIAG_AP_CMD_T));
+  rsplen = sizeof(TOOLS_DIAG_AP_CNF_T)+ sizeof(TOOLS_DIAG_MMI_CIT_T) + sizeof(MSG_HEAD_T);
+  rsp_ptr = (char*)malloc(rsplen);
+  if(NULL == rsp_ptr){
+    ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+    return 0;
+  }
+  aprsp = (TOOLS_DIAG_AP_CNF_T*)(rsp_ptr + sizeof(MSG_HEAD_T));
+  test_result = (TOOLS_DIAG_MMI_CIT_T*)(rsp_ptr + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_CNF_T));
+  memcpy(rsp_ptr,msg_head_ptr,sizeof(MSG_HEAD_T));
+  ((MSG_HEAD_T*)rsp_ptr)->len = rsplen;
+  aprsp->status = 0x01;
+  aprsp->length= sizeof(TOOLS_DIAG_MMI_CIT_T);
+
+  if( 0 == req_ptr->uType){
+    fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_RDONLY); //00: whole phone test; 01: PCBA test ; 02: BBAT test
+  }else if(1 == req_ptr->uType){
+    fd = open(PCBA_TEST_FILE_PATH,O_RDONLY);
+  }else if(2 == req_ptr->uType){
+    fd = open(BBAT_TEST_FILE_PATH,O_RDONLY);
+  }
+  if(fd < 0){
+    ENG_LOG("%s open failed,type = %d\n",__FUNCTION__,req_ptr->uType);
+    goto out;
+  }
+  read_len = read(fd,buffer,sizeof(buffer));
+  if(read_len < 0){
+    ENG_LOG("%s read failed! read_len = %d,type = %d\n",__FUNCTION__,read_len,req_ptr->uType);
+    goto out;
+  }
+
+  memcpy(test_result->uBuff,buffer,read_len);
+  aprsp->status = 0x00;
+
+out:
+  rsplen = translate_packet(rsp,(unsigned char*)rsp_ptr,((MSG_HEAD_T*)rsp_ptr)->len);
+  free(rsp_ptr);
+  if(fd >= 0 )
+    close(fd);
+  return rsplen;
+}
+
+static int eng_diag_write_mmi(char *buf, int len, char *rsp, int rsplen)
+{
+  int fd = -1;
+  int write_len;
+  char *rsp_ptr;
+  MSG_HEAD_T* msg_head_ptr;
+  TOOLS_DIAG_AP_CNF_T* aprsp;
+  TOOLS_DIAG_MMI_CIT_T* req_ptr;
+
+  if(NULL == buf){
+    ENG_LOG("%s,null pointer",__FUNCTION__);
+    return 0;
+  }
+
+  msg_head_ptr = (MSG_HEAD_T*)(buf + 1);
+  req_ptr = (TOOLS_DIAG_MMI_CIT_T*)(buf + 1 + sizeof(MSG_HEAD_T)+sizeof(TOOLS_DIAG_AP_CMD_T));
+
+  rsplen = sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MSG_HEAD_T);
+  rsp_ptr = (char*)malloc(rsplen);
+  if(NULL == rsp_ptr){
+    ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+    return 0;
+  }
+  aprsp = (TOOLS_DIAG_AP_CNF_T*)(rsp_ptr + sizeof(MSG_HEAD_T));
+  memcpy(rsp_ptr,msg_head_ptr,sizeof(MSG_HEAD_T));
+  ((MSG_HEAD_T*)rsp_ptr)->len = rsplen;
+  aprsp->status = 0x01;
+  aprsp->length= 0;
+
+  if( 0 == req_ptr->uType){
+    fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_WRONLY);  //00: whole phone test; 01: PCBA test ; 02: BBAT test
+  }else if(1 == req_ptr->uType){
+    fd = open(PCBA_TEST_FILE_PATH,O_WRONLY);
+  }else if(2 == req_ptr->uType){
+    fd = open(BBAT_TEST_FILE_PATH,O_WRONLY);
+  }
+  if(fd < 0){
+    ENG_LOG("%s open failed,type = %d\n",__FUNCTION__,req_ptr->uType);
+    goto out;
+  }
+  write_len = write(fd,req_ptr->uBuff,sizeof(req_ptr->uBuff));
+  if(write_len < 0){
+    ENG_LOG("%s write failed!write_len = %d,type = %d\n",__FUNCTION__,write_len,req_ptr->uType);
+    goto out;
+  } else {
+    fsync(fd);
+  }
+
+  aprsp->status = 0x00;
+
+out:
+  rsplen = translate_packet(rsp,(unsigned char*)rsp_ptr,((MSG_HEAD_T*)rsp_ptr)->len);
+  free(rsp_ptr);
+  if(fd >= 0 )
+    close(fd);
+
+  return rsplen;
+}
+
+int eng_init_test_file(void)
+{
+  int i,len = 0;
+  int fd_bbat = 1,fd_pcba = 1,fd_whole = -1;
+  TEST_NEW_RESULT_INFO result[64] = {0};
+  parse_config();
+
+  if (0 != access(BBAT_TEST_FILE_PATH,F_OK)){
+    fd_bbat = open(BBAT_TEST_FILE_PATH,O_RDWR|O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+    if (fd_bbat < 0 && (errno != EEXIST)) {
+      ENG_LOG("%s,creat %s failed.",__FUNCTION__,BBAT_TEST_FILE_PATH);
+      return 0;
+    }
+    //init /productinfo/BBATtest.txt
+    for(i = 0;i < 64; i++){
+      result[i].type_id = 2;
+      result[i].function_id = i;
+      result[i].support= bbat_support_result[i].support;
+      result[i].status = 0;
+    }
+    len = write(fd_bbat,result,sizeof(result));
+    if(len < 0){
+      ENG_LOG("%s %s write_len = %d,type = %d\n",__FUNCTION__,BBAT_TEST_FILE_PATH,len);
+    } else {
+      fsync(fd_bbat);
+    }
+  }
+
+  if (0 != access(PCBA_TEST_FILE_PATH,F_OK)){
+    fd_pcba = open(PCBA_TEST_FILE_PATH,O_RDWR|O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+    if (fd_pcba < 0 && (errno != EEXIST)) {
+      ENG_LOG("%s,creat %s failed.",__FUNCTION__,PCBA_TEST_FILE_PATH);
+      return 0;
+    }
+    //init /productinfo/PCBAtest.txt
+    for(i = 0;i < 64; i++){
+      result[i].type_id = 1;
+      result[i].function_id = i;
+      result[i].support= support_result[i].support;
+      result[i].status = 0;
+    }
+    result[0].support= 0;//lcd not support
+    len = write(fd_pcba,result,sizeof(result));
+    if(len < 0){
+      ENG_LOG("%s write %s failed!write_len = %d,type = %d\n",__FUNCTION__,PCBA_TEST_FILE_PATH,len);
+    } else {
+      fsync(fd_pcba);
+    }
+  }
+
+  if (0 != access(WHOLE_PHONE_TEST_FILE_PATH,F_OK)){
+    fd_whole = open(WHOLE_PHONE_TEST_FILE_PATH,O_RDWR|O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+    if (fd_whole < 0 && (errno != EEXIST)) {
+      ENG_LOG("%s,creat %s failed.",__FUNCTION__,WHOLE_PHONE_TEST_FILE_PATH);
+      return 0;
+    }
+    //init /productinfo/wholetest.txt
+    for(i = 0;i < 64; i++){
+      result[i].type_id = 0;
+      result[i].function_id= i;
+      result[i].support= support_result[i].support;
+      result[i].status = 0;
+    }
+    len = write(fd_whole,result,sizeof(result));
+    if(len < 0){
+      ENG_LOG("%s write %s failed! write_len = %d,type = %d\n",__FUNCTION__,WHOLE_PHONE_TEST_FILE_PATH,len);
+    } else {
+      fsync(fd_whole);
+    }
+  }
+  if(fd_pcba >= 0)
+    close(fd_pcba);
+  if(fd_bbat >= 0)
+    close(fd_bbat);
+  if(fd_whole >= 0)
+    close(fd_whole);
+
+  return 1;
+}
+
+static int parse_string(char * buf, char gap, char* value)
+{
+  int len = 0;
+  char *ch = NULL;
+  char str[10] = {0};
+
+  if(buf != NULL && value  != NULL){
+    ch = strchr(buf, gap);
+    if(ch != NULL){
+      len = ch - buf ;
+      strncpy(str, buf, len);
+      *value = atoi(str);
+    }
+  }
+  return len;
+}
+
+static int parse_2_entries(char *type, char* arg1, char* arg2)
+{
+  int len;
+  char *str = type;
+
+  /* sanity check */
+  if(str == NULL) {
+    ENG_LOG("type is null!");
+    return -1;
+  }
+
+  if((len = parse_string(str, '\t', arg1)) <= 0)  return -1;
+  str += len + 1;
+  if(str == NULL) {
+    ENG_LOG("mmitest type is null!");
+    return -1;
+  }
+  if((len = parse_string(str, '\t', arg2)) <= 0)  return -1;
+
+  return 0;
+}
+
+static int parse_config(void)
+{
+  FILE *fp;
+  int ret = 0, count = 0;
+  char id,flag;
+  char buffer[MAX_LINE_LEN]={0};
+
+  /*for PCBA*/
+  fp = fopen(ENG_PCBA_SUPPORT_CONFIG, "r");
+  if(fp == NULL) {
+    ENG_LOG("mmitest open %s failed, %s", ENG_PCBA_SUPPORT_CONFIG,strerror(errno));
+    return -1;
+  }
+
+  /* parse line by line */
+  while(fgets(buffer, MAX_LINE_LEN, fp) != NULL) {
+    if(buffer[0] == '#')
+      continue;
+    if((buffer[0]>='0') && (buffer[0]<='9')){
+      ret = parse_2_entries(buffer,&id,&flag);
+      if(ret != 0) {
+        ENG_LOG("mmitest parse %s return %d.  reload", ENG_PCBA_SUPPORT_CONFIG,ret);
+        fclose(fp);
+        return -1;
+      }
+      support_result[count].id = id;
+      support_result[count++].support= flag;
+    }
+  }
+
+  fclose(fp);
+  if(count < 64) {
+    ENG_LOG("mmitest parse PCBA.conf failed");
+  }
+
+  /*for BBAT*/
+  fp = fopen(ENG_BBAT_SUPPORT_CONFIG, "r");
+  if(fp == NULL) {
+    ENG_LOG("bbattest open %s failed, %s", ENG_BBAT_SUPPORT_CONFIG,strerror(errno));
+    return -1;
+  }
+
+  /* parse line by line */
+  ret = 0;
+  count = 0;
+  while(fgets(buffer, MAX_LINE_LEN, fp) != NULL) {
+    if(buffer[0] == '#')
+      continue;
+    if((buffer[0]>='0') && (buffer[0]<='9')){
+      ret = parse_2_entries(buffer,&id,&flag);
+      if(ret != 0) {
+        ENG_LOG("bbattest parse %s return %d.  reload", ENG_BBAT_SUPPORT_CONFIG,ret);
+        fclose(fp);
+        return -1;
+      }
+      bbat_support_result[count].id = id;
+      bbat_support_result[count++].support= flag;
+    }
+  }
+
+  fclose(fp);
+  if(count < 64) {
+    ENG_LOG("bbattest parse BBAT.conf failed");
+  }
+
+  return ret;
 }

@@ -24,6 +24,8 @@
 #include "atci.h"
 #endif
 #endif
+#include <poll.h>
+#include <cutils/sockets.h>
 
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
 
@@ -36,7 +38,21 @@
 #else
 #define ENG_KEYPAD_PATH "/sys/devices/platform/sprd-keypad/emulate"
 #endif
+
+#define MAXLENRESP 10
+#define SLOG_MODEM_SERVER_SOCK_NAME "slogmodem"
+#define ENABLE_WCN_LOG_CMD  "ENABLE_LOG WCN\n"
+#define DISABLE_WCN_LOG_CMD  "DISABLE_LOG WCN\n"
+#define ENABLE_GNSS_LOG_CMD  "ENABLE_LOG GNSS\n"
+#define DISABLE_GNSS_LOG_CMD  "DISABLE_LOG GNSS\n"
+
 extern int g_reset;
+extern int g_setuart_ok;
+extern eng_dev_info_t *g_dev_info;
+extern void set_raw_data_speed(int fd, int speed);
+extern int get_ser_diag_fd(void);
+extern int translate_packet(char *dest,char *src,int size);
+extern int eng_diag_write2pc(char* diag_data, int r_cnt, int ser_fd);
 extern int eng_atdiag_hdlr(unsigned char *buf, int len, char *rsp);
 #if defined(ENGMODE_EUT_BCM) || defined(ENGMODE_EUT_SPRD)
 extern int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index);
@@ -73,7 +89,9 @@ static int eng_linuxcmd_wifieutmode(char *req, char *rsp);
 static int eng_linuxcmd_gpseutmode(char *req, char *rsp);
 static int eng_linuxcmd_batttest(char *req, char *rsp);
 static int eng_linuxcmd_temptest(char *req, char *rsp);
+static int eng_linuxcmd_logctl(char *req,char *rsp);
 static int eng_linuxcmd_rtctest(char *req, char *rsp);
+static int eng_linuxcmd_setuartspeed(char* req, char* rsp);
 static int eng_linuxcmd_wiqpb(char *req, char *rsp);
 static int eng_linuxcmd_property(char *req, char *rsp);
 
@@ -107,9 +125,11 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_ATDIAG, CMD_TO_AP, "+SPBTWIFICALI", eng_linuxcmd_atdiag},
     {CMD_BATTTEST, CMD_TO_AP, "AT+BATTTEST", eng_linuxcmd_batttest},
     {CMD_TEMPTEST, CMD_TO_AP, "AT+TEMPTEST", eng_linuxcmd_temptest},
+    {CMD_LOGCTL, CMD_TO_AP, "AT+LOGCTL", eng_linuxcmd_logctl},
     {CMD_RTCTEST, CMD_TO_AP, "AT+RTCCTEST", eng_linuxcmd_rtctest},
     {CMD_SPWIQ, CMD_TO_AP, "AT+SPWIQ", eng_linuxcmd_wiqpb},
     {CMD_PROP, CMD_TO_AP, "AT+PROP", eng_linuxcmd_property},
+    {CMD_SETUARTSPEED, CMD_TO_AP, "AT+SETUARTSPEED", eng_linuxcmd_setuartspeed},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -1058,6 +1078,140 @@ int eng_linuxcmd_temptest(char *req, char *rsp) {
   return 0;
 }
 
+static int get_response(int fd, size_t timeout) {
+  int ret = -1;
+  char resp[MAXLENRESP] = {0};
+  struct pollfd r_pollfd;
+
+  r_pollfd.fd = fd;
+  r_pollfd.events = POLLIN;
+
+  ret = poll(&r_pollfd, 1, timeout);
+  if(ret < 0) {
+    ENG_LOG("poll slogmodem fail\n");
+  } else {
+    if (r_pollfd.revents & POLLIN) {
+      if ((read(fd, resp, MAXLENRESP)) < 3 || memcmp(resp, "OK\n", 3)) {
+        ENG_LOG("err response from slogmodem\n");
+      } else {
+        ret = 1;
+      }
+    }
+  }
+  return ret;
+}
+
+static int notice_slogmodem(char *cmd)
+{
+  int ret = 0;
+  int fd = socket_local_client(SLOG_MODEM_SERVER_SOCK_NAME,
+      ANDROID_SOCKET_NAMESPACE_ABSTRACT, SOCK_STREAM);
+  if (fd < 0) {
+    ENG_LOG("can't connect to slogmodem server, ERROR:%s\n", strerror(errno));
+    return -1;
+  }
+
+  int flags = fcntl(fd, F_GETFL);
+  flags |= O_NONBLOCK;
+  int err = fcntl(fd, F_SETFL, flags);
+  if (-1 == err) {
+    ENG_LOG("set slogmodem socket to O_NONBLOCK error\n");
+    ret = -1;
+    goto out;
+  }
+
+  int len = write(fd, cmd, strlen(cmd));
+  if (strlen(cmd) != len) {
+    ENG_LOG("FLUSH command write error, len=%d, ERROR:%s\n", len, strerror(errno));
+    ret = -1;
+    goto out;
+  }
+
+  // Wait for the response for a while before failure.
+  int result = get_response(fd, 3000);
+  if (1 != result) {
+    ENG_LOG("ERROR: get response %d\n", result);
+    ret = -1;
+    goto out;
+  }
+
+out:
+  close(fd);
+  return ret;
+}
+
+static int eng_linuxcmd_logctl(char *req, char *rsp)
+{
+  char *type;
+  char ptr_cmd[1];
+  int fd = -1;
+  int ret = -1;
+  int cali_flag = g_dev_info->host_int.cali_flag;
+
+  req = strchr(req, '=');
+  if(NULL == req) {
+    ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+    goto out;
+  }
+  req++;
+  type = req;
+  req = strchr(req, ',');
+  if(NULL == req) {
+    ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+    goto out;
+  }
+  *req = '\0';
+  req++;
+  ptr_cmd[0] = *req;
+
+  if(0 == strncasecmp(type, "WCN", strlen("WCN")) && 1 == cali_flag) {
+
+    if(ptr_cmd[0] == '1') {
+      //notice slogmodem
+      if(notice_slogmodem(ENABLE_WCN_LOG_CMD) < 0) {
+        goto out;
+      }
+      //enable wcn armlog
+      system("wcnd_cli wcn poweron");
+      system("wcnd_cli wcn at+armlog=1");
+    } else if(ptr_cmd[0] == '0') {
+      //notice slogmodem
+      if(notice_slogmodem(DISABLE_WCN_LOG_CMD) < 0) {
+        goto out;
+      }
+      //disable wcn armlog
+      system("wcnd_cli wcn at+armlog=0");
+    } else {
+      ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+      goto out;
+    }
+    sprintf(rsp, "+LOGCTL:%s%s", SPRDENG_OK, ENG_STREND);
+    return 0;
+
+  } else if (0 == strncasecmp(type, "GNSS", strlen("GNSS")) && 1 == cali_flag) {
+
+    if(ptr_cmd[0] == '1') {
+      if(notice_slogmodem(ENABLE_GNSS_LOG_CMD) < 0) {
+        goto out;
+      }
+    } else if(ptr_cmd[0] == '0') {
+      if(notice_slogmodem(DISABLE_GNSS_LOG_CMD) < 0) {
+        goto out;
+      }
+    } else {
+      ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+      goto out;
+    }
+    sprintf(rsp, "+LOGCTL:%s%s", SPRDENG_OK, ENG_STREND);
+    return 0;
+
+  }
+
+out:
+  sprintf(rsp, "%s%s", SPRDENG_ERROR, ENG_STREND);
+  return -1;
+}
+
 int eng_linuxcmd_rtctest(char *req, char *rsp) {
   char ptr_parm1[1];
   time_t t;
@@ -1208,4 +1362,68 @@ int eng_linuxcmd_property(char *req, char *rsp) {
             ENG_STREND);
   }
   return 0;
+}
+
+int send_rsp2pc(char *buf, int buf_len, int fd)
+{
+  int ret = -1;
+  char tmp[128] = {0};
+  int tmp_len;
+  char rsp[256] = {0};
+  int rsp_len;
+  MSG_HEAD_T head;
+  head.len = sizeof(MSG_HEAD_T) + buf_len;
+  ENG_LOG("%s: head.len=%d\n",__FUNCTION__, head.len);
+  head.seq_num = 0;
+  head.type = 0x9c;
+  head.subtype = 0x00;
+  memcpy(tmp, &head, sizeof(MSG_HEAD_T));
+  memcpy(tmp + sizeof(MSG_HEAD_T), buf , buf_len);
+  rsp_len = translate_packet(rsp, (unsigned char*)tmp, head.len);
+  ret = eng_diag_write2pc(rsp, rsp_len, fd);
+  if (ret <= 0) {
+    ENG_LOG("%s: eng_diag_write2pc ret=%d !\n", __FUNCTION__, ret);
+    return -1;
+  }
+  return 0;
+}
+
+int eng_linuxcmd_setuartspeed(char *req,char *rsp)
+{
+  int speed;
+  char *ptr = NULL;
+  char buf[64] = {0};
+
+  if (NULL == g_dev_info) {
+    ENG_LOG("%s: g_dev_info is NULL", __FUNCTION__);
+    return -1;
+  }
+
+  ptr = strchr(req, '=');
+  if (NULL == ptr) {
+    ENG_LOG("%s: format error\n", __FUNCTION__);
+    return -1;
+  }
+  ptr++;
+  speed = atoi(ptr);
+  ENG_LOG("%s: dev_diag=%s\n", __FUNCTION__, g_dev_info->host_int.dev_diag);
+
+  if (g_dev_info->host_int.dev_type == CONNECT_UART) {
+    int ser_fd = get_ser_diag_fd();
+
+    sprintf(buf, "%s%s%s", ENG_STREND, SPRDENG_OK, ENG_STREND);
+    if (send_rsp2pc(buf, strlen(buf), ser_fd) <0) {
+      return -1;
+    } else {
+      usleep(200*1000);
+    }
+
+    set_raw_data_speed(ser_fd, speed);
+    ENG_LOG("%s: set speed=%d success\n", __FUNCTION__, speed);
+
+    g_setuart_ok = 1;
+    return 0;
+  }
+  ENG_LOG("%s: set speed=%d fail\n", __FUNCTION__, speed);
+  return -1;
 }

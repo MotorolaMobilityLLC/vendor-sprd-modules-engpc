@@ -125,6 +125,9 @@ typedef enum {
   CMD_USER_GET_MONITORDATA,
   CMD_USER_MODEM_DB_ATTR,
   CMD_USER_MODEM_DB_READ,
+  CMD_USER_READ_MMI = 0x3c,/* 0x3c*/
+  CMD_USER_WRITE_MMI,
+  CMD_USER_GET_TIME_SYNC_INFO,
   CMD_INVALID
 } DIAG_CMD_TYPE;
 
@@ -167,6 +170,11 @@ struct eng_autotestcmd_str {
 #define ENG_AUDIO "/sys/class/vbc_param_config/vbc_param_store"
 #define ENG_FM_DEVSTAT "/sys/class/fm_devstat_config/fm_devstat_store"
 
+/*the add the file result*/
+#define BBAT_TEST_FILE_PATH "/productinfo/BBATtest.txt"
+#define PCBA_TEST_FILE_PATH "/productinfo/PCBAtest.txt"
+#define WHOLE_PHONE_TEST_FILE_PATH "/productinfo/wholephonetest.txt"
+
 #define HASH_LEN 40
 
 #define MAX_SN_LEN 24
@@ -190,6 +198,8 @@ struct eng_autotestcmd_str {
 
 #define ENG_MAX_NAME_LEN 260
 #define MAX_DIAG_TRANSMIT_FILE_LEN 8192
+
+#define TIME_SERVER_SOCK_NAME "cp_time_sync_server"
 
 #define SHA1_SIZE 20
 #define ENG_MODEMDB_DIAG_SIZE (64 * 1024)
@@ -229,6 +239,18 @@ typedef struct {
   unsigned int dwMapVersion;
   unsigned char byActivatecode[16];
 } GPS_NV_INFO_T;
+
+typedef struct {
+  char type_id;
+  char function_id;
+  char support;
+  char status;
+}TEST_NEW_RESULT_INFO;
+
+typedef struct hardware_result{
+  char id;
+  char support;
+}hardware_result;
 
 typedef struct {
   unsigned char imei1[MAX_IMEI_LENGTH];
@@ -327,6 +349,19 @@ typedef struct wifi_register_req_t {
   unsigned int nCount;
   unsigned int nUit;  // BYTE:1, WORD:2, DWORD:4
 } __attribute__((packed)) WIFI_REGISTER_REQ_T;
+
+typedef struct modem_timestamp
+{
+  uint32_t tv_sec;             /* clock time, seconds since 1970.01.01 */
+  uint32_t tv_usec;            /* clock time, microeseconds part */
+  uint32_t sys_cnt;            /* modem's time */
+}__attribute__((packed))MODEM_TIMESTAMP_T;
+
+typedef struct time_sync
+{
+  uint32_t sys_cnt;
+  uint32_t uptime;
+}__attribute__((packed))TIME_SYNC_T;
 
 typedef struct __attribute__((packed)) {
   uint16_t cmd;     // AP sub cmd

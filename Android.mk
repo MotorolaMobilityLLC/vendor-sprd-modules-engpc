@@ -153,6 +153,7 @@ endif
 endif
 
 LOCAL_MODULE := engpc
+LOCAL_INIT_RC := engpc.rc
 LOCAL_MODULE_TAGS := optional
 LOCAL_MULTILIB := 32
 include $(BUILD_EXECUTABLE)

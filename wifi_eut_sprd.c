@@ -234,12 +234,13 @@ static int start_wifieut(char *rsp) {
   ret = system("rmmod sprdwl.ko");
   ENG_LOG("ADL %s(), callED system(rmmod sprdwl.ko), ret = %d", __func__, ret);
 
-  ret = system("insmod /system/lib/modules/sprdwl.ko");
+  sprintf(cmd, "insmod %s", WIFI_DRIVER_MODULE_PATH);
+  ret = system(cmd);
   ENG_LOG(
-      "ADL %s(), callED system(insmod /system/lib/modules/sprdwl.ko), ret = %d",
-      __func__, ret);
+      "ADL %s(), callED system(insmod %s), ret = %d",
+      __func__, WIFI_DRIVER_MODULE_PATH, ret);
   if (ret < 0) {
-    ENG_LOG("%s, insmod /system/lib/modules/sprdwl.ko err\n", __func__);
+    ENG_LOG("%s, insmod %s err\n", __func__, WIFI_DRIVER_MODULE_PATH);
     goto err;
   }
 

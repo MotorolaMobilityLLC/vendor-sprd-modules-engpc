@@ -234,6 +234,7 @@ static int eng_diag_read_enable_secure_bit(char *buf, int len, char *rsp,
 static int eng_detect_process(char *process_name);
 static int eng_open_wifi_switch();
 static int eng_diag_set_backlight(char *buf, int len, char *rsp, int rsplen);
+static int eng_diag_txdata(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_set_powermode(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_set_ipconfigure(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_read_register(char *buf, int len, char *rsp, int rsplen);
@@ -1442,6 +1443,13 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
       return 0;
 #endif
+    case CMD_USER_TXDATA:
+      ENG_LOG("%s: CMD_USER_TXDATA Req!\n", __FUNCTION__);
+      memset(eng_diag_buf,0,sizeof(eng_diag_buf));
+      rlen = eng_diag_txdata(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf, eng_diag_len,fd);
+      return 0;
     default:
       break;
   }
@@ -4178,6 +4186,8 @@ static int eng_diag_ap_req(char *buf, int len) {
     ret = CMD_USER_WRITE_MMI;
   } else if (DIAG_AP_CMD_BKLIGHT == apcmd->cmd) {
     ret = CMD_USER_BKLIGHT;
+  }else if(DIAG_AP_CMD_TSX_DATA == apcmd->cmd){
+    ret = CMD_USER_TXDATA;
   } else if (DIAG_AP_CMD_PWMODE == apcmd->cmd) {
     ret = CMD_USER_PWMODE;
   } else if (DIAG_AP_CMD_MODEM_DB_ATTR == apcmd->cmd) {
@@ -5240,6 +5250,149 @@ static int eng_diag_get_modem_mode(char *buf, int len, char *rsp, int rsplen) {
 out:
   rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr,
                             ((MSG_HEAD_T *)rsp_ptr)->len);
+  free(rsp_ptr);
+  return rsplen;
+}
+
+static int read_tsx_data(TOOLS_DIAG_AP_TSX_DATA_T * res)
+{
+  int rcount;
+  int ret = 0;
+  FILE * fp = NULL;
+  if(NULL == res)
+  {
+    ENG_LOG("%s: res is NULL!!!",__FUNCTION__);
+    ret = -1;
+    return ret;
+  }
+  if(access(ENG_TXDATA_FILE, F_OK) == 0) {
+    ENG_LOG("%s: %s exists",__FUNCTION__, ENG_TXDATA_FILE);
+    fp = fopen(ENG_TXDATA_FILE, "r");
+    if(NULL == fp)
+    {
+      ENG_LOG("%s: fopen fail errno=%d, strerror(errno)=%s",__FUNCTION__, errno, strerror(errno));
+      ret = -1;
+      return ret;
+    }
+    rcount = fread(&res->value[0], sizeof(TSX_DATA_T), 2, fp);
+    if(rcount <= 0)
+    {
+      ret = -1;
+    }
+    ENG_LOG("%s: fread count %d",__FUNCTION__, rcount);
+    fclose(fp);
+  }else{
+    ret = -1;
+    ENG_LOG("%s: %s not exists",__FUNCTION__, ENG_TXDATA_FILE);
+  }
+  return ret;
+}
+static int write_tsx_data(TOOLS_DIAG_AP_TSX_DATA_T * req)
+{
+  int rcount;
+  int ret = 0, fd = -1;
+  FILE * fp = NULL;
+  mode_t old_mask;
+  static first_flag = 1;
+  if(NULL == req)
+  {
+    ENG_LOG("%s: req is NULL!!!",__FUNCTION__);
+    ret = -1;
+    return ret;
+  }
+  ENG_LOG("%s: %s exists",__FUNCTION__, ENG_TXDATA_FILE);
+  if(first_flag) old_mask = umask(0);
+  fp = fopen(ENG_TXDATA_FILE, "w+");
+  if(first_flag) umask(old_mask);
+  if(NULL == fp)
+  {
+    ENG_LOG("%s: fopen fail errno=%d, strerror(errno)=%s",__FUNCTION__, errno, strerror(errno));
+    first_flag = 1;
+    ret = -1;
+    return ret;
+  }
+  else
+  {
+    first_flag = 0;
+  }
+  rcount = fwrite(&req->value[0], sizeof(TSX_DATA_T), 2, fp);
+  ENG_LOG("%s: fread count %d",__FUNCTION__, rcount);
+  if(2 != rcount)
+  {
+    ret = -1;
+  }
+  else
+  {
+    fflush(fp);
+    fd = fileno(fp);
+    if(fd > 0) {
+      fsync(fd);
+    } else {
+      ENG_LOG("%s: fileno() error, strerror(errno)=%s", __FUNCTION__, strerror(errno));
+      ret = -1;
+    }
+  }
+  fclose(fp);
+  return ret;
+}
+static int eng_diag_txdata(char *buf, int len, char *rsp, int rsplen)
+{
+  int ret = 0;
+  char *rsp_ptr;
+  MSG_HEAD_T* msg_head_ptr;
+  TOOLS_DIAG_AP_CNF_T* aprsp;
+  TOOLS_DIAG_AP_TSX_DATA_T* src_tsxdata;
+  TOOLS_DIAG_AP_TSX_DATA_T* tsxdata;
+  if(NULL == buf){
+    ENG_LOG("%s,null pointer",__FUNCTION__);
+    return 0;
+  }
+  msg_head_ptr = (MSG_HEAD_T*)(buf + 1);
+  rsplen = sizeof(TOOLS_DIAG_AP_TSX_DATA_T)+ sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MSG_HEAD_T);
+  rsp_ptr = (char*)malloc(rsplen);
+  if(NULL == rsp_ptr){
+    ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+    return 0;
+  }
+  memset(rsp_ptr, 0x00, rsplen);
+  aprsp = (TOOLS_DIAG_AP_CNF_T*)(rsp_ptr + sizeof(MSG_HEAD_T));
+  tsxdata = (TOOLS_DIAG_AP_TSX_DATA_T*)(rsp_ptr + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_CNF_T));
+  memcpy(rsp_ptr,msg_head_ptr,sizeof(MSG_HEAD_T));
+  ((MSG_HEAD_T*)rsp_ptr)->len = rsplen;
+  aprsp->status = DIAG_AP_CMD_TSX_DATA;
+  aprsp->length= sizeof(TOOLS_DIAG_AP_TSX_DATA_T);
+  src_tsxdata = (TOOLS_DIAG_AP_TSX_DATA_T*)(buf + 1 + sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MSG_HEAD_T));
+  if(0 == src_tsxdata->cmd)
+  {
+#if 0
+    /*memcpy api defect, trigger crash in androidN*/
+    memcpy(tsxdata, src_tsxdata, sizeof(TOOLS_DIAG_AP_TSX_DATA_T));
+#else
+    for(int y=0; y<sizeof(TOOLS_DIAG_AP_TSX_DATA_T); y++) {
+      *((char *)tsxdata + y) = *((char *)src_tsxdata + y);
+    }
+#endif
+    ret = write_tsx_data(src_tsxdata);
+    if(0 == ret)
+    {
+      tsxdata->res_status = 0;
+    }else{
+      tsxdata->res_status = 1;
+    }
+  }else if(1 == src_tsxdata->cmd){
+    ret = read_tsx_data(tsxdata);
+    tsxdata->cmd = 1;
+    if(0 == ret)
+    {
+      tsxdata->res_status = 0;
+    }else{
+      tsxdata->res_status = 1;
+    }
+  }else{
+    ENG_LOG("%s: tsx_data cmd not read and write !!!\n", __FUNCTION__);
+  }
+out:
+  rsplen = translate_packet(rsp,(unsigned char*)rsp_ptr,((MSG_HEAD_T*)rsp_ptr)->len);
   free(rsp_ptr);
   return rsplen;
 }

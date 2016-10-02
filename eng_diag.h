@@ -83,6 +83,7 @@ typedef enum {
 #define ENG_TESTMODE "engtestmode"
 #define ENG_SPRD_VERS "ro.build.description"
 #define ENG_SET_BACKLIGHT "/sys/class/backlight/sprd_backlight/brightness"
+#define ENG_TXDATA_FILE "/productinfo/txdata.txt"
 typedef enum {
   CMD_COMMON = -1,
   CMD_USER_VER,
@@ -102,6 +103,7 @@ typedef enum {
   CMD_USER_FILE_OPER,
   CMD_USER_CFT_SWITCH,
   CMD_USER_BKLIGHT,
+  CMD_USER_TXDATA,
   CMD_USER_PWMODE,
   CMD_USER_SET_CONFIGURE_IP,
   CMD_USER_READ_REGISTER,

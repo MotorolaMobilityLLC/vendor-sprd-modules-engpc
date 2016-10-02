@@ -7,13 +7,14 @@ LOCAL_PRELINK_MODULE    := false
 
 CONFIG_MINIENGPC := false
 
+ifeq ($(strip $(BOARD_SECURE_BOOT_ENABLE)), true)
+LOCAL_CFLAGS += -DSECURE_BOOT_ENABLE
+endif
+
 ifeq ($(CONFIG_MINIENGPC), true)
 LOCAL_CFLAGS += -DCONFIG_MINIENGPC
 ifeq ($(USE_AUDIO_WHALE_HAL), true)
 LOCAL_CFLAGS += -DUSE_AUDIO_WHALE_HAL
-endif
-ifeq ($(BOARD_SECURE_BOOT_ENABLE), true)
-LOCAL_CFLAGS += -DSECURE_BOOT_ENABLE
 endif
 LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy
 else

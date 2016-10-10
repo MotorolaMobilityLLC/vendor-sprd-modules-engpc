@@ -2158,6 +2158,11 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
   ENG_LOG("\r\n");
   ENG_LOG("ADL entry %s(), buf = %s", __func__, buf);
 
+  if (BT_MODULE_INDEX == module_index || BLE_MODULE_INDEX == module_index) {
+    bt_eut_parse(buf, rsp);
+    return 0;
+  }
+
   get_sub_str(buf, data, '=', ",", 4, 32);
   cmd_index = get_cmd_index(buf);
   ENG_LOG(
@@ -2169,11 +2174,6 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
 #ifndef CONFIG_MINIENGPC
     gps_eut_parse(buf, rsp);
 #endif
-    return 0;
-  }
-
-  if (BT_MODULE_INDEX == module_index || BLE_MODULE_INDEX == module_index) {
-    bt_eut_parse(buf, rsp);
     return 0;
   }
 

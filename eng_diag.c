@@ -2156,10 +2156,10 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
   int cmd_index = -1;
 
   ENG_LOG("\r\n");
-  ENG_LOG("ADL entry %s(), buf = %s", __func__, buf);
+  ENG_LOG("ADL entry %s(), module=%d, buf = %s", __func__, module_index, buf);
 
   if (BT_MODULE_INDEX == module_index || BLE_MODULE_INDEX == module_index) {
-    bt_eut_parse(buf, rsp);
+    bt_eut_parse(module_index, buf, rsp);
     return 0;
   }
 

@@ -117,11 +117,14 @@ endif
 ifdef WIFI_DRIVER_FW_PATH_MFG
 LOCAL_CFLAGS += -DWIFI_DRIVER_FW_PATH_MFG=\"$(WIFI_DRIVER_FW_PATH_MFG)\"
 endif
+
+ifeq ($(BOARD_HAVE_BLUETOOTH_BCM),true)
 # bcm connectivity
 LOCAL_CFLAGS += -DENGMODE_EUT_BCM
 LOCAL_SRC_FILES     += bt_eut_pandora.c \
 		       wifi_eut.c \
                        bt_eut.c
+endif
 else
 
 ifneq ($(strip $(BOARD_HAVE_SPRD_WCN_COMBO)),)

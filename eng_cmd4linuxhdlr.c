@@ -39,7 +39,7 @@
 #else
 #define ENG_KEYPAD_PATH "/sys/devices/platform/sprd-keypad/emulate"
 #endif
-
+#define DEV_TCARD_BLOCK_NAME "/dev/block/mmcblk1"
 #define MAXLENRESP 10
 #define SLOG_MODEM_SERVER_SOCK_NAME "slogmodem"
 #define ENABLE_WCN_LOG_CMD  "ENABLE_LOG WCN\n"
@@ -100,6 +100,7 @@ static int eng_linuxcmd_setuartspeed(char* req, char* rsp);
 static int eng_linuxcmd_wiqpb(char *req, char *rsp);
 static int eng_linuxcmd_property(char *req, char *rsp);
 static int eng_linuxcmd_audiologctl(char *req, char *rsp);
+static int eng_linuxcmd_checksd(char *req,char *rsp);
 
 static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SENDKEY, CMD_TO_AP, "AT+SENDKEY", eng_linuxcmd_keypad},
@@ -136,7 +137,8 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SPWIQ, CMD_TO_AP, "AT+SPWIQ", eng_linuxcmd_wiqpb},
     {CMD_PROP, CMD_TO_AP, "AT+PROP", eng_linuxcmd_property},
     {CMD_SETUARTSPEED, CMD_TO_AP, "AT+SETUARTSPEED", eng_linuxcmd_setuartspeed},
-    {CMD_AUDIOLOGCTL, CMD_TO_AP, "AT+SPAUDIOOP", eng_linuxcmd_audiologctl}
+    {CMD_AUDIOLOGCTL, CMD_TO_AP, "AT+SPAUDIOOP", eng_linuxcmd_audiologctl},
+    {CMD_SPCHKSD,        CMD_TO_AP,     "AT+SPCHKSD",      eng_linuxcmd_checksd},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -1589,3 +1591,16 @@ out:
 
   return len;
 }
+
+static int eng_linuxcmd_checksd(char *req, char *rsp)
+{
+	if (0 == access(DEV_TCARD_BLOCK_NAME , F_OK)){
+		ENG_LOG("SD card exist\n");
+		sprintf(rsp, "%s%s", "1", ENG_STREND);
+	}else{
+		ENG_LOG("SD card no exist\n");
+		sprintf(rsp, "%s%s", "0", ENG_STREND);
+	}
+	return 0;
+}
+

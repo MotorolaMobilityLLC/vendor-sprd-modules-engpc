@@ -1516,6 +1516,8 @@ int eng_diag_user_handle(int type, char *buf, int len) {
   eng_diag_len = head.len + extra_len + 2;
   ENG_LOG("%s: eng_diag_write2pc eng_diag_buf=%s;eng_diag_len:%d !\n",
           __FUNCTION__, eng_diag_buf, eng_diag_len);
+  eng_diag_encode7d7e((char *)(eng_diag_buf+1), (eng_diag_len-2), &eng_diag_len);
+  eng_diag_buf[eng_diag_len-1] = 0x7e;
   ret = eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
   if (ret <= 0) {
     ENG_LOG("%s: eng_diag_write2pc ret=%d !\n", __FUNCTION__, ret);

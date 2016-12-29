@@ -22,6 +22,7 @@
 #define VLOG_PRI -20
 #define USB_CONFIG_VSER "vser"
 #define SYS_CLASS_ANDUSB_ENABLE "/sys/class/android_usb/android0/enable"
+#define SYS_CLASS_ANDUSB_ENABLE_NEW "/config/usb_gadget/g1/UDC"
 #define SYS_CLASS_ANDUSB_STATE "/sys/class/android_usb/android0/state"
 #define DEVICE_SOC_USB_MAXIMUM_SPEED "/sys/devices/soc/soc:ap-ahb/20500000.usb3/maximum_speed"
 
@@ -333,10 +334,24 @@ static int eng_parse_cmdline(struct eng_param* cmdvalue) {
 void eng_usb_enable(void) {
   int fd = -1;
   int ret = 0;
+  char path[256] = {0};
+  char cmd[64] = {0};
 
-  fd = open(SYS_CLASS_ANDUSB_ENABLE, O_WRONLY);
+  if (0 == access(SYS_CLASS_ANDUSB_ENABLE_NEW, F_OK)) {
+    sprintf(path, "%s", SYS_CLASS_ANDUSB_ENABLE_NEW);
+    property_get("sys.usb.controller", cmd, "not_find");
+    if (strcmp(cmd, "not_find") == 0) {
+      ENG_LOG("%s: sys.usb.controller: not_find\n", __FUNCTION__);
+      return;
+    }
+  } else {
+	  sprintf(path, "%s", SYS_CLASS_ANDUSB_ENABLE);
+	  sprintf(cmd, "%s", "1");
+  }
+
+  fd = open(path, O_WRONLY);
   if (fd >= 0) {
-    ret = write(fd, "1", 1);
+    ret = write(fd, cmd, strlen(cmd));
     ENG_LOG("%s: Write sys class androidusb enable file: %d\n", __FUNCTION__,
             ret);
     close(fd);

@@ -27,6 +27,7 @@
 #endif
 #include <poll.h>
 #include <cutils/sockets.h>
+#include "emmc.h"
 
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
 
@@ -66,6 +67,7 @@ extern int eng_gps_atdiag_euthdlr(char *buf, int len, char *rsp,
                                   int module_index);
 extern void eng_check_factorymode(int normal_cali);
 extern int turnoff_lcd_backlight(void);
+extern int get_emmc_size(char *req, char *rsp);
 static unsigned char g_buffer[ENG_BUFFER_SIZE];
 static int eng_linuxcmd_rpoweron(char *req, char *rsp);
 static int eng_linuxcmd_keypad(char *req, char *rsp);
@@ -139,6 +141,7 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SETUARTSPEED, CMD_TO_AP, "AT+SETUARTSPEED", eng_linuxcmd_setuartspeed},
     {CMD_AUDIOLOGCTL, CMD_TO_AP, "AT+SPAUDIOOP", eng_linuxcmd_audiologctl},
     {CMD_SPCHKSD,        CMD_TO_AP,     "AT+SPCHKSD",      eng_linuxcmd_checksd},
+	{CMD_EMMCSIZE,        CMD_TO_AP,     "AT+EMMCSIZE",      get_emmc_size},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */

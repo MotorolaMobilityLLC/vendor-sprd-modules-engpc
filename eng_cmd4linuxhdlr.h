@@ -58,6 +58,7 @@ typedef enum {
   CMD_PROP,
   CMD_AUDIOLOGCTL,
   CMD_SPCHKSD,
+  CMD_EMMCSIZE,
   CMD_END
 } ENG_CMD;
 

@@ -153,7 +153,7 @@ LOCAL_CFLAGS += -DHAVE_EUT_BLUETOOTH_SPRD
 LOCAL_SHARED_LIBRARIES += libengbt
 LOCAL_C_INCLUDES +=  vendor/sprd/proprietories-source/bt/libengbt
 ### bt bqb
-
+LOCAL_SRC_FILES += sprd_wcn_at.c
 
 LOCAL_C_INCLUDES += vendor/sprd/proprietories-source/engmode/bt/ \
                     vendor/sprd/modules/wcn/bt/libbqbbt/include/

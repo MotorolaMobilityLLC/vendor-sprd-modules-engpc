@@ -20,37 +20,6 @@ static int pc_fd = -1;
 #include <cutils/sockets.h>
 #include <dlfcn.h>
 
-#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
-#include "bqb.h"
-
-static const char *VENDOR_LIBRARY_NAME = "libbqbbt.so";
-static const char *VENDOR_LIBRARY_SYMBOL_NAME = "BLUETOOTH_BQB_INTERFACE";
-static void *lib_handle;
-static bt_bqb_interface_t *lib_interface = NULL;
-static bool bqb_vendor_open() {
-  lib_handle = dlopen(VENDOR_LIBRARY_NAME, RTLD_NOW);
-  if (!lib_handle) {
-    ALOGD("%s unable to open %s: %s", __func__, VENDOR_LIBRARY_NAME, dlerror());
-    goto error;
-  }
-
-  lib_interface = (bt_bqb_interface_t *)dlsym(lib_handle, VENDOR_LIBRARY_SYMBOL_NAME);
-  if (!lib_interface) {
-    ALOGD("%s unable to find symbol %s in %s: %s", __func__, VENDOR_LIBRARY_SYMBOL_NAME, VENDOR_LIBRARY_NAME, dlerror());
-    goto error;
-  }
-  lib_interface->init();
-
-  return true;
-
-error:;
-  lib_interface = NULL;
-  if (lib_handle)
-    dlclose(lib_handle);
-  lib_handle = NULL;
-  return false;
-}
-#endif
 
 static int start_gser(char* ser_path)
 {
@@ -67,11 +36,6 @@ static int start_gser(char* ser_path)
         ENG_LOG("cannot open vendor serial\n");
         return -1;
     }
-
-#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
-    if(lib_interface !=NULL)
-        lib_interface->set_fd(pc_fd);
-#endif
 
     tcgetattr(pc_fd, &ser_settings);
     cfmakeraw(&ser_settings);
@@ -133,18 +97,10 @@ static void *eng_readpcat_thread(void *par)
 
             ENG_LOG("pc got: %s: %d", engbuf, len);
 
-#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
-            if(lib_interface->check_received_str(pc_fd, engbuf, len))
-                continue;
-#endif
         } else {
             ENG_LOG("warning !!!");
         }
-#ifdef CONFIG_BQBTEST
-        if (lib_interface->get_bqb_state() == BQB_OPENED) {
-            lib_interface->eng_send_data(engbuf, len);
-        } else
-#endif
+
         {
             if(at_mux_fd >= 0) {
                 cur = 0;
@@ -205,9 +161,7 @@ write_again:
 int eng_at_pcmodem(eng_dev_info_t* dev_info)
 {
     eng_thread_t t1,t2;
-#if (defined CONFIG_BQBTEST) || (defined CONFIG_BRCM_BQBTEST)
-    bqb_vendor_open();
-#endif
+
     start_gser(dev_info->host_int.dev_at);
 
     at_mux_fd = open(dev_info->modem_int.at_chan, O_RDWR);

@@ -623,6 +623,12 @@ int main(int argc, char** argv) {
     eng_at_pcmodem(&dev_info);
   }
 
+#ifdef HAVE_EUT_BLUETOOTH_SPRD
+  if(0 == strcmp(run_type, "wcn")) {
+    eng_wcnat_pcmodem(&dev_info);
+  }
+#endif
+
   while (1) {
     sleep(10000);
   }

@@ -736,7 +736,7 @@ static int eng_diag_attest(char *data, int count, char *out_msg) {
   memset(rsp_buf, 0, sizeof(rsp_buf));
   head_ptr = (MSG_HEAD_T *)(data + 1);
   sub_type = head_ptr->subtype;
-  if (sub_type >= (int)NUM_ELEMS(eng_autotestcmd)) {
+  if (sub_type > (int)NUM_ELEMS(eng_autotestcmd)) {
     ENG_LOG("%s: no handler for CMD_USER_AUTOTEST sub_type = %d", __FUNCTION__,
             sub_type);
     return -1;

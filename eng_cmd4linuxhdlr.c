@@ -1295,7 +1295,7 @@ int eng_linuxcmd_rtctest(char *req, char *rsp) {
   return 0;
 }
 
-static int eng_diag_enter_iq_pb_mode(void) {
+static int eng_diag_enter_iq_pb_playback(void) {
   int fd = -1;
   fd = open(IQMODE_FLAG_PATH, O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
   if (fd < 0) {
@@ -1310,12 +1310,19 @@ static int eng_diag_enter_iq_pb_mode(void) {
   return 0;
 }
 
-static int eng_diag_iq_pb_stop(void) {
+static int eng_diag_iq_pb_normal(void) {
   int fd = -1;
 
   // android_reboot(ANDROID_RB_RESTART, 0, 0);//will trigger framework
   // systemdump
   property_set(ANDROID_RB_PROPERTY, "reboot");
+  return 0;
+}
+
+static int eng_diag_iq_pb_capture(void) {
+  int fd = -1;
+
+  property_set(ANDROID_RB_PROPERTY, "reboot,iqmode");
   return 0;
 }
 
@@ -1325,10 +1332,12 @@ int eng_linuxcmd_wiqpb(char *req, char *rsp) {
   req++;
   ptr_parm1[0] = *req;
   ENG_LOG("%s: AT+SPWIQ=%c\n", __FUNCTION__, ptr_parm1[0]);
-  if (ptr_parm1[0] == '1') {
-    eng_diag_iq_pb_stop();
+  if (ptr_parm1[0] == '0') {
+    eng_diag_iq_pb_normal(); // normal mode
+  } else if (ptr_parm1[0] == '1') {
+    eng_diag_iq_pb_capture(); // iq capture
   } else if (ptr_parm1[0] == '2') {
-    eng_diag_enter_iq_pb_mode();
+    eng_diag_enter_iq_pb_playback(); // iq playback
   } else {
     ENG_LOG("%s: AT+SPWIQ=%c is invaild value\n", __FUNCTION__, ptr_parm1[0]);
   }

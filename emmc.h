@@ -13,6 +13,7 @@ extern "C" {
 #define MENU_TEST_EMMC          "> Test EMMC"
 #define TEXT_EMMC_STATE                         "EMMC status:"
 int get_emmc_size(char *req, char *rsp);
+int get_emmcsize(void);
 
 //-----------------------------------------------------------------------------
 //--};

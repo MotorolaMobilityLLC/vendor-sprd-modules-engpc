@@ -69,3 +69,38 @@ int get_emmc_size(char *req, char *rsp)
 	}
 	return 0;
 }
+
+
+int get_emmcsize(void)
+{
+	int fd;
+	int ret = 1; //fail
+	int cur_row = 2;
+	char  buffer[64]={0},temp[64]={0};
+	int read_len = 0;
+	float size = 0;
+	char *endptr;
+	if (0 == access("/sys/block/mmcblk0",F_OK)){
+		fd = open("/sys/block/mmcblk0/size",O_RDONLY);
+		if(fd < 0){
+			ENG_LOG("emmc card no exist\n");
+			return -1;
+		}
+		read_len = read(fd,buffer,sizeof(buffer));
+		if(read_len <= 0){
+			ENG_LOG("emmc card no read\n");
+			return -1;
+		}
+		size = strtoul(buffer,&endptr,0);
+		close(fd);
+		ENG_LOG("sys/block/mmcblk0/size value = %f, read_len = %d ", size, read_len);
+		ENG_LOG("%s %4.2f GB", TEXT_EMMC_CAPACITY,(size/2/1024/1024));
+		size=ceil(size/2/1024/1024);
+		return (int)size;
+	}else{
+		sprintf(temp,"%s%s",TEXT_EMMC_STATE,TEXT_EMMC_FAIL);
+		return -1;
+	}
+
+}
+

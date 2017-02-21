@@ -28,6 +28,7 @@
 #include <poll.h>
 #include <cutils/sockets.h>
 #include "emmc.h"
+#include "ddr.h"
 
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
 
@@ -67,6 +68,7 @@ extern int eng_gps_atdiag_euthdlr(char *buf, int len, char *rsp,
                                   int module_index);
 extern void eng_check_factorymode(int normal_cali);
 extern int turnoff_lcd_backlight(void);
+extern int get_emmcsize(void);
 extern int get_emmc_size(char *req, char *rsp);
 static unsigned char g_buffer[ENG_BUFFER_SIZE];
 static int eng_linuxcmd_rpoweron(char *req, char *rsp);
@@ -103,6 +105,7 @@ static int eng_linuxcmd_wiqpb(char *req, char *rsp);
 static int eng_linuxcmd_property(char *req, char *rsp);
 static int eng_linuxcmd_audiologctl(char *req, char *rsp);
 static int eng_linuxcmd_checksd(char *req,char *rsp);
+static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp);
 
 static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SENDKEY, CMD_TO_AP, "AT+SENDKEY", eng_linuxcmd_keypad},
@@ -142,6 +145,7 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_AUDIOLOGCTL, CMD_TO_AP, "AT+SPAUDIOOP", eng_linuxcmd_audiologctl},
     {CMD_SPCHKSD,        CMD_TO_AP,     "AT+SPCHKSD",      eng_linuxcmd_checksd},
 	{CMD_EMMCSIZE,        CMD_TO_AP,     "AT+EMMCSIZE",      get_emmc_size},
+{CMD_EMMCDDRSIZE,        CMD_TO_AP,     "AT+EMMCDDRSIZE",      eng_linuxcmd_get_emmcddrsize},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -1615,4 +1619,47 @@ static int eng_linuxcmd_checksd(char *req, char *rsp)
 	}
 	return 0;
 }
+
+static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp)
+{
+//ddr
+
+	char ddr_size_str[5]={0};
+	int retddr=-2;
+	int ddr_size_int=0;
+	int emmc_size=0;
+//test  the size of the DDR
+	memset(ddr_size_str, 0, 5);
+	//INFMSG(" eng_linuxcmd_get_emmcddrsize i=%d ddr_size_str=%s  \n", sizeof(ddr_sizechar_str),ddr_size_str);
+	retddr= getDDRsize(ddr_size_str);
+	if (retddr!= 0)
+	{
+		ENG_LOG("/proc/sprd_dmc/property not exist\n");
+		sprintf(rsp, "%s%s", "sprd_dmc/property no exist ", ENG_STREND);	
+		return 0;	
+	}
+	else if(retddr== 0)
+	{
+		ddr_size_int = atoi(ddr_size_str);  //MB
+		ddr_size_int=ddr_size_int/1024;	//G
+
+	}
+//test the size of the emmc
+	emmc_size=get_emmcsize();
+
+	if(emmc_size== -1)
+	{
+		ENG_LOG("read the emmc size failed\n");
+		return 0;
+	}else
+	{
+		ENG_LOG("read the emmc size success \n");
+	}
+	
+	sprintf(rsp, "%dG+%dG%s",emmc_size,ddr_size_int,ENG_STREND);
+	return 0;
+
+
+}
+
 

@@ -32,6 +32,9 @@ ifeq ($(strip $(BOARD_TEE_CONFIG)), watchdata)
 else ifeq ($(strip $(BOARD_TEE_CONFIG)), beanpod)
 LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
 LOCAL_SHARED_LIBRARIES  += libteeproduction
+else ifeq ($(strip $(BOARD_TEE_CONFIG)), trusty)
+LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
+LOCAL_SHARED_LIBRARIES  += libteeproduction
 endif
 endif
 

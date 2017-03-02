@@ -549,7 +549,7 @@ int eng_diag_parse(char *buf, int len, int *num) {
   int ret = CMD_COMMON;
   MSG_HEAD_T *head_ptr = NULL;
   *num = eng_diag_decode7d7e(
-      (char *)(buf + 1), (len - 2));  // remove the start 0x7e and the last 0x7e
+      (unsigned char *)(buf + 1), (len - 2));  // remove the start 0x7e and the last 0x7e
   head_ptr = (MSG_HEAD_T *)(buf + 1);
   ENG_LOG("%s: cmd=0x%x; subcmd=0x%x\n", __FUNCTION__, head_ptr->type,
           head_ptr->subtype);
@@ -2971,16 +2971,17 @@ static void eng_diag_char2hex(unsigned char *hexdata, char *chardata) {
   }
 }
 
-int eng_diag_decode7d7e(char *buf, int len) {
+int eng_diag_decode7d7e(unsigned char *buf, int len) {
   int i, j, m = 0;
-  char tmp;
+  unsigned char tmp;
   for (i = 0; i < len; i++) {
     if ((buf[i] == 0x7d) || (buf[i] == 0x7e)) {
       tmp = buf[i + 1] ^ 0x20;
       ENG_LOG("%s: tmp=%x, buf[%d]=%x", __FUNCTION__, tmp, i + 1, buf[i + 1]);
       buf[i] = tmp;
-      j = i + 1;
-      memcpy(&buf[j], &buf[j + 1], len - j);
+      for(j = i + 1; j < len; j ++){
+        buf[j] = buf[j+1];
+      }
       len--;
       m++;
       ENG_LOG("%s AFTER:", __FUNCTION__);

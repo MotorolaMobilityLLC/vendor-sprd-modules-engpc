@@ -412,5 +412,5 @@ void *eng_vdiag_rthread(void *x);
 void *eng_timesync_thread(void *x);
 void *eng_sd_log(void *args);
 void *eng_gps_log_thread(void *x);
-int eng_diag_decode7d7e(char *buf, int len);
+int eng_diag_decode7d7e(unsigned char *buf, int len);
 #endif

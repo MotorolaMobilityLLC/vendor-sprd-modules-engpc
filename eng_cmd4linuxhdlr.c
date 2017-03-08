@@ -1612,10 +1612,10 @@ static int eng_linuxcmd_checksd(char *req, char *rsp)
 {
 	if (0 == access(DEV_TCARD_BLOCK_NAME , F_OK)){
 		ENG_LOG("SD card exist\n");
-		sprintf(rsp, "%s%s", "1", ENG_STREND);
+		sprintf(rsp, "%s%s", "+SPCHKSD: OK", ENG_STREND);
 	}else{
 		ENG_LOG("SD card no exist\n");
-		sprintf(rsp, "%s%s", "0", ENG_STREND);
+		sprintf(rsp, "%s%s", "+SPCHKSD: 0", ENG_STREND);
 	}
 	return 0;
 }

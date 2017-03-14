@@ -5529,45 +5529,45 @@ static int eng_diag_set_ipconfigure(char *buf, int len, char *rsp, int rsplen) {
     goto out;
   }
 
-  flag = system("wpa_cli -iwlan0 IFNAME=wlan0 remove_network all");
+  flag = system("wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 remove_network all");
   if (!WIFEXITED(flag) || WEXITSTATUS(flag) || -1 == flag) {
     ENG_LOG(
-        "%s:wpa_cli -iwlan0 IFNAME=wlan0 remove_network all. flag=%d,err:%s\n",
+        "%s:wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 remove_network all. flag=%d,err:%s\n",
         __FUNCTION__, flag, strerror(errno));
     goto out;
   }
 
-  flag = system("wpa_cli -iwlan0 IFNAME=wlan0 add_network");
+  flag = system("wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 add_network");
   if (!WIFEXITED(flag) || WEXITSTATUS(flag) || -1 == flag) {
-    ENG_LOG("%s:wpa_cli -iwlan0 IFNAME=wlan0 add_network. flag=%d,err:%s\n",
+    ENG_LOG("%s:wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 add_network. flag=%d,err:%s\n",
             __FUNCTION__, flag, strerror(errno));
     goto out;
   }
 
-  sprintf(cmd, "wpa_cli -iwlan0 IFNAME=wlan0 set_network 0 ssid /%s/",
+  sprintf(cmd, "wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 set_network 0 ssid '\"%s\"'",
           apcmd->szSSID);
   flag = system(cmd);
   if (!WIFEXITED(flag) || WEXITSTATUS(flag) || -1 == flag) {
     ENG_LOG(
-        "%s: wpa_cli -iwlan0 IFNAME=wlan0 set_network 0 ssid /CMCC/. "
+        "%s: wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 set_network 0 ssid /CMCC/. "
         "lag=%d,err:%s\n",
         __FUNCTION__, flag, strerror(errno));
     goto out;
   }
 
-  flag = system("wpa_cli -iwlan0 IFNAME=wlan0 set_network 0 key_mgmt NONE");
+  flag = system("wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 set_network 0 key_mgmt NONE");
   if (!WIFEXITED(flag) || WEXITSTATUS(flag) || -1 == flag) {
     ENG_LOG(
-        "%s:wpa_cli -iwlan0 IFNAME=wlan0 set_network 0 key_mgmt NONE. "
+        "%s:wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 set_network 0 key_mgmt NONE. "
         "flag=%d,err:%s\n",
         __FUNCTION__, flag, strerror(errno));
     goto out;
   }
 
-  flag = system("wpa_cli -iwlan0 IFNAME=wlan0 select_network 0");
+  flag = system("wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 select_network 0");
   if (!WIFEXITED(flag) || WEXITSTATUS(flag) || -1 == flag) {
     ENG_LOG(
-        "%s:wpa_cli -iwlan0 IFNAME=wlan0 select_network 0. flag=%d,err:%s\n",
+        "%s:wpa_cli -p/data/system/wpa_supplicant IFNAME=wlan0 select_network 0. flag=%d,err:%s\n",
         __FUNCTION__, flag, strerror(errno));
     goto out;
   }

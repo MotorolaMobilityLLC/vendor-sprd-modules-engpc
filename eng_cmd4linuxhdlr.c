@@ -55,6 +55,7 @@ static int g_agdsp_pcm_status = 0; // 0: PCM disabled, 1: PCM enabled
 
 extern int g_reset;
 extern int g_setuart_ok;
+extern int g_armlog_enable;
 extern eng_dev_info_t *g_dev_info;
 extern void set_raw_data_speed(int fd, int speed);
 extern int get_ser_diag_fd(void);
@@ -868,6 +869,25 @@ int eng_linuxcmd_infactorymode(char *req, char *rsp) {
 
 #define DEEP_WAIT_TIME 15
 void *thread_fastsleep(void *para) {
+
+  int count;
+  int sleep = 0;
+  char cmd[] = {"echo mem > /sys/power/state"};
+
+  ALOGE("##: please plug out usb within 60s...\n");
+  for (count = 0; count < 60*5; count ++) {
+    if (!g_armlog_enable) {
+      sleep = 1;
+      break;
+    }
+    usleep(200*1000);
+  }
+  ALOGE("##: sleep count=%d\n", count);
+  if (sleep) {
+    ALOGE("##: going to sleep mode!\n");
+    system(cmd);
+  }
+/* 
   ALOGE("##: delay 2 seconds to wait AT command has been sent to modem...\n");
   sleep(2);
   ALOGE("##: Going to sleep mode!\n");
@@ -876,6 +896,7 @@ void *thread_fastsleep(void *para) {
   ALOGE("##: Waiting for a while...\n");
   char cmd[] = {"echo mem > /sys/power/state"};
   system(cmd);
+*/
 #if 0
   int fd, stringsize;
 

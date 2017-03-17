@@ -44,6 +44,7 @@
 #include "eng_cmd4linuxhdlr.h"
 #include "wifi_eut_sprd.h"
 #include "eng_ap_modem_time_sync.h"
+#include "eng_modules.h"
 
 #if defined(ENGMODE_EUT_BCM)
 #include "bt_eut_pandora.h"
@@ -115,6 +116,9 @@ char *at_sipc_devname[] = {
     "/dev/stty_w30"    // AT channel in W mode
 };
 
+struct list_head eng_head;
+int g_list_ok = 0;
+
 int g_reset = 0;
 int g_setuart_ok = 0;
 sem_t g_gps_sem;
@@ -125,6 +129,7 @@ extern int g_ap_cali_flag;
 #ifndef USE_AUDIO_WHALE_HAL
 extern AUDIO_TOTAL_T *audio_total;
 #endif
+extern void *thread_fastsleep(void *para);
 extern void eng_check_factorymode(int normal_cali);
 #ifndef USE_AUDIO_WHALE_HAL
 extern int parse_vb_effect_params(void *audio_params_ptr,
@@ -1165,6 +1170,12 @@ int eng_diag_user_handle(int type, char *buf, int len) {
 
   ENG_LOG("%s: type=%d\n", __FUNCTION__, type);
 
+  if(g_list_ok == 0){
+    ENG_LOG("engmode list init!\n");
+    g_list_ok = 1;
+    eng_modules_load(&eng_head);
+  }
+
   switch (type) {
     case CMD_USER_VER:
       rlen = eng_diag_getver((unsigned char *)buf, len, rsp);
@@ -1254,6 +1265,21 @@ int eng_diag_user_handle(int type, char *buf, int len) {
         write(get_ser_diag_fd(), emptyDiag, sizeof(emptyDiag));
       }
       rlen = eng_diag_apcmd_hdlr(buf, len, rsp);
+    #if 0
+      if(rlen == 0){
+          eng_modules *modules_list = NULL;
+          struct list_head *list_find;
+          list_for_each(list_find,&eng_head){
+
+          modules_list = list_entry(list_find, eng_modules, node);
+          ENG_LOG("engpc_callback cmd %x\n",modules_list->callback.at_cmd);
+
+          if(!strncmp(modules_list->callback.at_cmd, buf, strlen(modules_list->callback.at_cmd))){
+              rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
+          }
+        }
+      }
+    #endif
       break;
     case CMD_USER_PRODUCT_CTRL:
       ENG_LOG("%s: CMD_USER_PRODUCT_CTRL\n", __FUNCTION__);
@@ -4189,8 +4215,14 @@ static void eng_diag_reboot(int reset) {
 }
 
 static int eng_diag_deep_sleep(char *buf, int len, char *rsp) {
-  char cmd[] = {"echo mem > /sys/power/state"};
-  system(cmd);
+  pthread_t thread_id;
+  int ret;
+  ret = pthread_create(&thread_id, NULL, thread_fastsleep, NULL);
+  if (0 != ret) {
+    ENG_LOG("%s: Can't create thread[thread_fastsleep]!\n", __FUNCTION__);
+  } else {
+    ENG_LOG("%s: Create thread[thread_fastsleep] sucessfully!\n", __FUNCTION__);
+  }
   return 0;
 }
 

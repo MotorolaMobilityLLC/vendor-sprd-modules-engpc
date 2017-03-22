@@ -545,13 +545,12 @@ static int wifi_tx_start(char *rsp) {
     ENG_LOG("ADL %s(), Rx_start is 1, goto err. RX_START is 1", __func__);
     goto err;
   }
-  /* for bug 655161, Maybe no need check sin_wave_start in CW mode
+  /*we can not set tx on in cw mode*/
   if (1 == g_wifi_data.sin_wave_start) {
     ENG_LOG("ADL %s(), sin_wave_start is 1, goto err. SIN_WAVE_start is 1",
             __func__);
     goto err;
   }
- */
 
   sprintf(cmd, "iwnpi wlan0 set_tx_count %d > %s", g_wifi_tx_count, TMP_FILE);
   ret = system(cmd);

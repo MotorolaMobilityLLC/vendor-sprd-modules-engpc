@@ -29,7 +29,7 @@ extern int g_ap_cali_flag;
 #define DATA_EXT_DIAG_SIZE (4096 * 4)
 #define DIAG_BUF_SIZE 20
 
-static char log_data[DATA_BUF_SIZE];
+static unsigned  char log_data[DATA_BUF_SIZE];
 static char ext_data_buf[DATA_EXT_DIAG_SIZE];
 static char backup_data_buf[DATA_EXT_DIAG_SIZE];
 static char diag_header[DIAG_BUF_SIZE];
@@ -71,11 +71,11 @@ void init_user_diag_buf(void) {
 }
 
 //flag 1: print once; 0: print all
-void eng_dump(char *buf, int len, int col, int flag, char *keyword)
+void eng_dump(unsigned char *buf, int len, int col, int flag, char *keyword)
 {
     int i = 0;
     int j = 0;
-    char tmpbuf[128] = {0};
+    unsigned char tmpbuf[128] = {0};
 
     for(i = 0; i < len; i++) {
         sprintf(tmpbuf + j, "%02X ", *(buf + i));
@@ -94,10 +94,9 @@ void eng_dump(char *buf, int len, int col, int flag, char *keyword)
 }
 
 // Find a valid diag framer.
-int get_user_diag_buf(char *buf, int len) {
+int get_user_diag_buf( unsigned char *buf, int len) {
   int i;
   int is_find = 0;
-
   eng_dump(buf, len, 20, 1, __FUNCTION__);
 
   for (i = 0; i < len; i++) {

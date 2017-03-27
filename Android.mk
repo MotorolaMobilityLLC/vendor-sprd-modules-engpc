@@ -33,8 +33,10 @@ else ifeq ($(strip $(BOARD_TEE_CONFIG)), beanpod)
 LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
 LOCAL_SHARED_LIBRARIES  += libteeproduction
 else ifeq ($(strip $(BOARD_TEE_CONFIG)), trusty)
+ifeq ($(strip $(TRUSTY_PRODUCTION)),true)
 LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
 LOCAL_SHARED_LIBRARIES  += libteeproduction
+endif
 endif
 endif
 

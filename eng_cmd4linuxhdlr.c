@@ -884,7 +884,8 @@ void *thread_fastsleep(void *para) {
   }
   ALOGE("##: sleep count=%d\n", count);
   if (sleep) {
-    ALOGE("##: going to sleep mode!\n");
+    ALOGE("##: going to sleep mode!delay 3s\n");
+    usleep(3000*1000);
     system(cmd);
   }
 /* 

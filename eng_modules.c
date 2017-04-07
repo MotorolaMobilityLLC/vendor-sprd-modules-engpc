@@ -51,7 +51,7 @@ int readFileList(const char *basePath, char **f_name)
     if ((dir = opendir(basePath)) == NULL)
     {
         ALOGE("Open %s error...%s",basePath,dlerror());
-        return -1;
+        return 0;
     }
 
     while ((ptr = readdir(dir)) != NULL)

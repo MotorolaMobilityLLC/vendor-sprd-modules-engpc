@@ -1210,15 +1210,15 @@ static int eng_linuxcmd_logctl(char *req, char *rsp)
         goto out;
       }
       //enable wcn armlog
-      system("wcnd_cli wcn poweron");
-      system("wcnd_cli wcn at+armlog=1");
+      system("connmgr_cli wcn poweron");
+      system("connmgr_cli wcn at+armlog=1");
     } else if(ptr_cmd[0] == '0') {
       //notice slogmodem
       if(notice_slogmodem(DISABLE_WCN_LOG_CMD) < 0) {
         goto out;
       }
       //disable wcn armlog
-      system("wcnd_cli wcn at+armlog=0");
+      system("connmgr_cli wcn at+armlog=0");
     } else {
       ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
       goto out;

@@ -227,8 +227,8 @@ static int start_wifieut(char *rsp) {
     goto ok;
   }
 #ifdef SPRD_WCN_MARLIN
-  ret = system("wcnd_cli wcn poweron");
-  ENG_LOG("ADL %s(), callED system(wcnd_cli wcn poweron), ret = %d", __func__,
+  ret = system("connmgr_cli wcn poweron");
+  ENG_LOG("ADL %s(), callED system(connmgr_cli wcn poweron), ret = %d", __func__,
           ret);
 #endif
   ret = system("rmmod sprdwl.ko");
@@ -324,8 +324,8 @@ static int stop_wifieut(char *rsp) {
 #endif
   system("rmmod sprdwl.ko");
 #ifdef SPRD_WCN_MARLIN
-  ret = system("wcnd_cli wcn poweroff ");
-  ENG_LOG("ADL %s(), callED system(wcnd_cli wcn poweroff ), ret = %d", __func__,
+  ret = system("connmgr_cli wcn poweroff ");
+  ENG_LOG("ADL %s(), callED system(connmgr_cli wcn poweroff ), ret = %d", __func__,
           ret);
 #endif
   memset(&g_wifi_data, 0, sizeof(WIFI_ELEMENT));

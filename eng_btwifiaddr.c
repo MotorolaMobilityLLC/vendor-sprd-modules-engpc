@@ -43,9 +43,9 @@ static void write_to_randmacfile(char *btmac, char *wifimac) {
     write(fd, buf, sizeof(buf));
     close(fd);
   } else {
-    ALOGD("%s: errno=%d, errstr=%s", __FUNCTION__, errno, strerror(errno));
+    ENG_LOG("%s: errno=%d, errstr=%s", __FUNCTION__, errno, strerror(errno));
   }
-  ALOGD("%s: %s fd=%d, data=%s", __FUNCTION__, MAC_RAND_FILE, fd, buf);
+  ENG_LOG("%s: %s fd=%d, data=%s", __FUNCTION__, MAC_RAND_FILE, fd, buf);
 }
 
 // realtek_add_start
@@ -53,15 +53,15 @@ static int get_urandom(unsigned int *buf, size_t len) {
   int fd;
   size_t rc;
 
-  ALOGD("+%s+", __FUNCTION__);
+  ENG_LOG("+%s+", __FUNCTION__);
   fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0) {
-    ALOGD("%s: Open urandom fail", __FUNCTION__);
+    ENG_LOG("%s: Open urandom fail", __FUNCTION__);
     return -1;
   }
   rc = read(fd, buf, len);
   close(fd);
-  ALOGD("-%s: rc: %d-", __FUNCTION__, rc);
+  ENG_LOG("-%s: rc: %d-", __FUNCTION__, rc);
   return rc;
 }
 // realtek_add_end
@@ -81,15 +81,15 @@ static void mac_rand(char *btmac, char *wifimac) {
   memset(buf, 0, sizeof(buf));
 
   // realtek_add_start
-  ALOGD("+%s+", __FUNCTION__);
+  ENG_LOG("+%s+", __FUNCTION__);
   // realtek_add_end
   if (access(MAC_RAND_FILE, F_OK) == 0) {
-    ALOGD("%s: %s exists", __FUNCTION__, MAC_RAND_FILE);
+    ENG_LOG("%s: %s exists", __FUNCTION__, MAC_RAND_FILE);
     fd = open(MAC_RAND_FILE, O_RDWR);
     if (fd >= 0) {
       ret = read(fd, buf, sizeof(buf) - 1);
       if (ret > 0) {
-        ALOGD("%s: read %s %s", __FUNCTION__, MAC_RAND_FILE, buf);
+        ENG_LOG("%s: read %s %s", __FUNCTION__, MAC_RAND_FILE, buf);
         ptr = strchr(buf, ';');
         if (ptr != NULL) {
           if ((strstr(wifimac, MAC_ERROR) != NULL) ||
@@ -102,12 +102,12 @@ static void mac_rand(char *btmac, char *wifimac) {
               (strstr(btmac, MAC_ERROR_EX) != NULL) || (strlen(btmac) == 0))
             strcpy(btmac, buf);
 
-          ALOGD("%s: read btmac=%s, wifimac=%s", __FUNCTION__, btmac, wifimac);
+          ENG_LOG("%s: read btmac=%s, wifimac=%s", __FUNCTION__, btmac, wifimac);
           close(fd);
           return;
         }
       } else {
-        ALOGD("%s: read failed", __FUNCTION__);
+        ENG_LOG("%s: read failed", __FUNCTION__);
       }
       // realtek_add_start
       close(fd);
@@ -117,24 +117,24 @@ static void mac_rand(char *btmac, char *wifimac) {
 
   rc = get_urandom(&randseed, sizeof(randseed));
   if (rc > 0) {
-    ALOGD("urandom:%u", randseed);
+    ENG_LOG("urandom:%u", randseed);
   } else {
     if (gettimeofday(&tt, (struct timezone *)0) > 0)
       randseed = (unsigned int)tt.tv_usec;
     else
       randseed = (unsigned int)time(NULL);
 
-    ALOGD("urandom fail, using system time for randseed");
+    ENG_LOG("urandom fail, using system time for randseed");
   }
   // realtek_add_end
-  ALOGD("%s: randseed=%u", __FUNCTION__, randseed);
+  ENG_LOG("%s: randseed=%u", __FUNCTION__, randseed);
   srand(randseed);
-  ALOGD("%s: mac=%s, fd[%s]=%d", __FUNCTION__, btmac, BT_MAC_FILE, fd);
+  ENG_LOG("%s: mac=%s, fd[%s]=%d", __FUNCTION__, btmac, BT_MAC_FILE, fd);
 
   // FOR BT
   i = rand();
   j = rand();
-  ALOGD("%s:  rand i=0x%x, j=0x%x", __FUNCTION__, i, j);
+  ENG_LOG("%s:  rand i=0x%x, j=0x%x", __FUNCTION__, i, j);
   sprintf(btmac, "00:%02x:%02x:%02x:%02x:%02x",
           (unsigned char)((i >> 8) & 0xFF), (unsigned char)((i >> 16) & 0xFF),
           (unsigned char)((j)&0xFF), (unsigned char)((j >> 8) & 0xFF),
@@ -143,13 +143,13 @@ static void mac_rand(char *btmac, char *wifimac) {
   // FOR WIFI
   i = rand();
   j = rand();
-  ALOGD("%s:  rand i=0x%x, j=0x%x", __FUNCTION__, i, j);
+  ENG_LOG("%s:  rand i=0x%x, j=0x%x", __FUNCTION__, i, j);
   sprintf(wifimac, "00:%02x:%02x:%02x:%02x:%02x",
           (unsigned char)((i >> 8) & 0xFF), (unsigned char)((i >> 16) & 0xFF),
           (unsigned char)((j)&0xFF), (unsigned char)((j >> 8) & 0xFF),
           (unsigned char)((j >> 16) & 0xFF));
 
-  ALOGD("%s: bt mac=%s, wifi mac=%s", __FUNCTION__, btmac, wifimac);
+  ENG_LOG("%s: bt mac=%s, wifi mac=%s", __FUNCTION__, btmac, wifimac);
 
   // create rand file
   // write_to_randmacfile(btmac, wifimac);

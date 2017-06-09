@@ -56,7 +56,9 @@ endif
 
 LOCAL_C_INCLUDES    += hardware/libhardware/include \
                        hardware/libhardware_legacy/include \
-                       system/core/include
+                       frameworks/opt/net/wifi/libwifi_hal/include \
+                       system/core/include \
+                       system/media/audio/include
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_C_INCLUDES    +=  vendor/sprd/modules/audio/voiceband/effect/include \
@@ -172,6 +174,7 @@ endif
 endif
 endif
 
+LOCAL_SHARED_LIBRARIES += liblog
 LOCAL_MODULE := engpc
 LOCAL_INIT_RC := engpc.rc
 LOCAL_MODULE_TAGS := optional

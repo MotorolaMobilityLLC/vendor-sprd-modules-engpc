@@ -155,7 +155,7 @@ int ensure_audio_para_file_exists(char *config_file) {
   if ((ret == 0) || (errno == EACCES)) {
     if ((ret != 0) &&
         (chmod(config_file, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) != 0)) {
-      ALOGE("eng_vdiag Cannot set RW to \"%s\": %s", config_file,
+      ENG_LOG("eng_vdiag Cannot set RW to \"%s\": %s", config_file,
             strerror(errno));
       return -1;
     }
@@ -164,13 +164,13 @@ int ensure_audio_para_file_exists(char *config_file) {
       return 0;
     }
   } else if (errno != ENOENT) {
-    ALOGE("eng_vdiag Cannot access \"%s\": %s", config_file, strerror(errno));
+    ENG_LOG("eng_vdiag Cannot access \"%s\": %s", config_file, strerror(errno));
     return -1;
   }
 
   srcfd = open((char *)(ENG_AUDIO_PARA), O_RDONLY);
   if (srcfd < 0) {
-    ALOGE("eng_vdiag Cannot open \"%s\": %s", (char *)(ENG_AUDIO_PARA),
+    ENG_LOG("eng_vdiag Cannot open \"%s\": %s", (char *)(ENG_AUDIO_PARA),
           strerror(errno));
     return -1;
   }
@@ -178,14 +178,14 @@ int ensure_audio_para_file_exists(char *config_file) {
   destfd = open(config_file, O_CREAT | O_RDWR, 0660);
   if (destfd < 0) {
     close(srcfd);
-    ALOGE("eng_vdiag Cannot create \"%s\": %s", config_file, strerror(errno));
+    ENG_LOG("eng_vdiag Cannot create \"%s\": %s", config_file, strerror(errno));
     return -1;
   }
 
   ENG_LOG("%s: start copy", __FUNCTION__);
   while ((nread = read(srcfd, buf, sizeof(buf))) != 0) {
     if (nread < 0) {
-      ALOGE("eng_vdiag Error reading \"%s\": %s", (char *)(ENG_AUDIO_PARA),
+      ENG_LOG("eng_vdiag Error reading \"%s\": %s", (char *)(ENG_AUDIO_PARA),
             strerror(errno));
       close(srcfd);
       close(destfd);
@@ -200,7 +200,7 @@ int ensure_audio_para_file_exists(char *config_file) {
 
   /* chmod is needed because open() didn't set permisions properly */
   if (chmod(config_file, 0660) < 0) {
-    ALOGE("eng_vdiag Error changing permissions of %s to 0660: %s", config_file,
+    ENG_LOG("eng_vdiag Error changing permissions of %s to 0660: %s", config_file,
           strerror(errno));
     unlink(config_file);
     return -1;
@@ -208,7 +208,7 @@ int ensure_audio_para_file_exists(char *config_file) {
 
 #if 0
     if (chown(config_file, AID_SYSTEM, AID_SYSTEM) < 0) {
-        ALOGE("eng_vdiag Error changing group ownership of %s to %d: %s",
+        ENG_LOG("eng_vdiag Error changing group ownership of %s to %d: %s",
                 config_file, AID_SYSTEM, strerror(errno));
         unlink(config_file);
         return -1;

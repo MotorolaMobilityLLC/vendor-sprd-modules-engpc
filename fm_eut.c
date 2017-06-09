@@ -14,6 +14,7 @@
 #include <cutils/properties.h>
 #include "eng_diag.h"
 #include "audioserver/audio_server.h"
+#include<system/audio-base.h>
 
 #define LOG_TAG "engpc"
 #define FM_CMD_STATE 0x00  // open/close fm
@@ -110,12 +111,13 @@ typedef enum {
   AUDIO_POLICY_FORCE_DEFAULT = AUDIO_POLICY_FORCE_NONE,
 } audio_policy_forced_cfg_t;
 
-#ifndef AUDIO_DEVICE_OUT_FM_HEADSET
+/*#ifndef AUDIO_DEVICE_OUT_FM_HEADSET
 #define AUDIO_DEVICE_OUT_FM_HEADSET 0x1000000
 #endif
 #ifndef AUDIO_DEVICE_OUT_FM_SPEAKER
 #define AUDIO_DEVICE_OUT_FM_SPEAKER 0x2000000
 #endif
+*/
 
 #ifndef BTA_FM_OK
 #define BTA_FM_OK 0
@@ -357,12 +359,12 @@ void btAdapterStateChangedCallback(bt_state_t state) {
 int fm_set_status(char *pdata) {
   int ret = 0;
   if (*pdata == 1) {
-    ALOGE("eut: open fm");
+    ENG_LOG("eut: open fm");
     ret = fmOpen();
     ret = fmPlay(mFmTune);
     *pdata = 0;
   } else if (*pdata == 0) {
-    ALOGE("eut: close fm");
+    ENG_LOG("eut: close fm");
     ret = fmStop();
     ret = fmClose();
   }
@@ -371,13 +373,13 @@ int fm_set_status(char *pdata) {
 
 int CallbackStatus(int status, char *p) {
   if (status == FM_STATE_ENABLED) {
-    ALOGE("%s return FM_STATE_ENABLED", p);
+    ENG_LOG("%s return FM_STATE_ENABLED", p);
     return FM_SUCCESS;
   } else if (FM_STATE_ERR == status) {
-    ALOGE("%s return FM_STATE_ERR", p);
+    ENG_LOG("%s return FM_STATE_ERR", p);
     return FM_FAILURE;
   } else {
-    ALOGE("%s timeout ....", p);
+    ENG_LOG("%s timeout ....", p);
     return FM_FAILURE;
   }
   return FM_FAILURE;
@@ -385,14 +387,14 @@ int CallbackStatus(int status, char *p) {
 int fm_set_volume(unsigned char vol) {
   int status;
   int counter = 0;
-  ALOGE("sFmStatus, status: %d", sFmStatus);
+  ENG_LOG("sFmStatus, status: %d", sFmStatus);
   if ((NULL != sFmInterface) &&
       ((sFmStatus == FM_STATE_ENABLED) || (sFmStatus == FM_STATE_PLAYING))) {
     sFmVolumeStatus = FM_STATE_PANIC;
-    ALOGE("fm_set_volume() vol = %d", (int)vol);
+    ENG_LOG("fm_set_volume() vol = %d", (int)vol);
     setVolume((int)vol);
     if ((status = sFmInterface->set_volume((int)vol)) != BT_STATUS_SUCCESS) {
-      ALOGE("Failed FM setFMVolumeNative, status: %d", status);
+      ENG_LOG("Failed FM setFMVolumeNative, status: %d", status);
       return FM_FAILURE;
     }
     while (counter++ < 3 && FM_STATE_ENABLED != sFmVolumeStatus &&
@@ -408,13 +410,13 @@ int fm_set_volume(unsigned char vol) {
 int fm_set_mute() {
   int status;
   int counter = 0;
-  ALOGE("sFmStatus, status: %d", sFmStatus);
+  ENG_LOG("sFmStatus, status: %d", sFmStatus);
   if ((NULL != sFmInterface) &&
       ((sFmStatus == FM_STATE_ENABLED) || (sFmStatus == FM_STATE_PLAYING))) {
     sFmMuteStatus = FM_STATE_PANIC;
     setVolume(0);
     if ((status = sFmInterface->mute(TRUE)) != BT_STATUS_SUCCESS) {
-      ALOGE("Failed FM setFMmuteNative, status: %d", status);
+      ENG_LOG("Failed FM setFMmuteNative, status: %d", status);
       return FM_FAILURE;
     }
     while (counter++ < 3 && FM_STATE_ENABLED != sFmMuteStatus &&
@@ -435,7 +437,7 @@ int fm_set_seek(unsigned int startFreq, char mode) {
   int direction;
   memset(&mFmSignalParm, 0, sizeof(FM_SIGNAL_PARAM_T));
   mFmSignalParm.nOperInd = FM_FAILURE;
-  ALOGE("sFmStatus, status: %d", sFmStatus);
+  ENG_LOG("sFmStatus, status: %d", sFmStatus);
   if ((NULL != sFmInterface) &&
       ((sFmStatus == FM_STATE_ENABLED) || (sFmStatus == FM_STATE_PLAYING))) {
     if (mode == 0) {
@@ -450,7 +452,7 @@ int fm_set_seek(unsigned int startFreq, char mode) {
     sFmSearchStatus = FM_STATE_PANIC;
     if ((status = sFmInterface->seek_for_test(startFreq, direction)) !=
         BT_STATUS_SUCCESS) {
-      ALOGE("Failed FM seek, status: %d", status);
+      ENG_LOG("Failed FM seek, status: %d", status);
       return FM_FAILURE;
     }
     while (counter++ < 30 && (FM_STATE_ENABLED != sFmSearchStatus) &&
@@ -460,7 +462,7 @@ int fm_set_seek(unsigned int startFreq, char mode) {
         if ((status = sFmInterface->seek_for_test(mFmSignalParm.nFreqValue / 10,
                                                   direction)) !=
             BT_STATUS_SUCCESS) {
-          ALOGE("Failed FM seek, status: %d", status);
+          ENG_LOG("Failed FM seek, status: %d", status);
           return FM_FAILURE;
         }
       }
@@ -484,7 +486,7 @@ int fm_get_tune(int frq) {
       ((sFmStatus == FM_STATE_ENABLED) || (sFmStatus == FM_STATE_PLAYING))) {
     sFmTuneStatus = FM_STATE_PANIC;
     if ((status = sFmInterface->tune_for_test(frq)) != BT_STATUS_SUCCESS) {
-      ALOGE("Failed FM Tune, status: %d", status);
+      ENG_LOG("Failed FM Tune, status: %d", status);
       return FM_FAILURE;
     }
     while (counter++ < 10 && FM_STATE_ENABLED != sFmTuneStatus &&
@@ -502,17 +504,17 @@ int fm_get_tune(int frq) {
 int fm_read_reg(unsigned int addr) {
   int status;
   int counter = 0;
-  ALOGE("sFmStatus, status: %d", sFmStatus);
+  ENG_LOG("sFmStatus, status: %d", sFmStatus);
   if ((NULL != sFmInterface) &&
       ((sFmStatus == FM_STATE_ENABLED) || (sFmStatus == FM_STATE_PLAYING))) {
     sFmReadRegStatus = FM_STATE_PANIC;
     reg_value = 0;
     if (addr % 4) {
-      ALOGE("fm_read_reg the addr is illegal %d", addr);
+      ENG_LOG("fm_read_reg the addr is illegal %d", addr);
       return FM_FAILURE;
     }
     if ((status = sFmInterface->read_reg(addr)) != BT_STATUS_SUCCESS) {
-      ALOGE("Failed FM fm_read_reg, status: %d", status);
+      ENG_LOG("Failed FM fm_read_reg, status: %d", status);
       return FM_FAILURE;
     }
     while (counter++ < 3 && FM_STATE_ENABLED != sFmReadRegStatus &&
@@ -530,17 +532,17 @@ int fm_read_reg(unsigned int addr) {
 int fm_write_reg(unsigned int addr, int value) {
   int status;
   int counter = 0;
-  ALOGE("sFmStatus, status: %d", sFmStatus);
+  ENG_LOG("sFmStatus, status: %d", sFmStatus);
   if ((NULL != sFmInterface) &&
       ((sFmStatus == FM_STATE_ENABLED) || (sFmStatus == FM_STATE_PLAYING))) {
     sFmWriteRegStatus = 0;
     if (addr % 4) {
-      ALOGE("fm_write_reg the addr is illegal %d", addr);
+      ENG_LOG("fm_write_reg the addr is illegal %d", addr);
       return FM_FAILURE;
     }
 
     if ((status = sFmInterface->write_reg(addr, value)) != BT_STATUS_SUCCESS) {
-      ALOGE("Failed FM fm_write_reg, status: %d", status);
+      ENG_LOG("Failed FM fm_write_reg, status: %d", status);
       return FM_FAILURE;
     }
     // needd return in callback.
@@ -574,36 +576,36 @@ int start_fm_test(unsigned char *buf, int len, char *rsp) {
   pdata = buf + DIAG_HEADER_LENGTH + 1;  // data
 
   p = tmprsp + headlen;
-  ALOGE("start FM test Subtype=%d,%d ", head_ptr->subtype, *pdata);
+  ENG_LOG("start FM test Subtype=%d,%d ", head_ptr->subtype, *pdata);
   switch (head_ptr->subtype) {
     case FM_CMD_STATE:
       ret = fm_set_status(pdata);
-      ALOGE("fm_set_status =%d", ret);
+      ENG_LOG("fm_set_status =%d", ret);
       *p = ret;
       head_ptr->len = headlen + 1;
       break;
     case FM_CMD_VOLUME:
-      ALOGE("FM_CMD_VOLUME =%d", *pdata);
+      ENG_LOG("FM_CMD_VOLUME =%d", *pdata);
       ret = fm_set_volume(*pdata);
       *p = ret;
       head_ptr->len = headlen + 1;
       break;
     case FM_CMD_MUTE:
-      ALOGE("FM_CMD_MUTE");
+      ENG_LOG("FM_CMD_MUTE");
       ret = fm_set_mute();
       *p = ret;
       head_ptr->len = headlen + 1;
       break;
     case FM_CMD_TUNE:
       set_frq = pdata;
-      ALOGE("FM_CMD_TUNE =%d", *set_frq);
+      ENG_LOG("FM_CMD_TUNE =%d", *set_frq);
       ret = fm_get_tune(*set_frq / 10);
       head_ptr->len = headlen + sizeof(FM_SIGNAL_PARAM_T);
       memcpy(p, &mFmSignalParm, sizeof(FM_SIGNAL_PARAM_T));
       break;
     case FM_CMD_SEEK:
       set_frq = pdata;
-      ALOGE("FM_CMD_SEEK =%d , mode = %d , %d \n", *set_frq, *(pdata + 4),
+      ENG_LOG("FM_CMD_SEEK =%d , mode = %d , %d \n", *set_frq, *(pdata + 4),
             sizeof(FM_SIGNAL_PARAM_T));
       ret = fm_set_seek(*set_frq / 10, *(pdata + 4));
       head_ptr->len = headlen + sizeof(FM_SIGNAL_PARAM_T);
@@ -611,7 +613,7 @@ int start_fm_test(unsigned char *buf, int len, char *rsp) {
       break;
     case FM_CMD_READ_REG:
       receive_addr = pdata;
-      ALOGE("FM_CMD_READ_REG =%d , mode = %d , %d ,%d \n",
+      ENG_LOG("FM_CMD_READ_REG =%d , mode = %d , %d ,%d \n",
             receive_addr->nStartAddr, receive_addr->nUintCount,
             sizeof(FM_RW_REG_T));
       for (i = 0; i < receive_addr->nUintCount; i++) {
@@ -626,7 +628,7 @@ int start_fm_test(unsigned char *buf, int len, char *rsp) {
       break;
     case FM_CMD_WRITE_REG:
       receive_addr = pdata;
-      ALOGE("FM_CMD_WRITE_REG =%d , mode = %d  \n", receive_addr->nStartAddr,
+      ENG_LOG("FM_CMD_WRITE_REG =%d , mode = %d  \n", receive_addr->nStartAddr,
             receive_addr->nUintCount);
       for (i = 0; i < receive_addr->nUintCount; i++) {
         ret &= fm_write_reg(receive_addr->nStartAddr + i,
@@ -641,7 +643,7 @@ int start_fm_test(unsigned char *buf, int len, char *rsp) {
   }
   memcpy(tmprsp, (unsigned char *)head_ptr, headlen);
   for (i = 0; i < head_ptr->len; i++) {
-    ALOGE("start FM test =%x", tmprsp[i]);
+    ENG_LOG("start FM test =%x", tmprsp[i]);
   }
   return translate_packet(rsp, tmprsp, head_ptr->len);
 }

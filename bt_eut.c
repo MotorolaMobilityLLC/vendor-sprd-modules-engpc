@@ -29,31 +29,31 @@ int start_bteut(char *result) {
     ALOGI("=== BTUT test start! ===\n");
     int error = system("setprop ctl.stop bluetoothd");
     if (error == -1 || error == 127) {
-      ALOGE("=== BTUT test failed on cmd : setprop ctl.stop bluetoothd! ===\n");
+      ENG_LOG("=== BTUT test failed on cmd : setprop ctl.stop bluetoothd! ===\n");
       sprintf(result, "%s%d", EUT_BT_ERROR, error);
     } else {
       error = system("hciconfig uart0 up");
       if (error == -1 || error == 127) {
-        ALOGE("=== BTUT test failed on cmd : hciconfig uart0 up! ===\n");
+        ENG_LOG("=== BTUT test failed on cmd : hciconfig uart0 up! ===\n");
         sprintf(result, "%s%d", EUT_BT_ERROR, error);
       } else {
         error = system("hciconfig hci0 up");
         ALOGI("hciconfig hci0 up");
         if (error == -1 || error == 127) {
-          ALOGE("=== BTUT test failed on cmd : hciconfig hci0 up! ===\n");
+          ENG_LOG("=== BTUT test failed on cmd : hciconfig hci0 up! ===\n");
           sprintf(result, "%s%d", EUT_BT_ERROR, error);
         } else {
           ALOGI("hcitool cmd 0x03 0x03 start");
           error = system("hcitool cmd 0x03 0x03");
           ALOGI("hcitool cmd 0x03 0x03");
           if (error == -1 || error == 127) {
-            ALOGE("=== BTUT test failed on cmd : hcitool cmd 0x03 0x03! ===\n");
+            ENG_LOG("=== BTUT test failed on cmd : hcitool cmd 0x03 0x03! ===\n");
             sprintf(result, "%s%d", EUT_BT_ERROR, error);
           } else {
             error = system("hcitool cmd 0x03 0x05  0x02 0x00 0x02");
             ALOGI("hcitool cmd 0x03 0x1a 0x03");
             if (error == -1 || error == 127) {
-              ALOGE(
+              ENG_LOG(
                   "=== BTUT test failed on cmd : hcitool cmd 0x03 0x1a 0x03! "
                   "===\n");
               sprintf(result, "%s%d", EUT_BT_ERROR, error);
@@ -61,7 +61,7 @@ int start_bteut(char *result) {
               error = system("hcitool cmd 0x03 0x1a 0x03");
               ALOGI("hcitool cmd 0x03 0x05  0x02 0x00 0x02");
               if (error == -1 || error == 127) {
-                ALOGE(
+                ENG_LOG(
                     "=== BTUT test failed on cmd : hcitool cmd 0x03 0x05  0x02 "
                     "0x00 0x02! ===\n");
                 sprintf(result, "%s%d", EUT_BT_ERROR, error);
@@ -69,7 +69,7 @@ int start_bteut(char *result) {
                 error = system("hcitool cmd 0x06 0x03");
                 ALOGI("hcitool cmd 0x06 0x03");
                 if (error == -1 || error == 127) {
-                  ALOGE(
+                  ENG_LOG(
                       "=== BTUT test failed on cmd : hcitool cmd 0x06 0x03! "
                       "===\n");
                   sprintf(result, "%s%d", EUT_BT_ERROR, error);

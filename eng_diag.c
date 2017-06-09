@@ -1640,7 +1640,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
     case EUT_REQ_INDEX:
       ENG_LOG("wsh EUT_REQ_INDEX\n");
       if (module_index == BT_MODULE_INDEX) {
-        ALOGD("case BT_EUT_REQ_INDEX");
+        ENG_LOG("case BT_EUT_REQ_INDEX");
         bt_eutops.bteut_req(rsp);
       } else if (module_index == WIFI_MODULE_INDEX) {
         ENG_LOG("case WIFIEUT_INDEX");
@@ -1648,16 +1648,16 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
         if (wifi_eutops.wifieut_req != NULL)
           wifi_eutops.wifieut_req(rsp);
         else
-          ALOGE("wifi_eutops.wifieut_req not support!");
+          ENG_LOG("wifi_eutops.wifieut_req not support!");
       } else {
-        ALOGD("case GPS_INDEX");
+        ENG_LOG("case GPS_INDEX");
         gps_eutops.gpseut_req(rsp);
       }
       break;
     case EUT_INDEX:
       ENG_LOG("wsh EUT_INDEX\n");
       if (module_index == BT_MODULE_INDEX) {
-        ALOGD("case BTEUT_INDEX");
+        ENG_LOG("case BTEUT_INDEX");
         bt_eutops.bteut(atoi(data[1]), rsp);
       } else if (module_index == WIFI_MODULE_INDEX) {
         ENG_LOG("case WIFIEUT_INDEX");
@@ -1665,9 +1665,9 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
         if (wifi_eutops.wifieut != NULL)
           wifi_eutops.wifieut(atoi(data[1]), rsp);
         else
-          ALOGE("wifi_eutops.wifieut not support!");
+          ENG_LOG("wifi_eutops.wifieut not support!");
       } else {
-        ALOGD("case GPS_INDEX");
+        ENG_LOG("case GPS_INDEX");
         gps_eutops.gpseut(atoi(data[1]), rsp);
       }
       break;
@@ -1677,7 +1677,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.wifi_ch_req != NULL)
         wifi_eutops.wifi_ch_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_ch_req not support!");
+        ENG_LOG("wifi_eutops.wifi_ch_req not support!");
       break;
     case WIFICH_INDEX:
       ENG_LOG("case WIFICH_INDEX   %d", WIFICH_INDEX);
@@ -1685,7 +1685,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.set_wifi_ch != NULL)
         wifi_eutops.set_wifi_ch(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.set_wifi_ch not support!");
+        ENG_LOG("wifi_eutops.set_wifi_ch not support!");
       break;
     case WIFIMODE_INDEX:
       ENG_LOG("wsh WIFIMODE_INDEX\n");
@@ -1693,22 +1693,22 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.set_wifi_mode != NULL)
         wifi_eutops.set_wifi_mode(data[1], rsp);
       else
-        ALOGE("wifi_eutops.set_wifi_mode not support!");
+        ENG_LOG("wifi_eutops.set_wifi_mode not support!");
       break;
     case WIFIRATIO_INDEX:
-      ALOGD("case WIFIRATIO_INDEX   %d", WIFIRATIO_INDEX);
+      ENG_LOG("case WIFIRATIO_INDEX   %d", WIFIRATIO_INDEX);
       // wifi_eutops.set_wifi_ratio(atof(data[1]),rsp);
       if (wifi_eutops.set_wifi_ratio != NULL)
         wifi_eutops.set_wifi_ratio(atof(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.set_wifi_ratio not support!");
+        ENG_LOG("wifi_eutops.set_wifi_ratio not support!");
       break;
     case WIFITX_FACTOR_INDEX:
       // wifi_eutops.set_wifi_tx_factor(atol(data[1]),rsp);
       if (wifi_eutops.set_wifi_tx_factor != NULL)
         wifi_eutops.set_wifi_tx_factor(atol(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.set_wifi_tx_factor not support!");
+        ENG_LOG("wifi_eutops.set_wifi_tx_factor not support!");
       break;
 
     case WIFITX_FACTOR_REQ_INDEX:
@@ -1716,65 +1716,65 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.wifi_tx_factor_req != NULL)
         wifi_eutops.wifi_tx_factor_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_tx_factor_req not support!");
+        ENG_LOG("wifi_eutops.wifi_tx_factor_req not support!");
       break;
     case WIFIRATIO_REQ_INDEX:
       // wifi_eutops.wifi_ratio_req(rsp);
       if (wifi_eutops.wifi_ratio_req != NULL)
         wifi_eutops.wifi_ratio_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_ratio_req not support!");
+        ENG_LOG("wifi_eutops.wifi_ratio_req not support!");
       break;
     case WIFIRX_PACKCOUNT_INDEX:
       // wifi_rxpktcnt_get(rsp);
       if (wifi_eutops.wifi_rxpackcount != NULL)
         wifi_eutops.wifi_rxpackcount(rsp);
       else
-        ALOGE("wifi_eutops.wifi_rxpackcount not support!");
+        ENG_LOG("wifi_eutops.wifi_rxpackcount not support!");
       break;
     case WIFICLRRXPACKCOUNT_INDEX:
       // wifi_eutops.wifi_clr_rxpackcount(rsp);
       if (wifi_eutops.wifi_clr_rxpackcount != NULL)
         wifi_eutops.wifi_clr_rxpackcount(rsp);
       else
-        ALOGE("wifi_eutops.wifi_clr_rxpackcount not support!");
+        ENG_LOG("wifi_eutops.wifi_clr_rxpackcount not support!");
       break;
     case WIFI_BAND_REQ_INDEX:
       if (wifi_eutops.wifiband_req != NULL)
         wifi_eutops.wifiband_req(rsp);
       else
-        ALOGE("wifi_eutops.wifiband_req not support!");
+        ENG_LOG("wifi_eutops.wifiband_req not support!");
       break;
     case WIFI_BAND_INDEX:
       if (wifi_eutops.wifiband != NULL)
         wifi_eutops.wifiband(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.wifiband not support!");
+        ENG_LOG("wifi_eutops.wifiband not support!");
       break;
     case WIFITX_MODE_REQ_INDEX:
       if (wifi_eutops.wifi_tx_mode_req != NULL)
         wifi_eutops.wifi_tx_mode_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_tx_mode_req not support!");
+        ENG_LOG("wifi_eutops.wifi_tx_mode_req not support!");
       break;
     case WIFITX_MODE_INDEX:
       if (wifi_eutops.wifi_tx_mode_bcm != NULL)
         wifi_eutops.wifi_tx_mode_bcm(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.wifi_tx_mode not support!");
+        ENG_LOG("wifi_eutops.wifi_tx_mode not support!");
       break;
     case WIFITX_PWRLV_REQ_INDEX:
       ENG_LOG("case WIFITX_PWRLV_REQ_INDEX   %d", WIFITX_PWRLV_REQ_INDEX);
       if (wifi_eutops.wifi_tx_pwrlv_req != NULL)
         wifi_eutops.wifi_tx_pwrlv_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_tx_pwrlv_req not support!");
+        ENG_LOG("wifi_eutops.wifi_tx_pwrlv_req not support!");
       break;
     case WIFITX_PWRLV_INDEX:
       if (wifi_eutops.wifi_tx_pwrlv != NULL)
         wifi_eutops.wifi_tx_pwrlv(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.wifi_tx_pwrlv not support!");
+        ENG_LOG("wifi_eutops.wifi_tx_pwrlv not support!");
       break;
     case GPSSEARCH_REQ_INDEX:
       gps_eutops.gps_search_req(rsp);
@@ -1798,7 +1798,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.set_wifi_rate != NULL)
         wifi_eutops.set_wifi_rate(data[1], rsp);
       else
-        ALOGE("wifi_eutops.set_wifi_rate not support!");
+        ENG_LOG("wifi_eutops.set_wifi_rate not support!");
       break;
     case ENG_WIFIRATE_REQ_INDEX:
       ENG_LOG("%s(), case:ENG_WIFIRATE_REQ_INDEX\n", __FUNCTION__);
@@ -1806,7 +1806,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.wifi_rate_req != NULL)
         wifi_eutops.wifi_rate_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_rate_req not support!");
+        ENG_LOG("wifi_eutops.wifi_rate_req not support!");
       break;
     case ENG_WIFITXGAININDEX_INDEX:
       ENG_LOG("%s(), case:ENG_WIFITXGAININDEX_INDEX\n", __FUNCTION__);
@@ -1814,7 +1814,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.set_wifi_txgainindex != NULL)
         wifi_eutops.set_wifi_txgainindex(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.set_wifi_txgainindex not support!");
+        ENG_LOG("wifi_eutops.set_wifi_txgainindex not support!");
       break;
     case ENG_WIFITXGAININDEX_REQ_INDEX:
       ENG_LOG("%s(), case:ENG_WIFITXGAININDEX_REQ_INDEX\n", __FUNCTION__);
@@ -1822,7 +1822,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.wifi_txgainindex_req != NULL)
         wifi_eutops.wifi_txgainindex_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_txgainindex_req not support!");
+        ENG_LOG("wifi_eutops.wifi_txgainindex_req not support!");
       break;
     case ENG_WIFIRSSI_REQ_INDEX:
       ENG_LOG("%s(), case:ENG_WIFIRSSI_REQ_INDEX\n", __FUNCTION__);
@@ -1830,7 +1830,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.wifi_rssi_req != NULL)
         wifi_eutops.wifi_rssi_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_rssi_req not support!");
+        ENG_LOG("wifi_eutops.wifi_rssi_req not support!");
       break;
     //-----------------------------------------------------
     case WIFIPKTLEN_REQ_INDEX:
@@ -1838,42 +1838,42 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       if (wifi_eutops.wifi_pkt_len_get != NULL)
         wifi_eutops.wifi_pkt_len_get(rsp);
       else
-        ALOGE("wifi_eutops.wifi_pkt_len_get not support!");
+        ENG_LOG("wifi_eutops.wifi_pkt_len_get not support!");
       break;
     case WIFIPKTLEN_INDEX:
       ENG_LOG("case WIFIPKTLEN_INDEX");
       if (wifi_eutops.wifi_pkt_len_set != NULL)
         wifi_eutops.wifi_pkt_len_set(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.wifi_tx_pwrlv not support!");
+        ENG_LOG("wifi_eutops.wifi_tx_pwrlv not support!");
       break;
     case WIFIBANDWIDTH_REQ_INDEX:
       ENG_LOG("case WIFIBANDWIDTH_REQ_INDEX");
       if (wifi_eutops.wifi_bw_get != NULL)
         wifi_eutops.wifi_bw_get(rsp);
       else
-        ALOGE("wifi_eutops.wifi_bw_get not support!");
+        ENG_LOG("wifi_eutops.wifi_bw_get not support!");
       break;
     case WIFIBANDWIDTH_INDEX:
       ENG_LOG("case WIFIBANDWIDTH_INDEX");
       if (wifi_eutops.wifi_bw_set != NULL)
         wifi_eutops.wifi_bw_set(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.wifi_bw_set not support!");
+        ENG_LOG("wifi_eutops.wifi_bw_set not support!");
       break;
     case WIFILNA_INDEX:
       ENG_LOG("case WIFILNA_INDEX");
       if (wifi_eutops.wifi_pm != NULL)
         wifi_eutops.wifi_pm(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.wifi_pm not support!");
+        ENG_LOG("wifi_eutops.wifi_pm not support!");
       break;
     case WIFIPREAMBLE_INDEX:
       ENG_LOG("case WIFILNA_INDEX");
       if (wifi_eutops.wifi_eut_preamble_set != NULL)
         wifi_eutops.wifi_eut_preamble_set(atoi(data[1]), rsp);
       else
-        ALOGE("wifi_eutops.wifi_eut_preamble_set not support!");
+        ENG_LOG("wifi_eutops.wifi_eut_preamble_set not support!");
       break;
     // for BRCM Bluetooth
     /* TX Channel */
@@ -2037,7 +2037,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
          if (wifi_eutops.wifi_tx != NULL)
               wifi_eutops.wifi_tx(atoi(data[1]), rsp);
           else
-              ALOGE("wifi_eutops.wifi_tx not support!");
+              ENG_LOG("wifi_eutops.wifi_tx not support!");
       } else {
         ENG_LOG("ADL %s(), case TX_INDEX, module_index is ERROR", __func__);
       }
@@ -2058,7 +2058,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
         if (wifi_eutops.wifi_rx != NULL)
            wifi_eutops.wifi_rx(atoi(data[1]), rsp);
          else
-            ALOGE("wifi_eutops.wifi_rx not support!");
+            ENG_LOG("wifi_eutops.wifi_rx not support!");
       } else {
         ENG_LOG("ADL %s(), case RX_INDEX, module_index is ERROR", __func__);
       }
@@ -2077,7 +2077,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
        if (wifi_eutops.wifi_tx_req != NULL)
          wifi_eutops.wifi_tx_req(rsp);
       else
-        ALOGE("wifi_eutops.wifi_tx_req not support!");
+        ENG_LOG("wifi_eutops.wifi_tx_req not support!");
       } else {
         ENG_LOG("ADL %s(), case TX_REQ_INDEX, module_index is ERROR", __func__);
       }
@@ -2096,7 +2096,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
        if (wifi_eutops.wifi_rx_req != NULL)
           wifi_eutops.wifi_rx_req(rsp);
       else
-          ALOGE("wifi_eutops.wifi_rx_req not support!");
+          ENG_LOG("wifi_eutops.wifi_rx_req not support!");
       } else {
         ENG_LOG("ADL %s(), case RX_REQ_INDEX, module_index is ERROR", __func__);
       }
@@ -2110,7 +2110,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
   // @alvin:
   // Here: I think it will response to pc directly outside
   // this function and should not send to modem again.
-  ALOGD(" eng_atdiag_rsp   %s", rsp);
+  ENG_LOG(" eng_atdiag_rsp   %s", rsp);
   ENG_LOG("eng_atdiag_rsp %s", rsp);
   return 0;
 }
@@ -2121,7 +2121,7 @@ int get_sub_str(char *buf, char **revdata, char a, char b) {
   char *end = buf;
   start = strchr(buf, a);
   current = strchr(buf, b);
-  ALOGD("get_sub_str ----->>  %d", (int)current);
+  ENG_LOG("get_sub_str ----->>  %d", (int)current);
   if (!current) {
     return 0;
   }
@@ -2131,7 +2131,7 @@ int get_sub_str(char *buf, char **revdata, char a, char b) {
     current++;
     len = current - start - 1;
     len1 = end - current;
-    ALOGD("get_sub_str  len1= %d", len1);
+    ENG_LOG("get_sub_str  len1= %d", len1);
     memcpy(revdata[0], start, len);
     memcpy(revdata[1], current, len1);
   }
@@ -2157,7 +2157,7 @@ int get_cmd_index(char *buf) {
 int get_brcm_bt_cmd_index(char *buf) {
   int index = -1;
   int i;
-  ALOGD("brcm get cmd index\n");
+  ENG_LOG("brcm get cmd index\n");
   for (i = 0; i < (int)NUM_ELEMS(eut_cmds); i++) {
     if (!(strcmp(buf, eut_cmds[i].name))) {
       ENG_LOG(
@@ -2236,7 +2236,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       // wifi_eutops.set_wifi_mode(data[1],rsp);
       break;
     case WIFIRATIO_INDEX:
-      ALOGD("case WIFIRATIO_INDEX   %d", WIFIRATIO_INDEX);
+      ENG_LOG("case WIFIRATIO_INDEX   %d", WIFIRATIO_INDEX);
       // wifi_eutops.set_wifi_ratio(atof(data[1]),rsp);
       break;
     case WIFITX_FACTOR_INDEX:
@@ -2447,7 +2447,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
   // @alvin:
   // Here: I think it will response to pc directly outside
   // this function and should not send to modem again.
-  ALOGD(" eng_atdiag_rsp   %s", rsp);
+  ENG_LOG(" eng_atdiag_rsp   %s", rsp);
 
   return 0;
 }
@@ -2635,7 +2635,7 @@ int eng_gps_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
     return 0;
   }
 
-  ALOGD(" eng_atdiag_rsp   %s", rsp);
+  ENG_LOG(" eng_atdiag_rsp   %s", rsp);
 
   return 0;
 }
@@ -3490,7 +3490,7 @@ static AUDIO_TOTAL_T *eng_regetpara(void) {
   int srcfd;
   char *filename = NULL;
   // eng_getparafromnvflash();
-  ALOGW("wangzuo eng_regetpara 1");
+  ENG_LOG("wangzuo eng_regetpara 1");
 
   AUDIO_TOTAL_T *aud_params_ptr;
   int len = sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng();
@@ -3504,7 +3504,7 @@ static AUDIO_TOTAL_T *eng_regetpara(void) {
     close(srcfd);
   }
 
-  ALOGW("eng_regetpara %s", filename);  ////done,into
+  ENG_LOG("eng_regetpara %s", filename);  ////done,into
   stringfile2nvstruct(filename, aud_params_ptr, len);
 
   return aud_params_ptr;
@@ -3513,7 +3513,7 @@ static AUDIO_TOTAL_T *eng_regetpara(void) {
 static void eng_setpara(AUDIO_TOTAL_T *ptr) {  // to do
   int len = sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng();
 
-  ALOGW("wangzuo eng_setpara 2");
+  ENG_LOG("wangzuo eng_setpara 2");
   nvstruct2stringfile(ENG_AUDIO_PARA_DEBUG, ptr, len);
 }
 static int eng_notify_mediaserver_updatapara(int ram_ops, int index,
@@ -3523,16 +3523,16 @@ static int eng_notify_mediaserver_updatapara(int ram_ops, int index,
   int receive_fifo_id = -1;
   int ret;
   int length = 0;
-  ALOGE("eng_notify_mediaserver_updatapara E,%d:%d!\n", ram_ops, index);
+  ENG_LOG("eng_notify_mediaserver_updatapara E,%d:%d!\n", ram_ops, index);
   fifo_id = open(AUDFIFO, O_WRONLY);
   if (fifo_id != -1) {
     int buff = 1;
-    ALOGE("eng_notify_mediaserver_updatapara notify OPS!\n");
+    ENG_LOG("eng_notify_mediaserver_updatapara notify OPS!\n");
     result = write(fifo_id, &ram_ops, sizeof(int));
     if (ram_ops & ENG_RAM_OPS) {
       result = write(fifo_id, &index, sizeof(int));
       result = write(fifo_id, aud_params_ptr, sizeof(AUDIO_TOTAL_T));
-      ALOGE("eng_notify_mediaserver_updatapara,index:%d,size:%d!\n", index,
+      ENG_LOG("eng_notify_mediaserver_updatapara,index:%d,size:%d!\n", index,
             sizeof(AUDIO_TOTAL_T));
     }
     if (ram_ops & ENG_PHONEINFO_OPS) {
@@ -3551,29 +3551,29 @@ static int eng_notify_mediaserver_updatapara(int ram_ops, int index,
         result += sizeof(int);
         close(receive_fifo_id);
         receive_fifo_id = -1;
-        ALOGE("eng_notify_mediaserver_updatapara,result:%d,received:%d!\n",
+        ENG_LOG("eng_notify_mediaserver_updatapara,result:%d,received:%d!\n",
               result, length);
       } else {
-        ALOGE("%s open audio FIFO_2 error %s,fifo_id:%d\n", __FUNCTION__,
+        ENG_LOG("%s open audio FIFO_2 error %s,fifo_id:%d\n", __FUNCTION__,
               strerror(errno), fifo_id);
       }
     }
     if (ram_ops & ENG_PHONELOOP_OPS) {
-        ALOGE("eng_notify_mediaserver_updatapara,loop entry, enable:%d, loop_route:%d!!!\n",loop_enable, loop_route);
+        ENG_LOG("eng_notify_mediaserver_updatapara,loop entry, enable:%d, loop_route:%d!!!\n",loop_enable, loop_route);
         result = write(fifo_id,&loop_enable,sizeof(int));
         result = write(fifo_id,&loop_route,sizeof(int));
     }
     close(fifo_id);
     fifo_id = -1;
   } else {
-    ALOGE("%s open audio FIFO error %s,fifo_id:%d\n", __FUNCTION__,
+    ENG_LOG("%s open audio FIFO error %s,fifo_id:%d\n", __FUNCTION__,
           strerror(errno), fifo_id);
   }
-  ALOGE("eng_notify_mediaserver_updatapara X,result:%d,length:%d!\n", result,
+  ENG_LOG("eng_notify_mediaserver_updatapara X,result:%d,length:%d!\n", result,
         length);
   return result;
 error:
-  ALOGE("eng_notify_mediaserver_updatapara X,ERROR,result:%d!\n", result);
+  ENG_LOG("eng_notify_mediaserver_updatapara X,ERROR,result:%d!\n", result);
   if (receive_fifo_id != -1) {
     close(receive_fifo_id);
     receive_fifo_id = -1;
@@ -3589,12 +3589,12 @@ error:
 void *eng_getpara(void) {
   int srcfd;
   char *filename = NULL;
-  ALOGW("wangzuo eng_getpara 3");  ////done,into
+  ENG_LOG("wangzuo eng_getpara 3");  ////done,into
   int audio_fd;
   static int read = 0;
   int len = sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng();
   if (read) {
-    ALOGW("eng_getpara read already.");  ////done,into
+    ENG_LOG("eng_getpara read already.");  ////done,into
     return audio_total;
   } else {
     read = 1;
@@ -3605,7 +3605,7 @@ void *eng_getpara(void) {
   if (srcfd >= 0) {
     close(srcfd);
   }
-  ALOGW("wangzuo eng_getpara %s", filename);  ////done,into
+  ENG_LOG("wangzuo eng_getpara %s", filename);  ////done,into
   stringfile2nvstruct(filename, audio_total,
                       len);  // get data from audio_hw.txt.
   return audio_total;
@@ -3687,7 +3687,7 @@ int eng_diag_audio(char *buf, int len, char *rsp) {
     // *)mmap(0,4*sizeof(AUDIO_TOTAL_T),PROT_READ|PROT_WRITE,MAP_SHARED,audio_fd,0);
     if ((AUDIO_TOTAL_T *)(-1) == audio_ptr ||
         (AUDIO_TOTAL_T *)(0) == audio_ptr) {
-      ALOGE("mmap failed %s", strerror(errno));
+      ENG_LOG("mmap failed %s", strerror(errno));
       goto out;
     }
 

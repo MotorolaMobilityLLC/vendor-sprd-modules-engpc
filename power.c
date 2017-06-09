@@ -91,7 +91,7 @@ static inline void initialize_fds(void) {
 }
 
 int set_screen_state(int on) {
-  ALOGD("*** set_screen_state %d", on);
+  ENG_LOG("*** set_screen_state %d", on);
 
   initialize_fds();
 
@@ -111,7 +111,7 @@ int set_screen_state(int on) {
   len = write(g_fds[REQUEST_STATE], buf, len);
   if (len < 0) {
   failure:
-    ALOGE("Failed setting last user activity: g_error=%d\n", g_error);
+    ENG_LOG("Failed setting last user activity: g_error=%d\n", g_error);
   }
   return 0;
 }

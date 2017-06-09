@@ -874,7 +874,7 @@ void *thread_fastsleep(void *para) {
   int sleep = 0;
   char cmd[] = {"echo mem > /sys/power/state"};
 
-  ALOGE("##: please plug out usb within 60s...\n");
+  ENG_LOG("##: please plug out usb within 60s...\n");
   for (count = 0; count < 60*5; count ++) {
     if (!g_armlog_enable) {
       sleep = 1;
@@ -882,19 +882,19 @@ void *thread_fastsleep(void *para) {
     }
     usleep(200*1000);
   }
-  ALOGE("##: sleep count=%d\n", count);
+  ENG_LOG("##: sleep count=%d\n", count);
   if (sleep) {
-    ALOGE("##: going to sleep mode!delay 3s\n");
+    ENG_LOG("##: going to sleep mode!delay 3s\n");
     usleep(3000*1000);
     system(cmd);
   }
 /* 
-  ALOGE("##: delay 2 seconds to wait AT command has been sent to modem...\n");
+  ENG_LOG("##: delay 2 seconds to wait AT command has been sent to modem...\n");
   sleep(2);
-  ALOGE("##: Going to sleep mode!\n");
+  ENG_LOG("##: Going to sleep mode!\n");
   turnoff_lcd_backlight();
   set_screen_state(0);
-  ALOGE("##: Waiting for a while...\n");
+  ENG_LOG("##: Waiting for a while...\n");
   char cmd[] = {"echo mem > /sys/power/state"};
   system(cmd);
 */
@@ -903,18 +903,18 @@ void *thread_fastsleep(void *para) {
 
   fd = open("proc/syssleep", O_RDWR);
   if (fd < 0) {
-    ALOGE("Unknown error: %s", strerror(errno));
+    ENG_LOG("Unknown error: %s", strerror(errno));
     return NULL;
   }
 
   if (lseek(fd, 0, SEEK_SET) != 0) {
-    ALOGE("Cant lseek error :%s", strerror(errno));
+    ENG_LOG("Cant lseek error :%s", strerror(errno));
     goto leave;
   }
 
   stringsize = strlen("on");
   if (write(fd, "on", stringsize) != stringsize) {
-    ALOGE("Could not write error :%s", strerror(errno));
+    ENG_LOG("Could not write error :%s", strerror(errno));
     goto leave;
   }
 leave:
@@ -930,10 +930,10 @@ int eng_linuxcmd_fastdeepsleep(char *req, char *rsp) {
 #if 1
   ret = pthread_create(&thread_id, NULL, thread_fastsleep, NULL);
   if (0 != ret) {
-    ALOGE("##: Can't create thread[thread_fastsleep]!\n");
+    ENG_LOG("##: Can't create thread[thread_fastsleep]!\n");
     sprintf(rsp, "%s%s", SPRDENG_ERROR, ENG_STREND);
   } else {
-    ALOGE("##: Ccreate thread[thread_fastsleep] sucessfully!\n");
+    ENG_LOG("##: Ccreate thread[thread_fastsleep] sucessfully!\n");
     sprintf(rsp, "%s%s", SPRDENG_OK, ENG_STREND);
   }
 #endif
@@ -1311,7 +1311,7 @@ int eng_linuxcmd_rtctest(char *req, char *rsp) {
     tv.tv_sec = timer;
     tv.tv_usec = 0;
     if (settimeofday(&tv, NULL) < 0) {
-      ALOGE("Set timer error \n");
+      ENG_LOG("Set timer error \n");
       sprintf(rsp, "error,%04d%02d%02d%02d%02d%02d%01d", tm.tm_year, tm.tm_mon,
               tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_wday);
       return -1;

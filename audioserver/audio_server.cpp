@@ -19,18 +19,22 @@ int setDeviceConnectionState(int device, int state) {
 }
 
 int setForceUse(int usage, int config) {
-  return AudioSystem::setForceUse(
-      static_cast<audio_policy_force_use_t>(usage),
-      static_cast<audio_policy_forced_cfg_t>(config));
+//close by ke.xu bringup
+//  return AudioSystem::setForceUse(
+//      static_cast<audio_policy_force_use_t>(usage),
+//      static_cast<audio_policy_forced_cfg_t>(config));
+    return 0;
 }
 int setParameters() {
-  String8 fm_volume("FM_Volume=11");
-  return AudioSystem::setParameters(audio_io_handle_t(0), fm_volume);
+//  String8 fm_volume("FM_Volume=11");
+//  return AudioSystem::setParameters(audio_io_handle_t(0), fm_volume);
+    return 0;
 }
 int setVolume(int volume) {
-  char *buf = NULL;
-  asprintf(&buf, "FM_Volume=%d", volume);
-  String8 fm_volume(buf);
-  free(buf);
-  return AudioSystem::setParameters(audio_io_handle_t(0), fm_volume);
+//  char *buf = NULL;
+//  asprintf(&buf, "FM_Volume=%d", volume);
+//  String8 fm_volume(buf);
+//  free(buf);
+//  return AudioSystem::setParameters(audio_io_handle_t(0), fm_volume);
+    return 0;
 }

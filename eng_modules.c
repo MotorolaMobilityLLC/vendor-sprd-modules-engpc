@@ -9,6 +9,7 @@
 #include <sys/types.h>
 
 #include "eng_modules.h"
+#include "engopt.h"
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -25,11 +26,11 @@ static const char *eng_modules_path = "/system/lib/engpc";
 
 eng_modules* get_eng_modules(struct eng_callback p)
 {
-    ALOGD("%s",__FUNCTION__);
+    ENG_LOG("%s",__FUNCTION__);
     eng_modules *modules = (eng_modules*)malloc(sizeof(eng_modules));
     if (modules == NULL)
     {
-        ALOGE("%s malloc fail...",__FUNCTION__);
+        ENG_LOG("%s malloc fail...",__FUNCTION__);
         return NULL;
     }
     memset(modules,0,sizeof(eng_modules));
@@ -46,21 +47,21 @@ int readFileList(const char *basePath, char **f_name)
     DIR *dir;
     struct dirent *ptr;
     int num = 0;
-    ALOGD("%s",__FUNCTION__);
+    ENG_LOG("%s",__FUNCTION__);
 
     if ((dir = opendir(basePath)) == NULL)
     {
-        ALOGE("Open %s error...%s",basePath,dlerror());
+        ENG_LOG("Open %s error...%s",basePath,dlerror());
         return 0;
     }
 
     while ((ptr = readdir(dir)) != NULL)
     {
         if(ptr->d_type == 8){    ///file
-            ALOGD("d_name:%s/%s\n",basePath,ptr->d_name);
+            ENG_LOG("d_name:%s/%s\n",basePath,ptr->d_name);
             f_name[num] = ptr->d_name;
             num ++;
-            ALOGD("d_name:%s\n",*f_name);
+            ENG_LOG("d_name:%s\n",*f_name);
         }
     }
     closedir(dir);
@@ -81,26 +82,26 @@ int eng_modules_load(struct list_head *head )
     p = f_name;
     eng_modules *modules;
 
-    ALOGD("%s",__FUNCTION__);
+    ENG_LOG("%s",__FUNCTION__);
 
     INIT_LIST_HEAD(head);
     int num = readFileList(eng_modules_path,p);
-    ALOGD("file num: %d\n",num);
+    ENG_LOG("file num: %d\n",num);
 
     for (i = 0 ; i < num; i++) {
         snprintf(path, sizeof(path), "%s/%s",
                         eng_modules_path, f_name[i]);
-        ALOGD("find lib path: %s",path);
+        ENG_LOG("find lib path: %s",path);
 
         if (access(path, R_OK) == 0){
             handler[i] = dlopen(path,RTLD_LAZY);
             if (handler[i] == NULL){
-                ALOGE("%s dlopen fail! %s \n",path,dlerror());
+                ENG_LOG("%s dlopen fail! %s \n",path,dlerror());
             }else{
                 eng_register_func = (REGISTER_FUNC)dlsym(handler[i], "register_this_module");
                 if(!eng_register_func){
                     dlclose(handler[i]);
-                    ALOGE("%s dlsym fail! %s\n",path,dlerror());
+                    ENG_LOG("%s dlsym fail! %s\n",path,dlerror());
                     continue;
                 }
                 eng_register_func(&register_callback);

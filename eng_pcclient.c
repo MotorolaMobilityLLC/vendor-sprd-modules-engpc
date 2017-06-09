@@ -187,7 +187,7 @@ static int eng_parse_cmdline(struct eng_param* cmdvalue) {
   fd = open("/proc/cmdline", O_RDONLY);
   if (fd >= 0) {
     if ((ret = read(fd, cmdline, sizeof(cmdline) - 1)) > 0) {
-      ALOGD("eng_pcclient: cmdline %s\n", cmdline);
+      ENG_LOG("eng_pcclient: cmdline %s\n", cmdline);
       /*calibration*/
       str = strstr(cmdline, "calibration");
       if (str != NULL) {
@@ -335,7 +335,7 @@ void eng_usb_enable(void) {
   int fd = -1;
   int ret = 0;
   char path[256] = {0};
-  char cmd[64] = {0};
+  char cmd[128] = {0};
 
   if (0 == access(SYS_CLASS_ANDUSB_ENABLE_NEW, F_OK)) {
     sprintf(path, "%s", SYS_CLASS_ANDUSB_ENABLE_NEW);

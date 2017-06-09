@@ -4,6 +4,9 @@
 #include <netinet/in.h>
 #include "engopt.h"
 
+
+int ENGLOGBRINGUP(const char* fmt, ...) { return 1;}
+
 int eng_open_mode(const char* pathname, int options, int mode) { return 0; }
 
 int eng_open(const char* pathname, int options) { return 0; }

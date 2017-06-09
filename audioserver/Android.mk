@@ -12,7 +12,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 
 LOCAL_C_INCLUDES:=   \
-             frameworks/av/include \
+             frameworks/av/media/libaudioclient/include \
              frameworks/base/include 
 
 

@@ -13,12 +13,18 @@ extern "C" {
 
 #define LOG_TAG "ENGPC"
 #include <utils/Log.h>
+
 #define ENG_AT_LOG ALOGD
 
 #define ENG_TRACING
 
+int ENGLOGBRINGUP(const char* fmt, ...);
+
 #ifdef ENG_TRACING
-#define ENG_LOG ALOGD
+#define ENG_LOG(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, fmt, ##args)
+//#define ENG_LOG ALOGD
+//#define ENG_LOG ENGLOGBRINGUP
+
 #else
 //#define ENG_LOG  ALOGD
 #define ENG_LOG(format, ...)

@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include "eng_pcclient.h"
 //#include "eng_log2kmsg.h"
-//#include "engopt.h"
+#include "engopt.h"
 
 #ifndef NUM_ELEMS(x)
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
@@ -235,21 +235,21 @@ int wifi_pm(int command_code, char *result) {
     error = system("wl PM 0");
     ALOGI("wl PM 0");
     if (error == -1 || error == 127) {
-      ALOGE("=== wifi_pm failed on cmd : wl PM 0 ===\n");
+      ENG_LOG("=== wifi_pm failed on cmd : wl PM 0 ===\n");
       sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
       return -1;
     } else {
       error = system("wl mpc 0");
       ALOGI("wl PM 0");
       if (error == -1 || error == 127) {
-        ALOGE("=== wifi_pm failed on cmd : wl mpc 0 ===\n");
+        ENG_LOG("=== wifi_pm failed on cmd : wl mpc 0 ===\n");
         sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
         return -1;
       } else {
         error = system("wl scansuppress 1");
         ALOGI("wl scansuppress 1");
         if (error == -1 || error == 127) {
-          ALOGE("=== wifi_pm failed on cmd : wl scansuppress 1 ===\n");
+          ENG_LOG("=== wifi_pm failed on cmd : wl scansuppress 1 ===\n");
           sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
           return -1;
         }
@@ -259,28 +259,28 @@ int wifi_pm(int command_code, char *result) {
     error = system("wl PM 2");
     ALOGI("wl PM 2");
     if (error == -1 || error == 127) {
-      ALOGE("=== wifi_pm failed on cmd : wl PM 2 ===\n");
+      ENG_LOG("=== wifi_pm failed on cmd : wl PM 2 ===\n");
       sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
       return -1;
     } else {
       error = system("wl mpc 1");
       ALOGI("wl PM 1");
       if (error == -1 || error == 127) {
-        ALOGE("=== wifi_pm failed on cmd : wl mpc 1 ===\n");
+        ENG_LOG("=== wifi_pm failed on cmd : wl mpc 1 ===\n");
         sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
         return -1;
       } else {
         error = system("wl scansuppress 0");
         ALOGI("wl scansuppress 0");
         if (error == -1 || error == 127) {
-          ALOGE("=== wifi_pm failed on cmd : wl scansuppress 0 ===\n");
+          ENG_LOG("=== wifi_pm failed on cmd : wl scansuppress 0 ===\n");
           sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
           return -1;
         }
       }
     }
   } else {
-    ALOGE("=== wifi_pm failed ,cmd = %d is not supported!\n", command_code);
+    ENG_LOG("=== wifi_pm failed ,cmd = %d is not supported!\n", command_code);
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     return -1;
   }
@@ -304,35 +304,35 @@ int wifi_cw(char *result) {
   int error = system("wl down");
   ALOGI("wl down");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl down ===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl down ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
   error = system("wl mpc 0");
   ALOGI("wl mpc 0");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl mpc 0 ===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl mpc 0 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
   error = system("wl phy_watchdog 0");
   ALOGI("wl phy_watchdog 0");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl mpc 0 ===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl mpc 0 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
   error = system("wl up");
   ALOGI("wl up");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl up ===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl up ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
   error = system("wl country ALL");
   ALOGI("wl country ALL");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl country ALL ===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl country ALL ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
@@ -340,14 +340,14 @@ int wifi_cw(char *result) {
   error = system(cmd_set);
   ALOGI("%s", cmd_set);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl band ===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl band ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
   error = system(cmd_set_channel);
   ALOGI("%s", cmd_set_channel);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl  channel %d===\n", channel_p);
+    ENG_LOG("=== wifi_cw test failed on cmd : wl  channel %d===\n", channel_p);
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
@@ -355,7 +355,7 @@ int wifi_cw(char *result) {
   error = system(cmd_set);
   ALOGI("%s", cmd_set);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl phy_tx_tone 400===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl phy_tx_tone 400===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   }
@@ -363,7 +363,7 @@ int wifi_cw(char *result) {
   error = system(cmd_set);
   ALOGI("%s", cmd_set);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== wifi_cw test failed on cmd : wl phy_watchdog 0===\n");
+    ENG_LOG("=== wifi_cw test failed on cmd : wl phy_watchdog 0===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto cw_out;
   } else {
@@ -397,7 +397,7 @@ int start_wifieut(char *result) {
   }
 
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifieut test failed on cmd : ifconfig wlan0 down ===\n");
+    ENG_LOG("=== start_wifieut test failed on cmd : ifconfig wlan0 down ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
   } else {
     error = system("echo -n " STR(WIFI_DRIVER_FW_PATH_MFG) " > " STR(
@@ -407,14 +407,14 @@ int start_wifieut(char *result) {
         "/sys/module/bcmdhd/parameters/firmware_path :%d",
         error);
     if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-      ALOGE("=== start_wifieut test failed on cmd : echo -n " STR(
+      ENG_LOG("=== start_wifieut test failed on cmd : echo -n " STR(
           WIFI_DRIVER_FW_PATH_MFG) " > " STR(WIFI_DRIVER_FW_PATH_PARAM) "\n");
       sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     } else {
       error = system("ifconfig wlan0 up");
       ALOGI("ifconfig wlan0 up :%d", error);
       if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-        ALOGE(
+        ENG_LOG(
             "=== start_wifieut test failed on cmd : ifconfig wlan0 down ===\n");
         sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
       } else {
@@ -430,7 +430,7 @@ int start_wifieut(char *result) {
 int end_wifieut(char *result) {
   int error = system("ifconfig wlan0 down");
   if (error == -1 || error == 127) {
-    ALOGE("=== start_wifieut test failed on cmd : ifconfig wlan0 down ===\n");
+    ENG_LOG("=== start_wifieut test failed on cmd : ifconfig wlan0 down ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
   } else {
     wifieut_state = 0;
@@ -471,49 +471,49 @@ int start_wifi_tx(char *result) {
   int error = system("wl down");
   ALOGI("wl down: %d", error);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl down===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl down===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl mpc 0");
   ALOGI("wl mpc 0");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl mpc 0 ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl mpc 0 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl phy_watchdog 0");
   ALOGI("wl phy_watchdog 0");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl phy_watchdog ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl phy_watchdog ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl up");
   ALOGI("wl up");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl up ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl up ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl country ALL");
   ALOGI("wl country ALL");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl country ALL ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl country ALL ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system(cmd_set_band);
   ALOGI("%s", cmd_set_band);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl band ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl band ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system(cmd_set_rate_bw);
   ALOGI("%s", cmd_set_rate_bw);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE(
+    ENG_LOG(
         "=== start_wifi_tx test failed on cmd : wl 2g_rate -r 11 -b 20 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
@@ -521,49 +521,49 @@ int start_wifi_tx(char *result) {
   error = system(cmd_set_channel);
   ALOGI("%s", cmd_set_channel);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl channel ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl channel ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl phy_forcecal 1");
   ALOGI("wl phy_forcecal 1");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl phy_forcecal 1 ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl phy_forcecal 1 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl phy_activecal");
   ALOGI("wl phy_activecal");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd :wl phy_activecal ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd :wl phy_activecal ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl scansuppress 1");
   ALOGI("wl scansuppress 1");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl scansuppress 1 ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl scansuppress 1 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system(cmd_set_pwrlv);
   ALOGI("%s", cmd_set_pwrlv);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl txpwr1===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl txpwr1===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl pkteng_stop tx");
   ALOGI("wl pkteng_stop tx");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl pkteng_stop tx ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl pkteng_stop tx ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
   error = system("wl pkteng_start 00:11:22:33:44:55 tx 100 1024 0");
   ALOGI("wl pkteng_start 00:11:22:33:44:55 tx 100 1024 0");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl pkteng_start ===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl pkteng_start ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto tx_out;
   }
@@ -581,7 +581,7 @@ int end_wifi_tx(char *result) {
   int error = system("wl down");
   ALOGI("end_wifi_tx");
   if (error == -1 || error == 127) {
-    ALOGE("=== end_wifi_tx test failed on cmd : wl down ===\n");
+    ENG_LOG("=== end_wifi_tx test failed on cmd : wl down ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
   } else {
     ALOGI("=== end_wifi_tx test succeed! ===\n");
@@ -616,77 +616,77 @@ int start_wifi_rx(char *result) {
   int error = system("wl down");
   ALOGI("wl down");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl down ===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl down ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl mpc 0");
   ALOGI("wl mpc 0");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl mpc 0 ===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl mpc 0 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl phy_watchdog 0");
   ALOGI("wl phy_watchdog 0");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl phy_watchdog 0===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl phy_watchdog 0===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl up");
   ALOGI("wl up");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl up===\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl up===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl country ALL");
   ALOGI("wl country ALL");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl country ALL ===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl country ALL ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system(cmd_rx_set_band);
   ALOGI("%s", cmd_rx_set_band);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl band ===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl band ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system(cmd_set_channel);
   ALOGI("%s", cmd_set_channel);
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_tx test failed on cmd : wl channel =\n");
+    ENG_LOG("=== start_wifi_tx test failed on cmd : wl channel =\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl phy_forcecal 1");
   ALOGI("wl phy_forcecal 1");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl phy_forcecal 1 ===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl phy_forcecal 1 ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl phy_activecal");
   ALOGI("wl phy_activecal");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : phy_activecal ===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : phy_activecal ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl scansuppress 1");
   ALOGI("wl scansuppress 1");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl scansuppress 1===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl scansuppress 1===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
     goto rx_out;
   }
   error = system("wl pkteng_start 00:11:22:33:44:55 rx");
-  ALOGE("wl pkteng_start 00:11:22:33:44:55 rx\n");
+  ENG_LOG("wl pkteng_start 00:11:22:33:44:55 rx\n");
   if (!WIFEXITED(error) || WEXITSTATUS(error) || (-1 == error)) {
-    ALOGE(
+    ENG_LOG(
         "=== start_wifi_rx test failed on cmd : wl pkteng_start "
         "00:11:22:33:44:55 rx ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
@@ -703,7 +703,7 @@ int end_wifi_rx(char *result) {
   int error = system("wl down");
   ALOGI("end_wifi_rx");
   if (error == -1 || error == 127) {
-    ALOGE("=== end_wifi_rx test failed on cmd : wl down ===\n");
+    ENG_LOG("=== end_wifi_rx test failed on cmd : wl down ===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
   } else {
     ALOGI("=== end_wifi_rx  succeed! ===\n");
@@ -835,7 +835,7 @@ int wifi_rxpackcount(char *result) {
   int error = system("wl counters > /data/data/wlancounters.txt");
   ALOGI("wifi_rxpackcount");
   if (error == -1 || error == 127) {
-    ALOGE("=== wifi_rxpackcount on cmd : wl counter===\n");
+    ENG_LOG("=== wifi_rxpackcount on cmd : wl counter===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
   } else {
     ALOGI("=== wifi_rxpackcount! ===\n");
@@ -855,7 +855,7 @@ int wifi_clr_rxpackcount(char *result) {
   int error = system("wl counters > /data/data/wlancounters.txt");
   ALOGI("wl counters");
   if (error == -1 || error == 127) {
-    ALOGE("=== start_wifi_rx test failed on cmd : wl counters===\n");
+    ENG_LOG("=== start_wifi_rx test failed on cmd : wl counters===\n");
     sprintf(result, "%s%d", EUT_WIFI_ERROR, error);
   } else {
     rxmfrmocast_priv = parse_packcount("/data/data/wlancounters.txt");
@@ -869,7 +869,7 @@ static long parse_packcount(char *filename) {
   memset(counter_respon, 0, COUNTER_BUF_SIZE);
   fd = open(filename, O_RDWR | O_NONBLOCK);
   if (fd < 0) {
-    ALOGE("=== open file  %s error===\n", filename);
+    ENG_LOG("=== open file  %s error===\n", filename);
   } else {
     n = read(fd, counter_respon, COUNTER_BUF_SIZE);
     close(fd);
@@ -878,13 +878,13 @@ static long parse_packcount(char *filename) {
   if (p != NULL) {
     char *q = strstr(p, " ");
     char *s = strstr(q, "txmpdu_sgi");
-    ALOGE("=== open file parse_packcount entry s= %s\n", s);
+    ENG_LOG("=== open file parse_packcount entry s= %s\n", s);
     len = s - q - 1;
     memcpy(packcount, q + 1, len);
     // return 0 ;
     return atol(packcount);
   } else {
-    ALOGE("=== open file  %s error===\n", filename);
+    ENG_LOG("=== open file  %s error===\n", filename);
     return 0;
   }
 }
@@ -892,7 +892,7 @@ static long parse_packcount(char *filename) {
 int set_wifi_rate(char *string, char *rsp) {
   ALOGI("%s()...%s\n", __FUNCTION__, string);
   if (0 == wifieut_state) {
-    ALOGE("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
+    ENG_LOG("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
     sprintf(rsp, "%s%s", EUT_WIFI_ERROR, "error");
     return -1;
   }
@@ -907,12 +907,12 @@ int wifi_rate_req(char *rsp) {
   char *str = NULL;
   ALOGI("%s()...\n", __FUNCTION__);
   if (0 == s_rate_index) {
-    ALOGE("%s(), s_rate_index is 0", __FUNCTION__);
+    ENG_LOG("%s(), s_rate_index is 0", __FUNCTION__);
     goto err;
   }
   str = mattch_rate_table_index(s_rate_index);
   if (NULL == str) {
-    ALOGE("%s(), don't mattch rate", __FUNCTION__);
+    ENG_LOG("%s(), don't mattch rate", __FUNCTION__);
     goto err;
   }
   sprintf(rsp, "%s%s", WIFI_RATE_REQ_RET, str);
@@ -924,7 +924,7 @@ err:
 
 int set_wifi_txgainindex(int index, char *rsp) {
   if (0 == wifieut_state) {
-    ALOGE("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
+    ENG_LOG("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
     goto err;
   }
   ALOGI("%s(), index:%d\n", __FUNCTION__, index);
@@ -937,7 +937,7 @@ err:
 
 int wifi_txgainindex_req(char *rsp) {
   if (0 == wifieut_state) {
-    ALOGE("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
+    ENG_LOG("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
     goto err;
   }
 
@@ -954,12 +954,12 @@ int wifi_rssi_req(char *rsp) {
   int rssi = -100;
 
   if (1 == tx_state) {
-    ALOGE("wifi_rssi_req(),tx_state:%d", tx_state);
+    ENG_LOG("wifi_rssi_req(),tx_state:%d", tx_state);
     goto err;
   }
 
   if ((fp = popen("wl rssi", "r")) == NULL) {
-    ALOGE("=== wifi_rssi_req popen() fail ===\n");
+    ENG_LOG("=== wifi_rssi_req popen() fail ===\n");
     sprintf(rsp, "%s%s", EUT_WIFI_ERROR, "popen");
     return -1;
   }
@@ -972,7 +972,7 @@ int wifi_rssi_req(char *rsp) {
   pclose(fp);
 
   if (-100 == rssi) {
-    ALOGE("get_rssi cmd  err");
+    ENG_LOG("get_rssi cmd  err");
     goto err;
   }
 
@@ -985,7 +985,7 @@ err:
 int wifiband(int band, char *rsp) {
   ALOGI("set band %d", band);
   if (0 == wifieut_state) {
-    ALOGE("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
+    ENG_LOG("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
     sprintf(rsp, "%s%s", EUT_WIFI_ERROR, "error");
     return -1;
   }
@@ -1002,7 +1002,7 @@ int wifiband_req(char *rsp) {
 int wifi_tx_mode_bcm(int tx_mode, char *rsp) {
   ALOGI("set tx mode %d", tx_mode);
   if (0 == wifieut_state) {
-    ALOGE("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
+    ENG_LOG("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
     sprintf(rsp, "%s%s", EUT_WIFI_ERROR, "error");
     return -1;
   }
@@ -1019,7 +1019,7 @@ int wifi_tx_mode_req(char *rsp) {
 int wifi_tx_pwrlv(int pwrlv, char *rsp) {
   ALOGI("set wifi_tx_pwrlv %d", pwrlv);
   if (0 == wifieut_state) {
-    ALOGE("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
+    ENG_LOG("%s(), wifieut_state:%d", __FUNCTION__, wifieut_state);
     sprintf(rsp, "%s%s", EUT_WIFI_ERROR, "error");
     return -1;
   }

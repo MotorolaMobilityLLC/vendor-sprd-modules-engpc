@@ -29,8 +29,8 @@
 //------------------------------------------------------------------------------
 #define LTAG "eng_autotest"
 
-#if 1
-#define EAT_DBG(fmt, arg...) \
+/*#if 1
+#define ENG_LOG(fmt, arg...) \
   android_printLog(ANDROID_LOG_DEBUG, LTAG, fmt, ##arg)
 #define EAT_INF(fmt, arg...) \
   android_printLog(ANDROID_LOG_INFO, LTAG, fmt, ##arg)
@@ -39,7 +39,7 @@
 #define EAT_ERR(fmt, arg...) \
   android_printLog(ANDROID_LOG_ERROR, LTAG, fmt, ##arg)
 #else
-#define EAT_DBG(fmt, arg...) \
+#define ENG_LOG(fmt, arg...) \
   do {                       \
   } while (0)
 #define EAT_INF(fmt, arg...) \
@@ -52,6 +52,7 @@
   do {                       \
   } while (0)
 #endif
+*/
 
 //------------------------------------------------------------------------------
 static int s_sckAccept = -1;
@@ -170,7 +171,7 @@ int eng_autotestDoTest(const uchar *req, int req_len, uchar *rsp,
     }
   }
   pthread_mutex_unlock(&s_mutex);
-  EAT_DBG("ret = %d\n", ret);
+  ENG_LOG("ret = %d\n", ret);
   return ret;
 }
 
@@ -234,7 +235,7 @@ void *acceptThread(void *param) {
 
     if (asynRead(sck, (uchar *)buffer, sizeof(buffer), 1000) > 0 &&
         0 == strncmp(buffer, hs, strlen(hs))) {
-      EAT_DBG("ok, welcome autotest client.\n");
+      ENG_LOG("ok, welcome autotest client.\n");
 
       pthread_mutex_lock(&s_mutex);
       if (s_sckAccept >= 0) {
@@ -253,7 +254,7 @@ void *acceptThread(void *param) {
     close(sck);
   }
 
-  EAT_DBG("acceptThread exit.\n");
+  ENG_LOG("acceptThread exit.\n");
   return NULL;
 }
 
@@ -285,7 +286,7 @@ int asynRead(int fd, uchar *buf, int size, int timeout) {
       ret = -1;
       break;
     }
-    // EAT_DBG("after poll\n");
+    // ENG_LOG("after poll\n");
 
     do {
       ret = read(fd, buf, size);
@@ -294,7 +295,7 @@ int asynRead(int fd, uchar *buf, int size, int timeout) {
     ENG_LOG("read %d bytes\n", ret);
   } while (0);
 
-  // EAT_DBG(" %s exit\n", __FUNCTION__);
+  // ENG_LOG(" %s exit\n", __FUNCTION__);
   return ret;
 }
 
@@ -326,7 +327,7 @@ int asynWrite(int fd, const uchar *buf, int cnt, int timeout) {
       ret = -1;
       break;
     }
-    // EAT_DBG("after poll\n");
+    // ENG_LOG("after poll\n");
 
     do {
       ret = write(fd, buf, cnt);
@@ -335,6 +336,6 @@ int asynWrite(int fd, const uchar *buf, int cnt, int timeout) {
     ENG_LOG("write %d bytes\n", ret);
   } while (0);
 
-  // EAT_DBG(" %s exit\n", __FUNCTION__);
+  // ENG_LOG(" %s exit\n", __FUNCTION__);
   return ret;
 }

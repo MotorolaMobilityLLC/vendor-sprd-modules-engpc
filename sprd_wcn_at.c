@@ -30,13 +30,13 @@ static bt_bqb_interface_t *lib_interface = NULL;
 static bool bqb_vendor_open() {
     lib_handle = dlopen(VENDOR_LIBRARY_NAME, RTLD_NOW);
     if (!lib_handle) {
-        ALOGD("%s unable to open %s: %s", __func__, VENDOR_LIBRARY_NAME, dlerror());
+        ENG_LOG("%s unable to open %s: %s", __func__, VENDOR_LIBRARY_NAME, dlerror());
         goto error;
     }
 
     lib_interface = (bt_bqb_interface_t *)dlsym(lib_handle, VENDOR_LIBRARY_SYMBOL_NAME);
     if (!lib_interface) {
-        ALOGD("%s unable to find symbol %s in %s: %s", __func__, VENDOR_LIBRARY_SYMBOL_NAME, VENDOR_LIBRARY_NAME, dlerror());
+        ENG_LOG("%s unable to find symbol %s in %s: %s", __func__, VENDOR_LIBRARY_SYMBOL_NAME, VENDOR_LIBRARY_NAME, dlerror());
         goto error;
     }
     lib_interface->init();

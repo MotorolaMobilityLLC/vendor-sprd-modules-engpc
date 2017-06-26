@@ -17,22 +17,31 @@
 int eng_read_productnvdata(char *databuf, int data_len) {
   int ret = 0;
   int len;
+  char prop[128] = {0};
+  char miscdata_path[128] = {0};
+  int fd = -1;
 
-  int fd = open(PRODUCTINFO_FILE, O_RDONLY);
+  if (-1 == property_get("ro.product.partitionpath", prop, "")){
+    ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
+    return 0;
+  }
+
+  sprintf(miscdata_path, "%smiscdata", prop);
+  fd = open(miscdata_path, O_RDONLY);
   if (fd >= 0) {
-    ENG_LOG("%s open Ok PRODUCTINFO_FILE = %s ", __FUNCTION__,
-            PRODUCTINFO_FILE);
+    ENG_LOG("%s open Ok miscdata_path = %s ", __FUNCTION__,
+            miscdata_path);
     len = read(fd, databuf, data_len);
 
     if (len <= 0) {
       ret = 1;
-      ENG_LOG("%s read fail PRODUCTINFO_FILE = %s ", __FUNCTION__,
-              PRODUCTINFO_FILE);
+      ENG_LOG("%s read fail miscdata_path = %s ", __FUNCTION__,
+              miscdata_path);
     }
     close(fd);
   } else {
-    ENG_LOG("%s open fail PRODUCTINFO_FILE = %s ", __FUNCTION__,
-            PRODUCTINFO_FILE);
+    ENG_LOG("%s open fail miscdata_path = %s ", __FUNCTION__,
+            miscdata_path);
     ret = 1;
   }
   return ret;

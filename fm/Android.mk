@@ -10,6 +10,8 @@ LOCAL_C_INCLUDES    += packages/apps/FMRadio/jni/fmr   \
              vendor/sprd/platform/packages/apps/FMRadio/jni/fmr\
              vendor/sprd/platform/packages/apps/DreamFMRadio/jni/fmr
 
+LOCAL_SHARED_LIBRARIES += liblog
+
 LOCAL_SHARED_LIBRARIES += libcutils   \
                           libfmjni
 

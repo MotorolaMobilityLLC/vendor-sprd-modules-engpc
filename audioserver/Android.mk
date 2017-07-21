@@ -19,6 +19,7 @@ LOCAL_C_INCLUDES:=   \
 LOCAL_SHARED_LIBRARIES += libcutils   \
                           libutils    \
                           libhardware \
+                          libaudioclient \
                           libmedia
 include $(BUILD_SHARED_LIBRARY)
 

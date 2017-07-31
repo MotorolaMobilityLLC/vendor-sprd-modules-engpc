@@ -107,8 +107,8 @@
 #define VLR_INFO_SIZE (512)
 #endif
 
-#define ENG_PCBA_SUPPORT_CONFIG "/system/etc/factorytest/PCBA.conf"
-#define ENG_BBAT_SUPPORT_CONFIG "/system/etc/engmode/BBAT.conf"
+#define ENG_PCBA_SUPPORT_CONFIG "/vendor/etc/PCBA.conf"
+#define ENG_BBAT_SUPPORT_CONFIG "/vendor/etc/BBAT.conf"
 
 // SIPC interfaces in AP linux for AT CMD
 char *at_sipc_devname[] = {

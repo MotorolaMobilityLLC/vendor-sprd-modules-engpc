@@ -1197,14 +1197,10 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       rlen = eng_diag_adc(buf, adc_rsp);
       break;
 /* add FM pandora for marlin */
-#if 0  //
-	case CMD_USER_FM:
-            rlen=start_fm_test(buf,len,rsp);
-            eng_diag_write2pc(rsp,rlen, fd);
-
-	    return 0;
-	    break;
-#endif
+    case CMD_USER_FM:
+      rlen = start_fm_test(buf,len,rsp);
+      eng_diag_write2pc(rsp,rlen, fd);
+      return 0;
     case CMD_USER_AUTOTEST:
       memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
       rlen = eng_diag_attest(buf, len, eng_diag_buf);

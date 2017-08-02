@@ -174,6 +174,9 @@ endif
 endif
 endif
 
+#FM
+LOCAL_SRC_FILES += fm_eut_new.c
+
 LOCAL_SHARED_LIBRARIES += liblog
 LOCAL_MODULE := engpc
 LOCAL_INIT_RC := engpc.rc

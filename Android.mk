@@ -142,6 +142,22 @@ ifneq ($(strip $(BOARD_HAVE_SPRD_WCN_COMBO)),)
 # sprd connectivity
 LOCAL_CFLAGS += -DENGMODE_EUT_SPRD
 
+ifeq ($(strip $(BOARD_HAVE_SPRD_WCN_COMBO)), marlin3)
+LOCAL_CFLAGS += -DWCN_USE_MARLIN3
+endif
+
+ifeq ($(strip $(BOARD_HAVE_SPRD_WCN_COMBO)), marlin2)
+LOCAL_CFLAGS += -DWCN_USE_MARLIN2
+endif
+
+ifeq ($(strip $(BOARD_HAVE_SPRD_WCN_COMBO)), marlin)
+LOCAL_CFLAGS += -DWCN_USE_MARLIN
+endif
+
+ifeq ($(strip $(BOARD_HAVE_SPRD_WCN_COMBO)), rs2351)
+LOCAL_CFLAGS += -DWCN_USE_RS2351
+endif
+
 ## wifi
 ### 2351
 ifeq ($(BOARD_SPRD_WCNBT_SR2351),true)

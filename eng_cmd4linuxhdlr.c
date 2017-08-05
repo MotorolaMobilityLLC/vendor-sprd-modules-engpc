@@ -107,6 +107,7 @@ static int eng_linuxcmd_property(char *req, char *rsp);
 static int eng_linuxcmd_audiologctl(char *req, char *rsp);
 static int eng_linuxcmd_checksd(char *req,char *rsp);
 static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp);
+static int eng_linuxcmd_get_wcn_chip(char *req, char *rsp);
 
 static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SENDKEY, CMD_TO_AP, "AT+SENDKEY", eng_linuxcmd_keypad},
@@ -147,6 +148,7 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SPCHKSD,        CMD_TO_AP,     "AT+SPCHKSD",      eng_linuxcmd_checksd},
 	{CMD_EMMCSIZE,        CMD_TO_AP,     "AT+EMMCSIZE",      get_emmc_size},
 {CMD_EMMCDDRSIZE,        CMD_TO_AP,     "AT+EMMCDDRSIZE",      eng_linuxcmd_get_emmcddrsize},
+    {CMD_GETWCNCHIP,    CMD_TO_AP,    "AT+GETWCNCHIP", eng_linuxcmd_get_wcn_chip},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -809,6 +811,25 @@ static int eng_linuxcmd_bleeutmode(char *req, char *rsp) {
   return ret;
 }
 
+int eng_linuxcmd_get_wcn_chip(char *req, char *rsp) {
+  if (strchr(req, '?') != NULL) {
+    #ifdef WCN_USE_MARLIN3
+      sprintf(rsp, "%s", "marlin3");
+    #elif WCN_USE_MARLIN2
+      sprintf(rsp, "%s", "marlin2");
+    #elif WCN_USE_MARLIN
+      sprintf(rsp, "%s", "marlin");
+    #elif WCN_USE_RS2351
+      sprintf(rsp, "%s", "rs2351");
+    #else
+      sprintf(rsp, "%s", "ERROR");
+    #endif
+  } else {
+    sprintf(rsp, "%s", "ERROR");
+  }
+  return 1;
+}
+
 int eng_linuxcmd_wifieutmode(char *req, char *rsp) {
   int ret = -1;
   int len = 0;
@@ -888,7 +909,7 @@ void *thread_fastsleep(void *para) {
     usleep(3000*1000);
     system(cmd);
   }
-/* 
+/*
   ENG_LOG("##: delay 2 seconds to wait AT command has been sent to modem...\n");
   sleep(2);
   ENG_LOG("##: Going to sleep mode!\n");
@@ -1657,8 +1678,8 @@ static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp)
 	if (retddr!= 0)
 	{
 		ENG_LOG("/proc/sprd_dmc/property not exist\n");
-		sprintf(rsp, "%s%s", "sprd_dmc/property no exist ", ENG_STREND);	
-		return 0;	
+		sprintf(rsp, "%s%s", "sprd_dmc/property no exist ", ENG_STREND);
+		return 0;
 	}
 	else if(retddr== 0)
 	{
@@ -1677,7 +1698,7 @@ static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp)
 	{
 		ENG_LOG("read the emmc size success \n");
 	}
-	
+
 	sprintf(rsp, "%dG+%dG%s",emmc_size,ddr_size_int,ENG_STREND);
 	return 0;
 

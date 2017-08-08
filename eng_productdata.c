@@ -8,11 +8,12 @@
 #include <ubi-user.h>
 #endif
 
-#ifdef CONFIG_NAND
-#define PRODUCTINFO_FILE "/dev/ubi0_miscdata"
-#else
-#define PRODUCTINFO_FILE "/dev/block/platform/sdio_emmc/by-name/miscdata"
-#endif
+//	Android8.0 miscdata need getfrom  property_get("ro.product.partitionpath", miscdata_path, "")
+//#ifdef CONFIG_NAND
+//#define PRODUCTINFO_FILE "/dev/ubi0_miscdata"
+//#else
+//#define PRODUCTINFO_FILE "/dev/block/platform/sdio_emmc/by-name/miscdata"
+//#endif
 
 int eng_read_productnvdata(char *databuf, int data_len) {
   int ret = 0;

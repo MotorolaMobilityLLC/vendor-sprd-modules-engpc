@@ -20,12 +20,14 @@
 #define FGU_CURRENT_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_current"
 #define FGU_VOL_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_vol"
 
-#ifdef CONFIG_NAND
-#define CALI_CTRL_FILE_PATH "/dev/ubi0_miscdata"
-#else
-#define CALI_CTRL_FILE_PATH "/dev/block/platform/sdio_emmc/by-name/miscdata"
-#endif
-#define BATTER_CALI_CONFIG_FILE CALI_CTRL_FILE_PATH
+//	Android8.0 miscdata need getfrom  property_get("ro.product.partitionpath", miscdata_path, "")
+//#ifdef CONFIG_NAND
+//#define CALI_CTRL_FILE_PATH "/dev/ubi0_miscdata"
+//#else
+//#define CALI_CTRL_FILE_PATH "/dev/block/platform/sdio_emmc/by-name/miscdata"
+//#endif
+//#define BATTER_CALI_CONFIG_FILE CALI_CTRL_FILE_PATH
+
 #define ADC_MAGIC (0x4144434D)  // ADCM, header flag of adc data
 #define MISCDATA_BASE  (0)
 #define ADC_DATA_OFFSET  (512 * 1024)

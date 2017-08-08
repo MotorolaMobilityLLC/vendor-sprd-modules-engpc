@@ -80,11 +80,20 @@ void initialize_ctrl_file(void) {
   CALI_INFO_DATA_T cali_info;
   int ret;
   unsigned int adc_magic = ADC_MAGIC;
+  char miscdata_path[128] = {0};
 
-  int fd = open(CALI_CTRL_FILE_PATH, O_RDWR);
+  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+    ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
+    return;
+  }else{
+    strcat (miscdata_path, "miscdata");
+    ENG_LOG("miscdata_path %s\n", miscdata_path);
+  }
+
+  int fd = open(miscdata_path, O_RDWR);
 
   if (fd < 0) {
-    ENG_LOG("%s open %s failed\n", __func__, CALI_CTRL_FILE_PATH);
+    ENG_LOG("%s open %s failed\n", __func__, miscdata_path);
     return;
   }
   sync();
@@ -123,11 +132,20 @@ void initialize_ctrl_file(void) {
 void disable_calibration(void) {
   CALI_INFO_DATA_T cali_info;
   int ret = 0;
+  char miscdata_path[128] = {0};
 
-  int fd = open(CALI_CTRL_FILE_PATH, O_RDWR);
+  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+    ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
+    return;
+  }else{
+    strcat (miscdata_path, "miscdata");
+    ENG_LOG("miscdata_path %s\n", miscdata_path);
+  }
+
+  int fd = open(miscdata_path, O_RDWR);
 
   if (fd < 0) {
-    ENG_LOG("%s open %s failed\n", __func__, CALI_CTRL_FILE_PATH);
+    ENG_LOG("%s open %s failed\n", __func__, miscdata_path);
     return;
   }
   lseek(fd, ADC_DATA_START + sizeof(unsigned int), SEEK_SET);
@@ -155,12 +173,21 @@ void disable_calibration(void) {
 
 void enable_calibration(void) {
   CALI_INFO_DATA_T cali_info;
+  char miscdata_path[128] = {0};
 
-  int fd = open(CALI_CTRL_FILE_PATH, O_RDWR);
+  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+    ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
+    return;
+  }else{
+    strcat (miscdata_path, "miscdata");
+    ENG_LOG("miscdata_path %s\n", miscdata_path);
+  }
+
+  int fd = open(miscdata_path, O_RDWR);
   int ret = 0;
 
   if (fd < 0) {
-    ENG_LOG("%s open %s failed\n", __func__, CALI_CTRL_FILE_PATH);
+    ENG_LOG("%s open %s failed\n", __func__, miscdata_path);
     return;
   }
   lseek(fd, ADC_DATA_START + sizeof(unsigned int), SEEK_SET);
@@ -208,11 +235,21 @@ static int AccessADCDataFile(unsigned char flag, char *lpBuff, int size) {
   int ret = 0;
   CALI_INFO_DATA_T cali_info;
 
-  fd = open(BATTER_CALI_CONFIG_FILE, O_RDWR);
+  char miscdata_path[128] = {0};
+
+  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+    ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
+    return 0;
+  }else{
+    strcat (miscdata_path, "miscdata");
+    ENG_LOG("miscdata_path %s\n", miscdata_path);
+  }
+
+  fd = open(miscdata_path, O_RDWR);
 
   if (flag == 1) {
     if (fd < 0) {
-      ENG_LOG("%s open %s failed\n", __func__, CALI_CTRL_FILE_PATH);
+      ENG_LOG("%s open %s failed\n", __func__, miscdata_path);
       return 0;
     }
     lseek(fd, ADC_DATA_START + sizeof(unsigned int),
@@ -238,7 +275,7 @@ static int AccessADCDataFile(unsigned char flag, char *lpBuff, int size) {
     sleep(1);
   } else {
     if (fd < 0) {
-      ENG_LOG("%s open %s failed\n", __func__, CALI_CTRL_FILE_PATH);
+      ENG_LOG("%s open %s failed\n", __func__, miscdata_path);
       return 0;
     }
     lseek(fd, ADC_DATA_START + sizeof(unsigned int), SEEK_SET);

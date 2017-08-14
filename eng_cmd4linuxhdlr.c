@@ -814,11 +814,11 @@ static int eng_linuxcmd_bleeutmode(char *req, char *rsp) {
 int eng_linuxcmd_get_wcn_chip(char *req, char *rsp) {
   if (strchr(req, '?') != NULL) {
     #ifdef WCN_USE_MARLIN3
-      sprintf(rsp, "%s", "marlin3");
+      sprintf(rsp, "%s", "sc2355");
     #elif WCN_USE_MARLIN2
-      sprintf(rsp, "%s", "marlin2");
+      sprintf(rsp, "%s", "sc2351");
     #elif WCN_USE_MARLIN
-      sprintf(rsp, "%s", "marlin");
+      sprintf(rsp, "%s", "sc2342");
     #elif WCN_USE_RS2351
       sprintf(rsp, "%s", "rs2351");
     #else

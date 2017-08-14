@@ -33,7 +33,7 @@ int ENGLOGBRINGUP(const char* fmt, ...);
 #define ENG_AT_CHANNEL
 
 #if defined(ENGMODE_EUT_BCM)
-// brcmµÄwlan·½°¸
+// brcmï¿½ï¿½wlanï¿½ï¿½ï¿½ï¿½
 
 #define ENG_EUT "EUT"
 #define ENG_EUT_REQ "EUT?"  // brcm
@@ -227,7 +227,7 @@ typedef enum {
 } eut_cmd_enum;
 
 #elif defined(ENGMODE_EUT_SPRD)
-// sprdµÄwlan·½°¸
+// sprdï¿½ï¿½wlanï¿½ï¿½ï¿½ï¿½
 #define ENG_EUT ("EUT")
 #define ENG_EUT_REQ ("EUT?")
 #define ENG_WIFICH_REQ ("CH?")
@@ -287,6 +287,12 @@ typedef enum {
 
 #define ENG_MACFILTER_REQ ("MACFILTER?")
 #define ENG_MACFILTER ("MACFILTER")
+
+#define ENG_WIFIANT_REQ ("ANT?")
+#define ENG_WIFIANT ("ANT")
+
+#define ENG_WIFIDECODEMODE_REQ ("DECODEMODE?")
+#define ENG_WIFIDECODEMODE ("DECODEMODE")
 
 //------------------------------------------------
 
@@ -359,6 +365,11 @@ typedef enum {
   WIFIMACFILTER_REQ_INDEX,
   WIFIMACFILTER_INDEX,
 
+  WIFIANT_REQ_INDEX,
+  WIFIANT_INDEX,
+
+  WIFIDECODEMODE_REQ_INDEX,
+  WIFIDECODEMODE_INDEX,
 } eut_cmd_enum;
 #endif
 

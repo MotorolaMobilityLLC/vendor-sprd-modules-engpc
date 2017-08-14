@@ -504,6 +504,13 @@ struct eut_cmd eut_cmds[] = {
     {WIFIMACFILTER_REQ_INDEX, ENG_MACFILTER_REQ},
     {WIFIMACFILTER_INDEX, ENG_MACFILTER},  // sprd
 
+    /* ANT chain */
+    {WIFIANT_REQ_INDEX, ENG_WIFIANT_REQ},
+    {WIFIANT_INDEX, ENG_WIFIANT},
+
+    /* Decode mode */
+    {WIFIDECODEMODE_REQ_INDEX, ENG_WIFIDECODEMODE_REQ},
+    {WIFIDECODEMODE_INDEX, ENG_WIFIDECODEMODE}
 };
 #endif
 
@@ -2226,7 +2233,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       break;
     case WIFICH_INDEX:
       ENG_LOG("case WIFICH_INDEX   %d", WIFICH_INDEX);
-      wifi_channel_set(atoi(data[1]), rsp);
+      wifi_channel_set(data[1], rsp);
       break;
     case WIFIMODE_INDEX:
       // wifi_eutops.set_wifi_mode(data[1],rsp);
@@ -2432,6 +2439,28 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
     case WIFIMACFILTER_INDEX: {
       ENG_LOG("%s(), case:WIFIMACFILTER_INDEX", __func__);
       wifi_mac_filter_set(atoi(data[1]), data[2], rsp);
+    } break;
+
+    /* ANT chain */
+    case WIFIANT_REQ_INDEX: {
+      ENG_LOG("%s(), case:WIFIANT_REQ_INDEX", __func__);
+      wifi_ant_get(rsp);
+    } break;
+
+    case WIFIANT_INDEX: {
+      ENG_LOG("%s(), case:WIFIANT_INDEX", __func__);
+      wifi_ant_set(atoi(data[1]), rsp);
+    } break;
+
+    /* Decode mode */
+    case WIFIDECODEMODE_REQ_INDEX: {
+      ENG_LOG("%s(), case:WIFIDECODEMODE_REQ_INDEX", __func__);
+      wifi_decode_mode_get(rsp);
+    } break;
+
+    case WIFIDECODEMODE_INDEX: {
+      ENG_LOG("%s(), case:WIFIDECODEMODE_INDEX", __func__);
+      wifi_decode_mode_set(atoi(data[1]), rsp);
     } break;
 
     //-----------------------------------------------------

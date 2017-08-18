@@ -108,6 +108,7 @@ static int eng_linuxcmd_audiologctl(char *req, char *rsp);
 static int eng_linuxcmd_checksd(char *req,char *rsp);
 static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp);
 static int eng_linuxcmd_get_wcn_chip(char *req, char *rsp);
+static int eng_linuxcmd_get_android_version(char *req, char *rsp);
 
 static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SENDKEY, CMD_TO_AP, "AT+SENDKEY", eng_linuxcmd_keypad},
@@ -149,6 +150,7 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
 	{CMD_EMMCSIZE,        CMD_TO_AP,     "AT+EMMCSIZE",      get_emmc_size},
 {CMD_EMMCDDRSIZE,        CMD_TO_AP,     "AT+EMMCDDRSIZE",      eng_linuxcmd_get_emmcddrsize},
     {CMD_GETWCNCHIP,    CMD_TO_AP,    "AT+GETWCNCHIP", eng_linuxcmd_get_wcn_chip},
+    {CMD_GETANDROIDVER, CMD_TO_AP,  "AT+GETANDROIDVER", eng_linuxcmd_get_android_version},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -811,7 +813,19 @@ static int eng_linuxcmd_bleeutmode(char *req, char *rsp) {
   return ret;
 }
 
-int eng_linuxcmd_get_wcn_chip(char *req, char *rsp) {
+static int eng_linuxcmd_get_android_version(char *req, char *rsp) {
+  if (strchr(req, '?') != NULL) {
+    char androidver[256] = {0};
+    property_get(ENG_ANDROID_VER, androidver, "");
+    sprintf(rsp, "%s", androidver);
+    return 0;
+  } else {
+    sprintf(rsp, "%s", "ERROR");
+    return -1;
+  }
+}
+
+static int eng_linuxcmd_get_wcn_chip(char *req, char *rsp) {
   if (strchr(req, '?') != NULL) {
     #ifdef WCN_USE_MARLIN3
       sprintf(rsp, "%s", "sc2355");
@@ -824,10 +838,11 @@ int eng_linuxcmd_get_wcn_chip(char *req, char *rsp) {
     #else
       sprintf(rsp, "%s", "ERROR");
     #endif
+    return 0;
   } else {
     sprintf(rsp, "%s", "ERROR");
+    return -1;
   }
-  return 1;
 }
 
 int eng_linuxcmd_wifieutmode(char *req, char *rsp) {

@@ -24,6 +24,8 @@
 #define ENG_CHARGERTEST_FILE "/productinfo/chargertest.file"
 #define IQMODE_FLAG_PATH "/productinfo/iqmode"
 
+#define ENG_ANDROID_VER "ro.build.version.release"
+
 typedef enum {
   CMD_SENDKEY = 0,
   CMD_GETICH,
@@ -61,6 +63,7 @@ typedef enum {
   CMD_EMMCSIZE,
   CMD_EMMCDDRSIZE,
   CMD_GETWCNCHIP,
+  CMD_GETANDROIDVER,
   CMD_END
 } ENG_CMD;
 

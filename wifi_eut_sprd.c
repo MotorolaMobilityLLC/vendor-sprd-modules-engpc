@@ -792,7 +792,8 @@ int wifi_tx_set(int command_code, int mode, int pktcnt, char *rsp) {
       }
     }
 
-    wifi_tx_start(rsp);
+    if (-1 == wifi_tx_start(rsp))
+      goto err;
   } else if (0 == command_code) {
     wifi_tx_stop(rsp);
   } else {

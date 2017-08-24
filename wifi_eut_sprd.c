@@ -195,7 +195,7 @@ static WIFI_RATE g_wifi_rate_table[] = {
 static int mattch_rate_table_str(const char *name) {
   WIFI_RATE *rate_ptr = NULL;
 
-  if (get_android_version() >= ANDROID_VER_8 || WCN_HW_MARLIN3 == get_wcn_hw_type()) {   //is AndroidO or newer
+  if (WCN_HW_MARLIN3 == get_wcn_hw_type()) {   //if wcn chip is marlin3
     rate_ptr = g_wifi_rate_table;
   } else {
     rate_ptr = g_wifi_rate_table_old;
@@ -213,7 +213,7 @@ static int mattch_rate_table_str(const char *name) {
 static char *mattch_rate_table_index(const int rate) {
   WIFI_RATE *rate_ptr = NULL;
 
-  if (get_android_version() >= ANDROID_VER_8 || WCN_HW_MARLIN3 == get_wcn_hw_type()) {   //is AndroidO or newer
+  if (WCN_HW_MARLIN3 == get_wcn_hw_type()) {   //if wcn chip is marlin3
     rate_ptr = g_wifi_rate_table;
   } else {
     rate_ptr = g_wifi_rate_table_old;

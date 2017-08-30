@@ -934,7 +934,7 @@ int wifi_rxpktcnt_get(char *rsp) {
     ENG_LOG("%s, no iwnpi\n", __FUNCTION__);
     goto err;
   }
-  sscanf(cmd, "rx_end_count=%d rx_err_end_count=%d fcs_fail_count=%d ",
+  sscanf(cmd, "reg value: rx_end_count=%d rx_err_end_count=%d fcs_fail_count=%d ",
                &(cnt->rx_end_count), &(cnt->rx_err_end_count),
                &(cnt->fcs_fail_count));
 

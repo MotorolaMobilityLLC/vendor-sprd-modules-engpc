@@ -142,8 +142,7 @@ int SendAudioTestCmd(const uchar * cmd,int bytes)
 			ALOGW("pipe_write_warning: %d,ret is %d",errno,ret);
 	} while(bytes);
 
-	if (pipe_fd > 0)
-		close(pipe_fd);
+	close(pipe_fd);
 
 	if (bytes == bytes_to_read)
 		return ret ;

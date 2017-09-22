@@ -24,7 +24,8 @@
 #define SYS_CLASS_ANDUSB_ENABLE "/sys/class/android_usb/android0/enable"
 #define SYS_CLASS_ANDUSB_ENABLE_NEW "/config/usb_gadget/g1/UDC"
 #define SYS_CLASS_ANDUSB_STATE "/sys/class/android_usb/android0/state"
-#define DEVICE_SOC_USB_MAXIMUM_SPEED "/sys/devices/soc/soc:ap-ahb/20500000.usb3/maximum_speed"
+#define DEVICE_SOC_USB_MAXIMUM_SPEED "sys/devices/platform/soc/soc:ap-ahb/20200000.usb/maximum_speed"
+//#define DEVICE_SOC_USB_MAXIMUM_SPEED "/sys/devices/soc/soc:ap-ahb/20500000.usb3/maximum_speed"
 
 sem_t g_armlog_sem;
 eng_dev_info_t *g_dev_info = 0;

@@ -1162,6 +1162,60 @@ static int eng_diag_modem_db_read(char *buf, int len, char *rsp) {
   return 0;
 }
 
+int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp) {
+
+  int rlen = 0, rsplen = 0;
+  eng_modules *modules_list = NULL;
+  struct list_head *list_find;
+  unsigned char *rsp_ptr;
+  unsigned char emptyDiag[] = {0x7e, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0xd5, 0x00, 0x7e};
+  int fd = -1;
+  MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
+
+  if(g_list_ok == 0){
+    ENG_LOG("%s:engmode list init!\n",__FUNCTION__);
+    g_list_ok = 1;
+    eng_modules_load(&eng_head);
+  }
+
+  list_for_each(list_find,&eng_head){
+  modules_list = list_entry(list_find, eng_modules, node);
+
+    if ((buf[7] == 0x68) && (strcasestr(buf+9, modules_list->callback.at_cmd)) != NULL) {
+      ENG_LOG("%s: Dymic CMD=%s finded\n",__FUNCTION__,modules_list->callback.at_cmd);
+      rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
+
+      do{
+        msg_head_ptr->seq_num = 0;
+        msg_head_ptr->type = 0x9c;
+        msg_head_ptr->subtype = 0x00;
+        rsplen = strlen(rsp) + sizeof(MSG_HEAD_T) +6;
+        rsp_ptr = (char *)malloc(rsplen);
+        if (NULL == rsp_ptr) {
+          ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+          return 0;
+        }
+        memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
+        ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
+        memcpy(rsp_ptr + sizeof(MSG_HEAD_T), rsp, strlen(rsp));
+        memcpy(rsp_ptr + sizeof(MSG_HEAD_T) + strlen(rsp), "\r\nOK\r\n", 6);
+      } while (0);
+
+      rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr, ((MSG_HEAD_T *)rsp_ptr)->len);
+      free(rsp_ptr);
+
+      ENG_LOG("%s: Send data to serial\n", __FUNCTION__);
+      get_user_diag_buf(rsp,rsplen);
+
+      write(get_ser_diag_fd(), emptyDiag, sizeof(emptyDiag));
+      fd= get_ser_diag_fd();
+      eng_diag_write2pc(rsp, rsplen,fd);
+      return 1;
+      }
+    }
+    return 0;
+}
+
 int eng_diag_user_handle(int type, char *buf, int len) {
   int rlen = 0, i;
   int extra_len = 0;
@@ -1268,21 +1322,6 @@ int eng_diag_user_handle(int type, char *buf, int len) {
         write(get_ser_diag_fd(), emptyDiag, sizeof(emptyDiag));
       }
       rlen = eng_diag_apcmd_hdlr(buf, len, rsp);
-    #if 0
-      if(rlen == 0){
-          eng_modules *modules_list = NULL;
-          struct list_head *list_find;
-          list_for_each(list_find,&eng_head){
-
-          modules_list = list_entry(list_find, eng_modules, node);
-          ENG_LOG("engpc_callback cmd %x\n",modules_list->callback.at_cmd);
-
-          if(!strncmp(modules_list->callback.at_cmd, buf, strlen(modules_list->callback.at_cmd))){
-              rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
-          }
-        }
-      }
-    #endif
       break;
     case CMD_USER_PRODUCT_CTRL:
       ENG_LOG("%s: CMD_USER_PRODUCT_CTRL\n", __FUNCTION__);
@@ -2878,6 +2917,11 @@ int eng_diag(char *buf, int len) {
     } else {
       ret = 1;
     }
+  }
+  else
+  {
+      ENG_LOG("eng_diag_dymic_hdlr\n");
+      ret = eng_diag_dymic_hdlr(buf, len, rsp);
   }
 
   ENG_LOG("%s: ret=%d\n", __FUNCTION__, ret);

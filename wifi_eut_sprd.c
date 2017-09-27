@@ -169,7 +169,7 @@ static WIFI_CHANNEL *match_channel_table_by_chn(const int primary_channel, const
 
 // older rate table for marlin2, it will replace by array g_wifi_rate_table as marlin3
 static WIFI_RATE g_wifi_rate_table_old[] = {
-    {1, "DSSS-1"},   {2, "DSSS-2"},   {5, "CCK-5.6"},  {11, "CCK-11"},
+    {1, "DSSS-1"},   {2, "DSSS-2"},   {5, "CCK-5.5"},  {11, "CCK-11"},
     {6, "OFDM-6"},   {9, "OFDM-9"},   {12, "OFDM-12"}, {18, "OFDM-18"},
     {24, "OFDM-24"}, {36, "OFDM-36"}, {48, "OFDM-48"}, {54, "OFDM-54"},
     {7, "MCS-0"},    {13, "MCS-1"},   {19, "MCS-2"},   {26, "MCS-3"},
@@ -1079,7 +1079,7 @@ int wifi_band_set(wifi_band band, char *rsp) {
   ENG_LOG("ADL entry %s(), band = %d", __func__, band);
   if (WCN_HW_MARLIN3 == get_wcn_hw_type()) {
     ENG_LOG("ADL entry %s(),marlin3 isn't support set band", __func__);
-    goto err;
+    goto ok;    //return ok, as though marlin3 don't support set band
   }
 
   if (wifi_enter_eut_mode() == 0)
@@ -1095,6 +1095,7 @@ int wifi_band_set(wifi_band band, char *rsp) {
   if (0 != exec_iwnpi_cmd_for_status(cmd))
     goto err;
 
+ok:
   return return_ok(rsp);
 err:
   return return_err(rsp);

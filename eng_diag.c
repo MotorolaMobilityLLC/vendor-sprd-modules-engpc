@@ -2272,7 +2272,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
       break;
     case WIFICH_INDEX:
       ENG_LOG("case WIFICH_INDEX   %d", WIFICH_INDEX);
-      wifi_channel_set(data[1], rsp);
+      wifi_channel_set(data[1], data[2], rsp);
       break;
     case WIFIMODE_INDEX:
       // wifi_eutops.set_wifi_mode(data[1],rsp);

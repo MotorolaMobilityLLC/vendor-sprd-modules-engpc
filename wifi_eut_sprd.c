@@ -541,29 +541,38 @@ err:
   return -1;
 }
 
-int wifi_channel_set_marlin3(char *ch_note, char *rsp) {
+//marlin3: iwnpi wlan0 set_channel $(prim_ch) $(cen_ch) > $(TMP_FILE)
+int wifi_channel_set_marlin3(char *ch_note1, char *ch_note2, char *rsp) {
   int ret = -1;
-  WIFI_CHANNEL *chn = NULL;
   char cmd[WIFI_EUT_COMMAND_MAX_LEN] = {0x00};
 
   if (wifi_enter_eut_mode() == 0)
     goto err;
 
-  chn = match_channel_table_by_name(ch_note);
-  if (chn == NULL)
-    goto err;
+  #ifdef __MARLIN3_USE_TWO_CHANNELS__
+    int primary_channel = atoi(ch_note1);
+    int center_channel = 0;
+    if (ch_note2 != NULL)
+      center_channel = atoi(ch_note2);
 
-  ENG_LOG("%s(), %s: prim_chn = %d, cen_chn = %d.", __FUNCTION__, ch_note, chn->primary_channel, chn->center_channel);
+    if (primary_channel < 1 || center_channel < 1)
+      goto err;
+    ENG_LOG("%s(): prim_chn = %d, cen_chn = %d.", __FUNCTION__, primary_channel, center_channel);
+    sprintf(cmd, "iwnpi wlan0 set_channel %d %d > %s", primary_channel, center_channel, TMP_FILE);
+  #else /*__MARLIN3_USE_TWO_CHANNELS__*/
+    WIFI_CHANNEL *chn = match_channel_table_by_name(ch_note1);
+    if (chn == NULL)
+      goto err;
+    ENG_LOG("%s(), %s: prim_chn = %d, cen_chn = %d.", __FUNCTION__, ch_note1, chn->primary_channel, chn->center_channel);
+    sprintf(cmd, "iwnpi wlan0 set_channel %d %d > %s", chn->primary_channel, chn->center_channel, TMP_FILE);
+  #endif  /*__MARLIN3_USE_TWO_CHANNELS__*/
 
-  sprintf(cmd, "iwnpi wlan0 set_channel %d %d > %s", chn->primary_channel, chn->center_channel, TMP_FILE);
   if (0 != exec_iwnpi_cmd_for_status(cmd))
     goto err;
 
-  g_wifi_data.marlin3_channel = chn;
   return return_ok(rsp);
 
 err:
-  g_wifi_data.marlin3_channel = NULL;
   return return_err(rsp);
 }
 
@@ -588,30 +597,35 @@ int wifi_channel_get_marlin3(char *rsp) {
     goto err;
   }
   sscanf(cmd, "primary_channel:%d,center_channel:%d\n", &primary_channel, &center_channel);
-  chn = match_channel_table_by_chn(primary_channel, center_channel);
-  ENG_LOG("%s(), get_channel-> %s [%d, %d].\n", __FUNCTION__, (chn != NULL ? chn->name : "null"), primary_channel, center_channel);
-  if (chn == NULL)
-    goto err;
-  g_wifi_data.marlin3_channel = chn;
-  sprintf(rsp, "%s%s", WIFI_CHANNEL_REQ_RET, chn->name);
+  #ifdef __MARLIN3_USE_TWO_CHANNELS__
+    if (primary_channel < 1 || center_channel < 1)
+      goto err;
+    sprintf(rsp, "%s%d,%d", WIFI_CHANNEL_REQ_RET, primary_channel, center_channel);
+  #else /*__MARLIN3_USE_TWO_CHANNELS__*/
+    chn = match_channel_table_by_chn(primary_channel, center_channel);
+    ENG_LOG("%s(), get_channel-> %s [%d, %d].\n", __FUNCTION__, (chn != NULL ? chn->name : "null"), primary_channel, center_channel);
+    if (chn == NULL)
+      goto err;
+    sprintf(rsp, "%s%s", WIFI_CHANNEL_REQ_RET, chn->name);
+  #endif  /*__MARLIN3_USE_TWO_CHANNELS__*/
+
   rsp_debug(rsp);
   return 0;
 
 err:
-  g_wifi_data.marlin3_channel = NULL;
   sprintf(rsp, "%s%s", WIFI_CHANNEL_REQ_RET, "null");
   rsp_debug(rsp);
   return -1;
 }
 
-int wifi_channel_set(char *ch_note, char *rsp) {
+int wifi_channel_set(char *ch_note1, char *ch_note2, char *rsp) {
   int ret = -1;
   char cmd[WIFI_EUT_COMMAND_MAX_LEN] = {0x00};
 
-  if (wifi_channel_set_marlin3(ch_note, rsp) == 0)
+  if (wifi_channel_set_marlin3(ch_note1, ch_note2, rsp) == 0)
     return 0;
 
-  int ch = atoi(ch_note);
+  int ch = atoi(ch_note1);
   ENG_LOG("ADL entry %s(), ch = %d", __func__, ch);
   if (wifi_enter_eut_mode() == 0)
     goto err;
@@ -964,8 +978,16 @@ err:
 static int wifi_eut_init(void) {
   int ret = -1;
   char rsp[WIFI_EUT_COMMAND_RSP_MAX_LEN + 1] = {0x00};
+  #ifdef __MARLIN3_USE_TWO_CHANNELS__
+    if (get_wcn_hw_type() == WCN_HW_MARLIN3) {
+      ret = wifi_channel_set_marlin3(WIFI_EUT_DEFAULT_MARLIN3_CHANNEL1, WIFI_EUT_DEFAULT_MARLIN3_CHANNEL2, rsp);
+    } else {
+      ret = wifi_channel_set(WIFI_EUT_DEFAULT_CHANNEL, NULL, rsp);
+    }
+  #else /*__MARLIN3_USE_TWO_CHANNELS__*/
+    ret = wifi_channel_set(((get_wcn_hw_type() == WCN_HW_MARLIN3) ? WIFI_EUT_DEFAULT_MARLIN3_CHANNEL : WIFI_EUT_DEFAULT_CHANNEL), NULL, rsp);
+  #endif  /*__MARLIN3_USE_TWO_CHANNELS__*/
 
-  ret = wifi_channel_set(((get_wcn_hw_type() == WCN_HW_MARLIN3) ? WIFI_EUT_DEFAULT_MARLIN3_CHANNEL : WIFI_EUT_DEFAULT_CHANNEL), rsp);
   rsp_debug(rsp);
   return ret;
 }

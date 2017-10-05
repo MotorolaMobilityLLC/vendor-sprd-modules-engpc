@@ -5,6 +5,10 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+#ifndef __MARLIN3_USE_TWO_CHANNELS__
+#define __MARLIN3_USE_TWO_CHANNELS__    //define this macro, if pandora transfer two channels to engpc
+#endif
+
 //----------------------------------------------------------------
 #define TMP_BUF_SIZE (128)
 
@@ -47,7 +51,12 @@
 
 #define WIFI_EUT_COMMAND_MAX_LEN (128)
 #define WIFI_EUT_COMMAND_RSP_MAX_LEN (128)
-#define WIFI_EUT_DEFAULT_MARLIN3_CHANNEL ("1-2412MHz(bgn) ")
+#ifdef __MARLIN3_USE_TWO_CHANNELS__
+  #define WIFI_EUT_DEFAULT_MARLIN3_CHANNEL1 ("1")
+  #define WIFI_EUT_DEFAULT_MARLIN3_CHANNEL2 ("1")
+#else
+  #define WIFI_EUT_DEFAULT_MARLIN3_CHANNEL ("1-2412MHz(bgn) ")
+#endif  /*__MARLIN3_USE_TWO_CHANNELS__*/
 #define WIFI_EUT_DEFAULT_CHANNEL ("1")
 
 /* TX Power Level */
@@ -110,7 +119,6 @@ typedef struct {
   WCN_HW_PRODUCT wcn_type;
   int eut_enter;
   int rate;
-  WIFI_CHANNEL *marlin3_channel;
   int channel;
   int tx_start;
   int rx_start;
@@ -189,10 +197,10 @@ int wifi_eut_get(char *rsp);
 int wifi_rate_set(char *string, char *rsp);
 int wifi_rate_get(char *rsp);
 
-int wifi_channel_set_marlin3(char *ch_note, char *rsp);
+int wifi_channel_set_marlin3(char *ch_note1, char *ch_note2, char *rsp);
 int wifi_channel_get_marlin3(char *rsp);
 
-int wifi_channel_set(char *ch_note, char *rsp);
+int wifi_channel_set(char *ch_note1, char *ch_note2, char *rsp);
 int wifi_channel_get(char *rsp);
 
 

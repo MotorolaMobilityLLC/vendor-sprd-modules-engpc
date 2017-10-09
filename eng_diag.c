@@ -238,6 +238,7 @@ static int get_battery_current(int *value);
 static int eng_diag_get_modem_mode(char *buf, int len, char *rsp, int rsplen);
 
 static int eng_diag_read_efuse(char *buf, int len, char *rsp, int rsplen);
+static int eng_diag_read_efuse_v2(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_write_efuse(char *buf, int len, char *rsp, int rsplen);
 static int eng_parse_hash_cmdline(unsigned char cmdvalue[]);
 static int eng_parse_publickey_cmdline(char *path, int *pos, int *len);
@@ -689,6 +690,8 @@ int eng_diag_parse(char *buf, int len, int *num) {
         ret = CMD_USER_READ_PUBLICKEY;
       else if (head_ptr->subtype == 0x24)
         ret = CMD_USER_READ_ENABLE_SECURE_BIT;
+      else if(head_ptr->subtype==0x32)
+        ret = CMD_USER_READ_EFUSE_V2;
       break;
     case DIAG_CMD_BUSMONITOR:
       if (head_ptr->subtype == 0x00) {
@@ -1384,6 +1387,13 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       ENG_LOG("%s: CMD_USER_READ_EFUSE Req!\n", __FUNCTION__);
       memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
       rlen = eng_diag_read_efuse(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
+      return 0;
+    case CMD_USER_READ_EFUSE_V2:
+      ENG_LOG("%s: CMD_USER_READ_EFUSE_V2 Req!\n", __FUNCTION__);
+      memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
+      rlen = eng_diag_read_efuse_v2(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
       return 0;
@@ -4876,6 +4886,108 @@ static int get_battery_current(int *value) {
   return read_len;
 }
 #ifndef CONFIG_MINIENGPC
+
+void eng_diag_print_buffer(char* buf,int len){
+    int i;
+    char *ptr;
+    ptr = buf;
+    ENG_LOG("eng_diag_print_buffer[len = %d]\n",len);
+    for (i=0;i<len;i++){
+        ENG_LOG("%x  ", ptr[0]);
+        ptr ++;
+    }
+    ENG_LOG("-------- --------\n");
+}
+
+static int eng_diag_read_efuse_v2(char *buf, int len, char *rsp, int rsplen) {
+  int ret = 0;
+  MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
+  unsigned char uid_buf[33] = {0};
+  unsigned char data_buf[16] = {0};
+  char *rsp_ptr;
+  char * at_cmd[20];
+  int at_find_flg = 0;
+  int rlen;
+  unsigned int block0,block1;
+  eng_modules *modules_list = NULL;
+  struct list_head *list_find;
+
+  if (NULL == buf) {
+    ENG_LOG("%s,null pointer", __FUNCTION__);
+    return 0;
+  }
+
+  sprintf(at_cmd, "AT+GETDYNAMICUID", sizeof(at_cmd));      //search this at command, if find use dymic lib else use old func
+
+  list_for_each(list_find,&eng_head){
+    modules_list = list_entry(list_find, eng_modules, node);
+    if(!strncmp(modules_list->callback.at_cmd, at_cmd, strlen(modules_list->callback.at_cmd))){
+      ENG_LOG("engpc find at cmd %s\n",at_cmd);
+      at_find_flg = 1;
+      rlen = modules_list->callback.eng_linuxcmd_func(at_cmd, rsp);      //change diag command to at command for get uid_v2
+      sprintf(uid_buf,rsp,sizeof(uid_buf)); //copy string to uid_buf
+      ENG_LOG("%s,efuse_uid_read_dymic = %s", __FUNCTION__, uid_buf);
+      break;
+    }
+  }
+
+  if (!at_find_flg){
+    ENG_LOG("engpc not find at cmd %s\n",at_cmd);
+    ret = efuse_uid_read(uid_buf, sizeof(uid_buf)); //use read old uid
+
+    if (ret < 0) {
+      ENG_LOG("%s,efuse_uid_read ret = %d", __FUNCTION__, ret);
+      return 0;
+    }
+
+    memcpy(data_buf, uid_buf, 8);
+    data_buf[8] = '\0';
+    block0 = strtoul(data_buf, 0, 16);
+
+    memcpy(data_buf, uid_buf + 8, 8);
+    data_buf[8] = '\0';
+    block1 = strtoul(data_buf, 0, 16);
+
+    ENG_LOG("get block0 = %x;block1 = %x\n",block0,block1);
+
+    memset(uid_buf,0,sizeof(uid_buf));
+
+    sprintf(uid_buf, "%c%c%c%c%c%c%02d%03d%03d",
+        ((block0 >>18) & 0x3F) + 0x30,
+        ((block0 >>12) & 0x3F) + 0x30,
+        ((block0 >>6 ) & 0x3F) + 0x30,
+        (block0 & 0x3F) +0x30,
+        ((block1 >>25) & 0x3F) + 0x30,
+        ((block1 >>19) & 0x3F) + 0x30,
+        (block1 >>14) & 0x1F,
+        (block1 >>7) & 0x7F,
+        block1 & 0x7F   );
+
+    ENG_LOG("get uid = %s\n",uid_buf);
+
+  }
+
+do{
+  rsplen = sizeof(uid_buf) + sizeof(MSG_HEAD_T);
+  rsp_ptr = (char *)malloc(rsplen);
+  if (NULL == rsp_ptr) {
+    ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+    return 0;
+  }
+
+    memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
+    ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
+    memcpy(rsp_ptr + sizeof(MSG_HEAD_T), uid_buf, sizeof(uid_buf));
+ } while (0);
+
+  eng_diag_print_buffer(rsp_ptr,((MSG_HEAD_T *)rsp_ptr)->len);
+
+  rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr,
+                            ((MSG_HEAD_T *)rsp_ptr)->len);
+  free(rsp_ptr);
+  return rsplen;
+}
+
 static int eng_diag_read_efuse(char *buf, int len, char *rsp, int rsplen) {
   MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
   unsigned char data_buf[16] = {0};  // FIX ME,adjusted by ronghua interfaces

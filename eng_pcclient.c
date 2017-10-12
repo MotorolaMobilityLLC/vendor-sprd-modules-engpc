@@ -612,6 +612,7 @@ int main(int argc, char** argv) {
 
   // Create vdiag thread for reading diag data from PC, some data will be
   // processed by ENG/AP, and some will be pass to modem transparently.
+
   if (0 != eng_thread_create(&t2, eng_vdiag_wthread, &dev_info)) {
     ENG_LOG("vdiag wthread start error");
   }

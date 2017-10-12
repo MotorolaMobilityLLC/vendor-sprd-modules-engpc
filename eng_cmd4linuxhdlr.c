@@ -29,6 +29,7 @@
 #include <cutils/sockets.h>
 #include "emmc.h"
 #include "ddr.h"
+#include <semaphore.h>
 
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
 
@@ -56,7 +57,9 @@ static int g_agdsp_pcm_status = 0; // 0: PCM disabled, 1: PCM enabled
 extern int g_reset;
 extern int g_setuart_ok;
 extern int g_armlog_enable;
+extern sem_t g_armlog_sem;
 extern eng_dev_info_t *g_dev_info;
+extern int eng_usb_state(void);
 extern void set_raw_data_speed(int fd, int speed);
 extern int get_ser_diag_fd(void);
 extern int translate_packet(char *dest,char *src,int size);
@@ -109,6 +112,7 @@ static int eng_linuxcmd_checksd(char *req,char *rsp);
 static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp);
 static int eng_linuxcmd_get_wcn_chip(char *req, char *rsp);
 static int eng_linuxcmd_get_android_version(char *req, char *rsp);
+static int eng_linuxcmd_cplogctl(char *req, char *rsp);
 
 static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SENDKEY, CMD_TO_AP, "AT+SENDKEY", eng_linuxcmd_keypad},
@@ -148,9 +152,10 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_AUDIOLOGCTL, CMD_TO_AP, "AT+SPAUDIOOP", eng_linuxcmd_audiologctl},
     {CMD_SPCHKSD,        CMD_TO_AP,     "AT+SPCHKSD",      eng_linuxcmd_checksd},
 	{CMD_EMMCSIZE,        CMD_TO_AP,     "AT+EMMCSIZE",      get_emmc_size},
-{CMD_EMMCDDRSIZE,        CMD_TO_AP,     "AT+EMMCDDRSIZE",      eng_linuxcmd_get_emmcddrsize},
+    {CMD_EMMCDDRSIZE,        CMD_TO_AP,     "AT+EMMCDDRSIZE",      eng_linuxcmd_get_emmcddrsize},
     {CMD_GETWCNCHIP,    CMD_TO_AP,    "AT+GETWCNCHIP", eng_linuxcmd_get_wcn_chip},
     {CMD_GETANDROIDVER, CMD_TO_AP,  "AT+GETANDROIDVER", eng_linuxcmd_get_android_version},
+    {CMD_CPLOGCTL, CMD_TO_AP,  "AT+CPLOG", eng_linuxcmd_cplogctl},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -912,7 +917,8 @@ void *thread_fastsleep(void *para) {
 
   ENG_LOG("##: please plug out usb within 60s...\n");
   for (count = 0; count < 60*5; count ++) {
-    if (!g_armlog_enable) {
+    //if (!g_armlog_enable) {
+    if (!eng_usb_state()){
       sleep = 1;
       break;
     }
@@ -1720,4 +1726,34 @@ static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp)
 
 }
 
+static int eng_linuxcmd_cplogctl(char *req, char *rsp)
+{
+    char *type;
+    char ptr_cmd[1];
 
+    req = strchr(req, '=');
+    if(NULL == req) {
+        ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+        goto out;
+    }
+    req++;
+    ptr_cmd[0] = *req;
+
+    if(ptr_cmd[0] == '1') {
+        // start cp log
+        ENG_LOG("%s: enable cp log\n", __FUNCTION__);
+        g_armlog_enable = 1;
+        sem_post(&g_armlog_sem);
+    }else if(ptr_cmd[0] == '0'){
+        ENG_LOG("%s: disable cp log\n", __FUNCTION__);
+        g_armlog_enable = 0;
+    }else{
+        goto out;
+    }
+    sprintf(rsp, "+CPLOGCTL:%s%s", SPRDENG_OK, ENG_STREND);
+    return 0;
+
+  out:
+    sprintf(rsp, "CPLOGCTL:%s%s", SPRDENG_ERROR, ENG_STREND);
+    return 0;
+}

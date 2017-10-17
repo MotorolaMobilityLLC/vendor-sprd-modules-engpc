@@ -3367,6 +3367,15 @@ static int eng_diag_btwifiimei(char *buf, int len, char *rsp, int rsplen) {
                   direct->wifiaddr[5]);
           pWifiAddr = wifiaddr;
           ENG_LOG("%s: WIFIADDR:%s\n", __func__, wifiaddr);
+          if(direct->wifiaddr[0] & 0x03){
+          //wifi addr error break;
+          head_ptr->subtype = 0x00;
+          memcpy(tmprsp, (unsigned char *)head_ptr, headlen);
+          head_ptr = (MSG_HEAD_T *)tmprsp;
+          head_ptr->len = headlen + 2;
+          rlen = translate_packet(rsp, tmprsp, head_ptr->len);
+          return rlen;
+          }
         }
 
         ret = eng_btwifimac_write(pBtAddr, pWifiAddr);

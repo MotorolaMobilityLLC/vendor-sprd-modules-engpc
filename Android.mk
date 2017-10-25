@@ -5,7 +5,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_PRELINK_MODULE    := false
 
-CONFIG_MINIENGPC := false
+CONFIG_MINIENGPC := true
 
 ifeq ($(strip $(BOARD_SECURE_BOOT_ENABLE)), true)
 LOCAL_CFLAGS += -DSECURE_BOOT_ENABLE

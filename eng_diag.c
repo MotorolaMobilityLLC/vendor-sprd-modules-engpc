@@ -1465,10 +1465,12 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       return 0;
     case CMD_USER_GET_TIME_SYNC_INFO:
       ENG_LOG("%s: CMD_USER_GET_TIME_SYNC_INFO Req!\n", __FUNCTION__);
+#ifndef CONFIG_MINIENGPC
       memset(eng_diag_buf,0,sizeof(eng_diag_buf));
       rlen = eng_diag_get_time_sync_info(buf, len, eng_diag_buf,sizeof(eng_diag_buf));
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf,eng_diag_len ,fd);
+#endif
       return 0;
     case CMD_USER_BKLIGHT:
       ENG_LOG("%s: CMD_USER_BKLIGHT Req!\n", __FUNCTION__);

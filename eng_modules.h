@@ -20,7 +20,9 @@ typedef unsigned short ushort;
 #endif
 
 struct eng_callback{
-    unsigned short diag_ap_cmd;
+    unsigned int diag_ap_cmd; //data area: unsigned int for data command
+    unsigned char type; //command
+    unsigned char subtype; //data command
     char at_cmd[32];
     int (*eng_diag_func)(char *buf, int len, char *rsp, int rsplen);
     int (*eng_linuxcmd_func)(char *req, char *rsp);

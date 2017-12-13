@@ -34,6 +34,8 @@ eng_modules* get_eng_modules(struct eng_callback p)
         return NULL;
     }
     memset(modules,0,sizeof(eng_modules));
+    modules->callback.type = p.type;
+    modules->callback.subtype = p.subtype;
     modules->callback.diag_ap_cmd = p.diag_ap_cmd;
     sprintf(modules->callback.at_cmd, "%s", p.at_cmd);
     modules->callback.eng_diag_func = p.eng_diag_func;
@@ -104,6 +106,7 @@ int eng_modules_load(struct list_head *head )
                     ENG_LOG("%s dlsym fail! %s\n",path,dlerror());
                     continue;
                 }
+                memset(&register_callback,0,sizeof(struct eng_callback));
                 eng_register_func(&register_callback);
 
                 modules = get_eng_modules(register_callback);

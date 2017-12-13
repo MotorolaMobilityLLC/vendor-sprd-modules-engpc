@@ -1165,15 +1165,17 @@ static int eng_diag_modem_db_read(char *buf, int len, char *rsp) {
   return 0;
 }
 
-int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp) {
+int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
 
   int rlen = 0, rsplen = 0;
   eng_modules *modules_list = NULL;
   struct list_head *list_find;
   unsigned char *rsp_ptr;
   unsigned char emptyDiag[] = {0x7e, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0xd5, 0x00, 0x7e};
+  unsigned char okRsp[] = {0x7E, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x00, 0x9C, 0x00, 0x0D, 0x0A, 0x4F, 0x4B, 0x0D, 0x0A, 0x7E};
   int fd = -1;
   MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
+  unsigned int *data_cmd = NULL;
 
   if(g_list_ok == 0){
     ENG_LOG("%s:engmode list init!\n",__FUNCTION__);
@@ -1181,42 +1183,90 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp) {
     eng_modules_load(&eng_head);
   }
 
+  ENG_LOG("type:%d,subtype:%d",msg_head_ptr->type,msg_head_ptr->subtype);
   list_for_each(list_find,&eng_head){
-  modules_list = list_entry(list_find, eng_modules, node);
+    modules_list = list_entry(list_find, eng_modules, node);
 
-    if ((buf[7] == 0x68) && (strcasestr(buf+9, modules_list->callback.at_cmd)) != NULL) {
+    if ((buf[7] == 0x68) && (0 != strlen(modules_list->callback.at_cmd)) && (strcasestr(buf+9, modules_list->callback.at_cmd)) != NULL) { // at command
       ENG_LOG("%s: Dymic CMD=%s finded\n",__FUNCTION__,modules_list->callback.at_cmd);
-      rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
-
-      do{
-        msg_head_ptr->seq_num = 0;
-        msg_head_ptr->type = 0x9c;
-        msg_head_ptr->subtype = 0x00;
-        rsplen = strlen(rsp) + sizeof(MSG_HEAD_T) +6;
-        rsp_ptr = (char *)malloc(rsplen);
-        if (NULL == rsp_ptr) {
-          ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
-          return 0;
-        }
-        memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
-        ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
-        memcpy(rsp_ptr + sizeof(MSG_HEAD_T), rsp, strlen(rsp));
-        memcpy(rsp_ptr + sizeof(MSG_HEAD_T) + strlen(rsp), "\r\nOK\r\n", 6);
-      } while (0);
-
-      rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr, ((MSG_HEAD_T *)rsp_ptr)->len);
-      free(rsp_ptr);
-
-      ENG_LOG("%s: Send data to serial\n", __FUNCTION__);
-      get_user_diag_buf(rsp,rsplen);
-
-      write(get_ser_diag_fd(), emptyDiag, sizeof(emptyDiag));
-      fd= get_ser_diag_fd();
-      eng_diag_write2pc(rsp, rsplen,fd);
-      return 1;
+      if (NULL != modules_list->callback.eng_linuxcmd_func) {
+        rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
+        goto at_write;
+      } else {
+        ENG_LOG("%s: Dymic eng_linuxcmd_func == NULL\n",__FUNCTION__);
+        break;
       }
+    } else if (msg_head_ptr->type == modules_list->callback.type && msg_head_ptr->subtype == modules_list->callback.subtype) {
+      // diag command: type(unsigned char) + sub_type(unsigned char) + data_cmd(unsigned int)
+      if (0x5D == msg_head_ptr->type){
+        data_cmd = (unsigned int *)(buf + 1 + sizeof(MSG_HEAD_T));
+        if (*data_cmd != modules_list->callback.diag_ap_cmd) {
+          ENG_LOG("%s data cmd is not matched!", __FUNCTION__);
+          continue;
+        }
+      }
+
+      if (NULL != modules_list->callback.eng_diag_func) {
+        rlen = modules_list->callback.eng_diag_func(buf, len, rsp, rsp_len/2);
+        goto diag_write;
+      } else {
+        ENG_LOG("%s: Dymic eng_diag_func == NULL\n",__FUNCTION__);
+        break;
+      }
+    } else {
+      continue;
     }
-    return 0;
+  }
+
+return 0;
+
+diag_write:
+    //write rsp to pc 
+    rsp_ptr = (char *)malloc(rlen);
+    if (NULL == rsp_ptr) {
+      ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+      return 0;
+    }
+    if (rlen < 2) {
+      ENG_LOG("%s: rlen is too small:%d\n", __FUNCTION__, rlen);
+      return 0;
+    }    
+    memcpy(rsp_ptr, rsp + 1, rlen - 2);
+    rlen = translate_packet(rsp, (unsigned char *)rsp_ptr, rlen - 2);
+    fd = get_ser_diag_fd();
+    eng_diag_write2pc(rsp, rlen, fd);
+    //write OK to pc
+    eng_diag_write2pc(okRsp, sizeof(okRsp)/sizeof(unsigned char), fd);
+    return 1;
+
+at_write:
+    // write rsp to pc
+    do {
+      msg_head_ptr->seq_num = 0;
+      msg_head_ptr->type = 0x9c;
+      msg_head_ptr->subtype = 0x00;
+      rsplen = strlen(rsp) + sizeof(MSG_HEAD_T) + 6;
+      rsp_ptr = (char *)malloc(rsplen);
+      if (NULL == rsp_ptr) {
+        ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+        return 0;
+      }
+      memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
+      ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
+      memcpy(rsp_ptr + sizeof(MSG_HEAD_T), rsp, strlen(rsp));
+      memcpy(rsp_ptr + sizeof(MSG_HEAD_T) + strlen(rsp), "\r\nOK\r\n", 6);
+    } while (0);
+
+    rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr, ((MSG_HEAD_T *)rsp_ptr)->len);
+    free(rsp_ptr);
+
+    ENG_LOG("%s: Send data to serial\n", __FUNCTION__);
+    get_user_diag_buf(rsp, rsplen);
+
+    write(get_ser_diag_fd(), emptyDiag, sizeof(emptyDiag));
+    fd = get_ser_diag_fd();
+    eng_diag_write2pc(rsp, rsplen, fd);
+    return 1;
 }
 
 int eng_diag_user_handle(int type, char *buf, int len) {
@@ -2933,7 +2983,8 @@ int eng_diag(char *buf, int len) {
   else
   {
       ENG_LOG("eng_diag_dymic_hdlr\n");
-      ret = eng_diag_dymic_hdlr(buf, len, rsp);
+      memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
+      ret = eng_diag_dymic_hdlr(buf, len - num, eng_diag_buf, sizeof(eng_diag_buf));
   }
 
   ENG_LOG("%s: ret=%d\n", __FUNCTION__, ret);

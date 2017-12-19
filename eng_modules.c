@@ -77,16 +77,61 @@ int eng_modules_load(struct list_head *head )
     struct eng_callback register_callback;
     char path[MAX_LEN]=" ";
 
-    void *handler[MAX_LEN];
-    char *f_name[MAX_LEN];
-    char **p;
-    int i = 0;
-    p = f_name;
+    //void *handler[MAX_LEN];
+    //char *f_name[MAX_LEN];
+    //char **p;
+    //int i = 0;
+    //p = f_name;
     eng_modules *modules;
+
+    //get so name fail:empty
+    DIR *dir;
+    struct dirent *ptr;
+    void *handler = NULL;
 
     ENG_LOG("%s",__FUNCTION__);
 
     INIT_LIST_HEAD(head);
+    if ((dir = opendir(eng_modules_path)) == NULL)
+    {
+        ENG_LOG("Open %s error...%s",eng_modules_path,dlerror());
+        return 0;
+    }
+
+    while ((ptr = readdir(dir)) != NULL)
+    {
+      if (ptr->d_type == 8) { /// file
+        ENG_LOG("d_name:%s/%s\n", eng_modules_path, ptr->d_name);
+        snprintf(path, sizeof(path), "%s/%s", eng_modules_path, ptr->d_name);
+        ENG_LOG("find lib path: %s", path);
+
+        if (access(path, R_OK) == 0) {
+          handler = NULL;
+          handler = dlopen(path, RTLD_LAZY);
+          if (handler == NULL) {
+            ENG_LOG("%s dlopen fail! %s \n", path, dlerror());
+          } else {
+            eng_register_func = (REGISTER_FUNC)dlsym(handler, "register_this_module");
+            if (!eng_register_func) {
+              dlclose(handler);
+              ENG_LOG("%s dlsym fail! %s\n", path, dlerror());
+              continue;
+            }
+            memset(&register_callback, 0, sizeof(struct eng_callback));
+            eng_register_func(&register_callback);
+
+            modules = get_eng_modules(register_callback);
+            if (modules == NULL) {
+              ENG_LOG("%s modules == NULL\n");
+              continue;
+            }
+            list_add_tail(&modules->node, head);
+          }
+        }
+      }
+    }
+    closedir(dir);
+#if 0
     int num = readFileList(eng_modules_path,p);
     ENG_LOG("file num: %d\n",num);
 
@@ -117,6 +162,7 @@ int eng_modules_load(struct list_head *head )
             }
         }
     }
+#endif
     return 0;
 }
 

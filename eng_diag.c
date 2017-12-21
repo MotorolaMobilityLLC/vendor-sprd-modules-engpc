@@ -1233,6 +1233,7 @@ diag_write:
     }    
     memcpy(rsp_ptr, rsp + 1, rlen - 2);
     rlen = translate_packet(rsp, (unsigned char *)rsp_ptr, rlen - 2);
+    free(rsp_ptr);
     fd = get_ser_diag_fd();
     eng_diag_write2pc(rsp, rlen, fd);
     //write OK to pc
@@ -5879,6 +5880,7 @@ static int eng_open_wifi_switch() {
   ret = read(fd, cmdline, sizeof(cmdline));
   if (ret < 0) {
     ENG_LOG("%s,/proc/modules read failed", __FUNCTION__);
+    close(fd);
     return 0;
   }
 
@@ -5889,6 +5891,7 @@ static int eng_open_wifi_switch() {
     if (!WIFEXITED(flag) || WEXITSTATUS(flag) || -1 == flag) {
       ENG_LOG("%s:insmod /system/lib/modules/sprdwl.ko. flag=%d,err:%s\n",
               __FUNCTION__, flag, strerror(errno));
+      close(fd);
       return 0;
     }
   }
@@ -5898,10 +5901,11 @@ static int eng_open_wifi_switch() {
     if (!WIFEXITED(flag) || WEXITSTATUS(flag) || -1 == flag) {
       ENG_LOG("%s: start wpa_supplicant failed. flag=%d ,err:%s\n",
               __FUNCTION__, flag, strerror(errno));
+      close(fd);
       return 0;
     }
   }
-
+  close(fd);
   sleep(5);
   return 1;
 }
@@ -5925,6 +5929,7 @@ static int eng_detect_process(char *process_name) {
 static int eng_diag_read_register(char *buf, int len, char *rsp, int rsplen) {
   FILE *fd;
   int m = 0;
+  int regvalue_size =0;
   char *rsp_ptr, *temp, *end;
   char stemp[9] = {0};
   char AddrCount[64] = {0};
@@ -5955,7 +5960,7 @@ static int eng_diag_read_register(char *buf, int len, char *rsp, int rsplen) {
     ENG_LOG("%s: popen error.\n", __FUNCTION__);
     goto out;
   }
-  fread(regvalue, sizeof(char), sizeof(regvalue), fd);
+  regvalue_size=fread(regvalue, sizeof(char), sizeof(regvalue), fd);
   rsplen = sizeof(MSG_HEAD_T) + sizeof(WIFI_REGISTER_REQ_T) +
            (apcmd->nCount) * 4;  // for every type return 4 bytes data
   temp = (char *)malloc(rsplen);

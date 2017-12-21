@@ -1843,7 +1843,7 @@ int wifi_mac_filter_set(int on_off, const char *mac, char *rsp) {
   if (1 == on_off) {
     unsigned char len = 0;
 
-    if (strlen(mac) < (WIFI_MAC_STR_MAX_LEN + 2 + strlen("\r\n"))) {
+    if (mac &&(strlen(mac) < (WIFI_MAC_STR_MAX_LEN + 2 + strlen("\r\n")))) {
       ENG_LOG("%s(), mac's length is invalid, len = %lu", __func__,
               strlen(mac));
       goto err;

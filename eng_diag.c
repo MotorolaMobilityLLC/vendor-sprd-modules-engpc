@@ -1221,7 +1221,7 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
 return 0;
 
 diag_write:
-    //write rsp to pc 
+    //write rsp to pc
     rsp_ptr = (char *)malloc(rlen);
     if (NULL == rsp_ptr) {
       ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
@@ -1230,14 +1230,14 @@ diag_write:
     if (rlen < 2) {
       ENG_LOG("%s: rlen is too small:%d\n", __FUNCTION__, rlen);
       return 0;
-    }    
+    }
     memcpy(rsp_ptr, rsp + 1, rlen - 2);
     rlen = translate_packet(rsp, (unsigned char *)rsp_ptr, rlen - 2);
     free(rsp_ptr);
     fd = get_ser_diag_fd();
     eng_diag_write2pc(rsp, rlen, fd);
     //write OK to pc
-    eng_diag_write2pc(okRsp, sizeof(okRsp)/sizeof(unsigned char), fd);
+    //eng_diag_write2pc(okRsp, sizeof(okRsp)/sizeof(unsigned char), fd);
     return 1;
 
 at_write:
@@ -2947,7 +2947,11 @@ int eng_diag(char *buf, int len) {
 
   ENG_LOG("%s:write type=%d,num=%d\n", __FUNCTION__, type, num);
 
-  if (type != CMD_COMMON) {
+  memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
+  ret = eng_diag_dymic_hdlr(buf, len - num, eng_diag_buf, sizeof(eng_diag_buf));
+  ENG_LOG("eng_diag_dymic_hdlr ret=%d\n",ret);
+
+  if (type != CMD_COMMON && 0 == ret) {
     ret_val = eng_diag_user_handle(type, buf, len - num);
     ENG_LOG("%s:ret_val=%d\n", __FUNCTION__, ret_val);
 
@@ -2981,12 +2985,12 @@ int eng_diag(char *buf, int len) {
       ret = 1;
     }
   }
-  else
+  /*else
   {
       ENG_LOG("eng_diag_dymic_hdlr\n");
       memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
       ret = eng_diag_dymic_hdlr(buf, len - num, eng_diag_buf, sizeof(eng_diag_buf));
-  }
+  }*/
 
   ENG_LOG("%s: ret=%d\n", __FUNCTION__, ret);
 

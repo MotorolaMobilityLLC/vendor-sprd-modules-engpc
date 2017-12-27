@@ -85,3 +85,88 @@ int eng_write_productnvdata(char *databuf, int data_len) {
   }
   return ret;
 }
+
+int eng_read_productnvdata_with_offset(int offset, char *databuf, int data_len) {
+  int ret = 0;
+  int len;
+  int fd = -1;
+  char prop[128] = {0};
+  char miscdata_path[128] = {0};
+
+  if (-1 == property_get("ro.product.partitionpath", prop, "")){
+    ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
+    return 0;
+  }
+
+  sprintf(miscdata_path, "%smiscdata", prop);
+  fd = open(miscdata_path, O_RDONLY);
+  if (fd >= 0) {
+    ENG_LOG("%s open Ok miscdata_path = %s ", __FUNCTION__,
+            miscdata_path);
+    if (lseek(fd, offset, SEEK_SET) == -1) {
+      ENG_LOG("%s offset:%d seek failed! = %s ", __FUNCTION__, offset,
+              miscdata_path);
+      ret = 1;
+      close(fd);
+      return ret;
+    }
+    len = read(fd, databuf, data_len);
+
+    if (len <= 0) {
+      ret = 1;
+      ENG_LOG("%s read fail miscdata_path = %s ", __FUNCTION__,
+              miscdata_path);
+    }
+    close(fd);
+  } else {
+    ENG_LOG("%s open fail miscdata_path = %s ", __FUNCTION__,
+            miscdata_path);
+    ret = 1;
+  }
+  return ret;
+}
+
+int eng_write_productnvdata_with_offset(int offset, char *databuf, int data_len) {
+  int ret = 0;
+  int len;
+  int fd = -1;
+  char prop[128] = {0};
+  char miscdata_path[128] = {0};
+
+  if (-1 == property_get("ro.product.partitionpath", prop, "")){
+    ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
+    return 0;
+  }
+
+  sprintf(miscdata_path, "%smiscdata", prop);
+  fd = open(miscdata_path, O_WRONLY);
+  if (fd >= 0) {
+    ENG_LOG("%s open Ok miscdata_path = %s ", __FUNCTION__,
+            miscdata_path);
+#ifdef CONFIG_NAND
+    __s64 up_sz = data_len;
+    ioctl(fd, UBI_IOCVOLUP, &up_sz);
+#endif
+    if (lseek(fd, offset, SEEK_SET) == -1) {
+      ENG_LOG("%s offset:%d seek failed! = %s ", __FUNCTION__, offset,
+              miscdata_path);
+      ret = 1;
+      close(fd);
+      return ret;
+    }
+    len = write(fd, databuf, data_len);
+
+    if (len <= 0) {
+      ret = 1;
+      ENG_LOG("%s read fail miscdata_path = %s ", __FUNCTION__,
+              miscdata_path);
+    }
+    fsync(fd);
+    close(fd);
+  } else {
+    ENG_LOG("%s open fail miscdata_path = %s ", __FUNCTION__,
+            miscdata_path);
+    ret = 1;
+  }
+  return ret;
+}

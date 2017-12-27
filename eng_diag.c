@@ -193,6 +193,7 @@ static int eng_diag_btwifiimei(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_audio(char *buf, int len, char *rsp);
 #endif
 static int eng_diag_product_ctrl(char *buf, int len, char *rsp, int rsplen);
+static int eng_diag_product_ctrl_ex(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_direct_phschk(char *buf, int len, char *rsp, int rsplen);
 static void eng_diag_reboot(int reset);
 static int eng_diag_deep_sleep(char *buf, int len, char *rsp);
@@ -586,6 +587,10 @@ int eng_diag_parse(char *buf, int len, int *num) {
         // 3: NVITEM_PRODUCT_CTRL_WRITE
         // 4: NVITEM_PRODUCT_CTRL_ERASE
         ret = CMD_USER_PRODUCT_CTRL;
+      } else if (head_ptr->subtype == 0x12 || head_ptr->subtype == 0x13) {
+        // 0x12: NVITEM_PRODUCT_CTRL_READ_EX
+        // 0x13: NVITEM_PRODUCT_CTRL_WRITE_EX
+        ret = CMD_USER_PRODUCT_CTRL_EXT;
       } else if (head_ptr->subtype == DIAG_SUB_MMICIT_READ) {
         ret = CMD_USER_MMICIT_READ;
       } else {
@@ -1382,6 +1387,14 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
       rlen =
           eng_diag_product_ctrl(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
+      return 0;
+    case CMD_USER_PRODUCT_CTRL_EXT:
+      ENG_LOG("%s: CMD_USER_PRODUCT_CTRL_EXT\n", __FUNCTION__);
+      memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
+      rlen =
+          eng_diag_product_ctrl_ex(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
       return 0;
@@ -4092,6 +4105,82 @@ static int eng_diag_product_ctrl(char *buf, int len, char *rsp, int rsplen) {
       } else {
         memcpy(nvdata + offset, (char *)msg_head + head_len, data_len);
         nverr = eng_write_productnvdata(nvdata, data_len);
+        if (NVERR_NONE != nverr) {
+          ENG_LOG("%s:Write ERROR: %d\n", __FUNCTION__, nverr);
+        }
+      }
+
+      free(nvdata);
+
+      msg_head->subtype = nverr;
+      msg_head->len = sizeof(MSG_HEAD_T);
+
+      rsp_len =
+          translate_packet(rsp, (unsigned char *)msg_head, sizeof(MSG_HEAD_T));
+    } break;
+    default:
+      ENG_LOG("%s: ERROR Oper: %d !\n", __FUNCTION__, msg_head->subtype);
+      return 0;
+  }
+
+  ENG_LOG("%s: rsp_len : %d\n", __FUNCTION__, rsp_len);
+
+  return rsp_len;
+}
+
+static int eng_diag_product_ctrl_ex(char *buf, int len, char *rsp, int rsplen) {
+  int offset = 0;
+  int data_len = 0;
+  int head_len = 0;
+  int rsp_len = 0;
+  unsigned char *nvdata = NULL;
+  NVITEM_ERROR_E nverr = NVERR_NONE;
+  MSG_HEAD_T *msg_head = (MSG_HEAD_T *)(buf + 1);
+
+  head_len = sizeof(MSG_HEAD_T) + 2 * sizeof(unsigned int);
+  offset = *(unsigned int *)((char *)msg_head + sizeof(MSG_HEAD_T));
+  data_len = *(unsigned int *)((char *)msg_head + sizeof(MSG_HEAD_T) +
+                                 sizeof(unsigned int));
+
+  ENG_LOG("%s: offset: %d, data_len: %d\n", __FUNCTION__, offset, data_len);
+
+  if (rsplen < (head_len + data_len + 2)) {  // 2:0x7e
+    ENG_LOG("%s: Rsp buffer is not enough, need buf: %d\n", __FUNCTION__,
+            head_len + data_len);
+    return 0;
+  }
+
+  // 12: NVITEM_PRODUCT_CTRL_READ_EX
+  // 13: NVITEM_PRODUCT_CTRL_WRITE_EX
+  ENG_LOG("%s: msg_head->subtype: %d\n", __FUNCTION__, msg_head->subtype);
+  switch (msg_head->subtype) {
+    case 0x12: {
+      nvdata = (unsigned char *)malloc(data_len + head_len);
+      memset(nvdata, 0, data_len + head_len);
+      memcpy(nvdata, msg_head, head_len);
+
+      nverr = eng_read_productnvdata_with_offset(offset, nvdata + head_len, data_len);
+      if (NVERR_NONE != nverr) {
+        ENG_LOG("%s: Read ERROR: %d\n", __FUNCTION__, nverr);
+        data_len = 0;
+      }
+
+      ((MSG_HEAD_T *)nvdata)->subtype = nverr;
+      ((MSG_HEAD_T *)nvdata)->len = head_len + data_len;
+
+      rsp_len = translate_packet(rsp, nvdata, head_len + data_len);
+
+      free(nvdata);
+    } break;
+    case 0x13: {
+      nvdata = (unsigned char *)malloc(data_len);
+      memset(nvdata, 0, data_len);
+      nverr = eng_read_productnvdata_with_offset(offset, nvdata, data_len);
+      if (NVERR_NONE != nverr) {
+        ENG_LOG("%s: Read before writing ERROR: %d\n", __FUNCTION__, nverr);
+      } else {
+        memcpy(nvdata, (char *)msg_head + head_len, data_len);
+        nverr = eng_write_productnvdata_with_offset(offset, nvdata, data_len);
         if (NVERR_NONE != nverr) {
           ENG_LOG("%s:Write ERROR: %d\n", __FUNCTION__, nverr);
         }

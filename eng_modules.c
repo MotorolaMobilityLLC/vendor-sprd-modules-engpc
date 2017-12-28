@@ -21,6 +21,7 @@
 #define	MAX_LEN 50
 
 typedef void (*REGISTER_FUNC)(struct eng_callback *register_callback);
+typedef void (*REGISTER_EXT_FUNC)(struct eng_callback *reg, int *num);
 
 static const char *eng_modules_path = "/system/lib/engpc";
 
@@ -74,7 +75,12 @@ int readFileList(const char *basePath, char **f_name)
 int eng_modules_load(struct list_head *head )
 {
     REGISTER_FUNC eng_register_func = NULL;
+    REGISTER_EXT_FUNC eng_register_ext_func = NULL;
     struct eng_callback register_callback;
+    struct eng_callback register_arr[32];
+    struct eng_callback *register_arr_ptr = register_arr;
+    int register_num = 0;
+    int i = 0;
     char path[MAX_LEN]=" ";
 
     //void *handler[MAX_LEN];
@@ -112,20 +118,43 @@ int eng_modules_load(struct list_head *head )
             ENG_LOG("%s dlopen fail! %s \n", path, dlerror());
           } else {
             eng_register_func = (REGISTER_FUNC)dlsym(handler, "register_this_module");
-            if (!eng_register_func) {
+            if (eng_register_func != NULL) {
+              memset(&register_callback, 0, sizeof(struct eng_callback));
+              eng_register_func(&register_callback);
+              ENG_LOG("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
+                        register_callback.type, register_callback.subtype,
+                        register_callback.diag_ap_cmd, register_callback.at_cmd);
+              modules = get_eng_modules(register_callback);
+              if (modules == NULL) {
+                ENG_LOG("%s modules == NULL\n", __FUNCTION__);
+                continue;
+              }
+              list_add_tail(&modules->node, head);
+            }
+
+            eng_register_ext_func = (REGISTER_EXT_FUNC)dlsym(handler, "register_this_module_ext");
+            if (eng_register_ext_func != NULL) {
+              memset(register_arr, 0, sizeof(register_arr));
+              eng_register_ext_func(register_arr_ptr, &register_num);
+              ENG_LOG("register_num:%d",register_num);
+
+              for (i = 0; i < register_num; i++) {
+                ENG_LOG("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
+                        register_arr[i].type, register_arr[i].subtype,
+                        register_arr[i].diag_ap_cmd, register_arr[i].at_cmd);
+                modules = get_eng_modules(register_arr[i]);
+                if (modules == NULL) {
+                  ENG_LOG("%s modules == NULL\n", __FUNCTION__);
+                  continue;
+                }
+                list_add_tail(&modules->node, head);
+              }
+            }
+            if (eng_register_func == NULL && eng_register_ext_func == NULL) {
               dlclose(handler);
               ENG_LOG("%s dlsym fail! %s\n", path, dlerror());
               continue;
             }
-            memset(&register_callback, 0, sizeof(struct eng_callback));
-            eng_register_func(&register_callback);
-
-            modules = get_eng_modules(register_callback);
-            if (modules == NULL) {
-              ENG_LOG("%s modules == NULL\n");
-              continue;
-            }
-            list_add_tail(&modules->node, head);
           }
         }
       }

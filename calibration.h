@@ -47,6 +47,7 @@ typedef enum {
   DIAG_AP_CMD_CHANGE = 0x0010,
   DIAG_AP_CMD_READ_CURRENT = 0x0011,
   DIAG_AP_CMD_TSX_DATA = 0x0019,
+  DIAG_AP_CMD_TSX_DATA_EXT = 0x0023,//include osc temprature x 4
   DIAG_AP_CMD_GET_MODEM_MODE = 0x0012,
   DIAG_AP_CMD_MODEM_DB_ATTR = 0x000e,
   DIAG_AP_CMD_MODEM_DB_READ = 0x000f,
@@ -122,6 +123,20 @@ typedef struct
   unsigned int res_status;
   TSX_DATA_T value[2];
 }TOOLS_DIAG_AP_TSX_DATA_T;
+
+typedef struct
+{
+  unsigned int freq;
+  unsigned int temprature;
+  unsigned int osctemprature;
+}TSX_DATA_EXT_T;
+
+typedef struct
+{
+  unsigned int cmd;
+  unsigned int res_status;
+  TSX_DATA_EXT_T value[4];
+}TOOLS_DIAG_AP_TSX_DATA_EXT_T;
 
 typedef struct {
   MSG_HEAD_T msg_head;

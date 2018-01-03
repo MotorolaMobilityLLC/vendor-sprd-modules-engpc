@@ -23,7 +23,8 @@
 typedef void (*REGISTER_FUNC)(struct eng_callback *register_callback);
 typedef void (*REGISTER_EXT_FUNC)(struct eng_callback *reg, int *num);
 
-static const char *eng_modules_path = "/system/lib/engpc";
+//static const char *eng_modules_path = "/system/lib/engpc";
+static const char *eng_modules_path = "/vendor/lib/npidevice";
 
 eng_modules* get_eng_modules(struct eng_callback p)
 {

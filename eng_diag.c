@@ -143,6 +143,7 @@ extern int eng_battery_calibration(char *data, unsigned int count,
 extern void adc_get_result(char *chan);
 extern void disable_calibration(void);
 extern void enable_calibration(void);
+extern int set_max_current(int value);
 extern char *get_ser_diag_path(void);
 extern int disconnect_vbus_charger(void);
 extern int connect_vbus_charger(void);
@@ -231,6 +232,7 @@ int eng_diag_adc(
 void At_cmd_back_sig(void);  // add by kenyliu on 2013 07 15 for set calibration
                              // enable or disable  bug 189696
 static void eng_diag_cft_switch_hdlr(char *buf, int len, char *rsp, int rsplen);
+static int eng_diag_set_max_current(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_enable_charge(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_get_charge_current(char *buf, int len, char *rsp,
                                        int rsplen);
@@ -1625,6 +1627,13 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       ENG_LOG("%s: CMD_USER_TXDATA_EXT Req!\n", __FUNCTION__);
       memset(eng_diag_buf,0,sizeof(eng_diag_buf));
       rlen = eng_diag_txdata_ext(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf, eng_diag_len,fd);
+      return 0;
+    case CMD_USER_SET_MAX_CURRENT:
+      ENG_LOG("%s: CMD_USER_CHARGE_CURRENT Req!\n", __FUNCTION__);
+      memset(eng_diag_buf,0,sizeof(eng_diag_buf));
+      rlen = eng_diag_set_max_current(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf, eng_diag_len,fd);
       return 0;
@@ -4493,6 +4502,8 @@ static int eng_diag_ap_req(char *buf, int len) {
     ret = CMD_USER_MODEM_DB_READ;
   } else if (DIAG_AP_CMD_TEE_PRODUCTION == apcmd->cmd) {
     ret = CMD_USER_TEE_PRODUCTION;
+  } else if (DIAG_AP_CMD_SET_MAX_CURRENT == apcmd->cmd) {
+    ret = CMD_USER_SET_MAX_CURRENT;
   } else {
     ret = CMD_USER_APCALI;
   }
@@ -4899,6 +4910,51 @@ static int eng_diag_gps_autotest_hdlr(char *buf, int len, char *rsp,
   return ret;
 }
 #endif
+
+static int eng_diag_set_max_current(char *buf, int len, char *rsp, int rsplen)
+{
+   int ret = 0;
+  char *rsp_ptr;
+  int ii=0;
+  int  *result;
+  ENG_LOG(" enter %s\n", __FUNCTION__);
+  if (NULL == buf) {
+    ENG_LOG("%s,null pointer", __FUNCTION__);
+    return 0;
+  }
+
+  MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
+  TOOLS_DIAG_AP_CHARGE_CURRENT *maxcurrent =
+      (TOOLS_DIAG_AP_CMD_T *)(buf + 1 + sizeof(MSG_HEAD_T) +
+                              sizeof(TOOLS_DIAG_AP_CMD_T));
+
+  rsplen = sizeof(TOOLS_DIAG_AP_CNF_T) + sizeof(MSG_HEAD_T);
+  rsp_ptr = (char *)malloc(rsplen);
+  if (NULL == rsp_ptr) {
+    ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+    return 0;
+  }
+  ENG_LOG(" middle %s\n", __FUNCTION__);
+  result = (int *)(rsp_ptr + sizeof(MSG_HEAD_T));
+  memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
+  ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
+   ret =  set_max_current( maxcurrent->value);
+    if (ret > 0) {
+     *result = 0x00;
+    } else {
+     *result = 0x01;
+     ENG_LOG("%s: set_max_current failed !!!", __FUNCTION__);
+    }
+  ENG_LOG("%s   rsplen=%02X", __FUNCTION__,rsplen);
+
+  rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr,
+                            ((MSG_HEAD_T *)rsp_ptr)->len);
+  free(rsp_ptr);
+  ENG_LOG(" exit %s\n", __FUNCTION__);
+  return rsplen;
+
+}
+
 static int eng_diag_enable_charge(char *buf, int len, char *rsp, int rsplen) {
   int ret = 0;
   char *rsp_ptr;

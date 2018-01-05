@@ -76,6 +76,45 @@ int connect_vbus_charger(void) {
   return 1;
 }
 
+int set_max_current(int value) {
+  int fd;
+  int ret = -1;
+  char max_current[5]={0};
+   sprintf(max_current, "%d", value);
+   ENG_LOG("max_current=%s  \n", max_current);
+
+   //set the max value to the   CHARGER_MAX_CURRENT1_PATH
+   fd = open( CHARGER_MAX_CURRENT1_PATH, O_WRONLY);
+    if (fd >= 0) {
+      ret = write(fd, max_current, 5);
+      if (ret < 0) {
+        ENG_LOG("%s write %s failed! \n", __func__, CHARGER_MAX_CURRENT1_PATH);
+        close(fd);
+        return 0;
+      }
+      close(fd);
+    } else {
+      ENG_LOG("%s open %s failed! \n", __func__, CHARGER_MAX_CURRENT1_PATH);
+      return 0;
+    }
+//set the max value to the   CHARGER_MAX_CURRENT2_PATH
+    fd = open( CHARGER_MAX_CURRENT2_PATH, O_WRONLY);
+    if (fd >= 0) {
+      ret = write(fd, max_current, 5);
+      if (ret < 0) {
+        ENG_LOG("%s write %s failed! \n", __func__, CHARGER_MAX_CURRENT2_PATH);
+        close(fd);
+        return 0;
+      }
+      close(fd);
+    } else {
+      ENG_LOG("%s open %s failed! \n", __func__, CHARGER_MAX_CURRENT2_PATH);
+      return 0;
+    }
+
+  return 1;
+}
+
 void initialize_ctrl_file(void) {
   CALI_INFO_DATA_T cali_info;
   int ret;

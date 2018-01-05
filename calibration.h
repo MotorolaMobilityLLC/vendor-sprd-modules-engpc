@@ -9,6 +9,9 @@
 #define BATTERY_VOL_PATH "/sys/class/power_supply/battery/real_time_voltage"
 #define BATTERY_ADC_PATH "/sys/class/power_supply/battery/real_time_vbat_adc"
 #define CHARGER_STOP_PATH "/sys/class/power_supply/battery/stop_charge"
+#define CHARGER_MAX_CURRENT1_PATH "/sys/class/power_supply/battery/force_chg_cur"
+#define CHARGER_MAX_CURRENT2_PATH "/sys/class/power_supply/battery/force_input_cur"
+
 #define ADC_CHAN_FILE_PATH "/sys/kernel/debug/sc2713-regulator/adc_chan"
 #define FGU_CURRENT_ADC_FILE_PATH \
   "/sys/class/power_supply/sprdfgu/fgu_current_adc"
@@ -54,6 +57,7 @@ typedef enum {
   DIAG_AP_CMD_READ_MMI = 0x0013, //Read MMI
   DIAG_AP_CMD_WRITE_MMI = 0x0014, //Write MMI
   DIAG_AP_CMD_TEE_PRODUCTION = 0x001d,
+  DIAG_AP_CMD_SET_MAX_CURRENT = 0x0022,  //Set Max Charge Current
   MAX_DIAG_AP_CMD
 } DIAG_AP_CMD_E;
 
@@ -147,6 +151,11 @@ typedef struct {
 typedef struct {
   unsigned int on_off;  // 1:0n    0:offf
 } TOOLS_DIAG_AP_CHARGE_T;
+
+typedef struct {
+  unsigned int value;  // 
+} TOOLS_DIAG_AP_CHARGE_CURRENT;
+
 
 typedef struct { char modem_mode[64]; } TOOLS_DIAG_AP_MODULE_T;
 

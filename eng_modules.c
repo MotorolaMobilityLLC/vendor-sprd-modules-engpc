@@ -18,7 +18,7 @@
 #define  LOG_TAG "ENGPC"
 #include <cutils/log.h>
 
-#define	MAX_LEN 50
+#define MAX_LEN NAME_MAX //50
 
 typedef void (*REGISTER_FUNC)(struct eng_callback *register_callback);
 typedef void (*REGISTER_EXT_FUNC)(struct eng_callback *reg, int *num);
@@ -83,6 +83,8 @@ int eng_modules_load(struct list_head *head )
     int register_num = 0;
     int i = 0;
     char path[MAX_LEN]=" ";
+    char lnk_path[MAX_LEN]=" ";
+    int readsize = 0;
 
     //void *handler[MAX_LEN];
     //char *f_name[MAX_LEN];
@@ -107,10 +109,25 @@ int eng_modules_load(struct list_head *head )
 
     while ((ptr = readdir(dir)) != NULL)
     {
-      if (ptr->d_type == 8) { /// file
+      if (ptr->d_type == 8 || ptr->d_type == 10) { /// file  , 10 == DT_LNK
         ENG_LOG("d_name:%s/%s\n", eng_modules_path, ptr->d_name);
         snprintf(path, sizeof(path), "%s/%s", eng_modules_path, ptr->d_name);
         ENG_LOG("find lib path: %s", path);
+
+        if (ptr->d_type == 10) //DT_LNK
+        {
+            memset(lnk_path,0,sizeof(lnk_path));
+            readsize = readlink(path, lnk_path, sizeof(lnk_path));
+            ENG_LOG("%s readsize:%d lnk_path:%s \n", path ,readsize, lnk_path);
+
+            if(readsize == -1) {
+              ENG_LOG("ERROR! Fail to readlink!\n");
+              continue;
+            }
+
+            memset(path, 0, sizeof(path));
+            strncpy(path, lnk_path, strlen(lnk_path));
+        }
 
         if (access(path, R_OK) == 0) {
           handler = NULL;
@@ -157,6 +174,8 @@ int eng_modules_load(struct list_head *head )
               continue;
             }
           }
+        } else {
+            ENG_LOG("%s is not allow to read!\n", path);
         }
       }
     }

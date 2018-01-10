@@ -113,6 +113,7 @@ static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp);
 static int eng_linuxcmd_get_wcn_chip(char *req, char *rsp);
 static int eng_linuxcmd_get_android_version(char *req, char *rsp);
 static int eng_linuxcmd_cplogctl(char *req, char *rsp);
+static int eng_linuxcmd_dbg_wfc(char *req,char *rsp);
 
 static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_SENDKEY, CMD_TO_AP, "AT+SENDKEY", eng_linuxcmd_keypad},
@@ -156,6 +157,7 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_GETWCNCHIP,    CMD_TO_AP,    "AT+GETWCNCHIP", eng_linuxcmd_get_wcn_chip},
     {CMD_GETANDROIDVER, CMD_TO_AP,  "AT+GETANDROIDVER", eng_linuxcmd_get_android_version},
     {CMD_CPLOGCTL, CMD_TO_AP,  "AT+CPLOG", eng_linuxcmd_cplogctl},
+    {CMD_DBGWFC,        CMD_TO_AP,     "AT+DBGWFC",      eng_linuxcmd_dbg_wfc},
 };
 
 /** returns 1 if line starts with prefix, 0 if it does not */
@@ -1756,4 +1758,18 @@ static int eng_linuxcmd_cplogctl(char *req, char *rsp)
   out:
     sprintf(rsp, "CPLOGCTL:%s%s", SPRDENG_ERROR, ENG_STREND);
     return 0;
+}
+
+static int eng_linuxcmd_dbg_wfc(char *req,char *rsp)
+{
+  char prop[PROPERTY_VALUE_MAX] = {0};
+  property_get("persist.dbg.wfc_avail_ovr", prop, "not_find");
+  if (0 == strcmp(prop, "not_find")) {
+    ENG_LOG("%s: get wfc_avail_ovr fail\n", __FUNCTION__);
+    return 0;
+  }
+
+  ENG_LOG("%s: DBG WFC: %s",__FUNCTION__,prop);
+  sprintf(rsp, "%s%s",prop,ENG_STREND);
+  return 0;
 }

@@ -49,11 +49,15 @@
 #define DISABLE_WCN_LOG_CMD  "DISABLE_LOG WCN\n"
 #define ENABLE_GNSS_LOG_CMD  "ENABLE_LOG GNSS\n"
 #define DISABLE_GNSS_LOG_CMD  "DISABLE_LOG GNSS\n"
+#define ENABLE_5MODE_LOG_CMD  "ENABLE_LOG 5MODE\n"
+#define DISABLE_5MODE_LOG_CMD  "DISABLE_LOG 5MODE\n"
 
 //AGDSP LOG, PCM DUMP status
 static int g_agdsp_log_status = 0; // 0: Log Disabled, 1: To UART, 2: To AP
 static int g_agdsp_pcm_status = 0; // 0: PCM disabled, 1: PCM enabled
 
+extern int modemlog_to_pc;
+extern int wcnlog_to_pc;
 extern int g_reset;
 extern int g_setuart_ok;
 extern int g_armlog_enable;
@@ -156,7 +160,7 @@ static struct eng_linuxcmd_str eng_linuxcmd[] = {
     {CMD_EMMCDDRSIZE,        CMD_TO_AP,     "AT+EMMCDDRSIZE",      eng_linuxcmd_get_emmcddrsize},
     {CMD_GETWCNCHIP,    CMD_TO_AP,    "AT+GETWCNCHIP", eng_linuxcmd_get_wcn_chip},
     {CMD_GETANDROIDVER, CMD_TO_AP,  "AT+GETANDROIDVER", eng_linuxcmd_get_android_version},
-    {CMD_CPLOGCTL, CMD_TO_AP,  "AT+CPLOG", eng_linuxcmd_cplogctl},
+    {CMD_CPLOGCTL, CMD_TO_AP,  "AT+SPATCPLOG", eng_linuxcmd_cplogctl},
     {CMD_DBGWFC,        CMD_TO_AP,     "AT+DBGWFC",      eng_linuxcmd_dbg_wfc},
 };
 
@@ -1728,35 +1732,176 @@ static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp)
 
 }
 
-static int eng_linuxcmd_cplogctl(char *req, char *rsp)
-{
+// log_type :
+// 1: modem log 2: wcn log
+// location :
+// 1: pc 2: t card
+//
+int cplogctrl_setlocation(char log_type, char location) {
+  int ret = 0;
+  eng_thread_t t1, t3;
+  char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
+  char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
+
+  property_get("persist.sys.modem.log_dest", modem_log_dest, "0");
+  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "0");
+
+  ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest, wcn_log_dest);
+  ENG_LOG("%s log_type=%d, location=%d", __FUNCTION__, log_type, location);
+
+  switch (log_type) {
+  case '1': // modem log
+    switch (location) {
+    case '1': // pc
+      // start cp log
+      ENG_LOG("%s: enable cp log\n", __FUNCTION__);
+      if (0 != strcmp(modem_log_dest, "1")) { //2 to 1 , 0 to 1
+        if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0) {
+          ret = -1;
+        } else { // notice slogomodem success
+          modemlog_to_pc = 1;
+          if (0 != eng_thread_create(&t1, eng_vlog_thread, g_dev_info)) {
+            ENG_LOG("vlog thread start error");
+          }
+          if (0 != eng_thread_create(&t3, eng_vdiag_rthread, g_dev_info)) {
+            ENG_LOG("vdiag rthread start error");
+          }          
+          property_set("persist.sys.modem.log_dest", "1");
+        }
+      } else {
+        ENG_LOG("modem log already to pc!");
+        ret = -1;
+      }
+      break;
+
+    case '2': // t card
+      ENG_LOG("%s: disable cp log\n", __FUNCTION__);
+      if (0 != strcmp(modem_log_dest, "2")) { //1 to 2 , 0 to 2
+        if (notice_slogmodem(ENABLE_5MODE_LOG_CMD) < 0) {
+          ret = -1;
+        } else {
+          modemlog_to_pc = 0;
+          property_set("persist.sys.modem.log_dest", "2");
+        }
+      } else {
+        ENG_LOG("modem log already to t card!");
+        ret = -1;
+      }
+      break;
+
+    default:
+      ret = -1;
+      break;
+    }
+    break;
+  case '2': // wcn log
+    switch (location) {
+    case '1': // pc
+      // start engpcclientwcn
+      if (0 != strcmp(wcn_log_dest, "1")) { //2 to 1 , 0 to 1
+        if (notice_slogmodem(DISABLE_WCN_LOG_CMD) < 0) {
+          ret = -1;
+        } else {
+          wcnlog_to_pc = 1;
+          property_set("persist.sys.wcn.log_dest", "1");
+          //system("start engpcclientwcn");
+        }
+      } else {
+        ENG_LOG("wcn log already to pc!");
+        ret = -1;
+      }
+      break;
+
+    case '2': // t card
+      // stop engpcclientwcn
+      if (0 != strcmp(wcn_log_dest, "2")) { //1 to 2 , 0 to 2
+        if (notice_slogmodem(ENABLE_WCN_LOG_CMD) < 0) {
+          ret = -1;
+        } else {
+          wcnlog_to_pc = 0;
+          property_set("persist.sys.wcn.log_dest", "2");
+          //system("stop engpcclientwcn");
+        }
+      } else {
+        ENG_LOG("wcn log already to t card!");
+        ret = -1;
+      }
+      break;
+
+    default:
+      ret = -1;
+      break;
+    }
+    break;
+  default:
+    ret = -1;
+    break;
+  }
+
+  ENG_LOG("%s ret=%d", __FUNCTION__, ret);
+  return ret;
+}
+
+/* AT+SPATCPLOG=[log_type],[log_dest]
+* log_dest     : 0 - no log
+*                1 - to pc
+*                2 - to memory card
+*
+* log_type   : 1 - modem log
+*              2 - wcn log
+*
+* AT+SPATCPLOG=[log_type]?
+* log_type   : 1 - modem log
+*              2 - wcn log
+*/
+static int eng_linuxcmd_cplogctl(char *req, char *rsp) {
     char *type;
-    char ptr_cmd[1];
+    char log_type_cmd[2] = {0, 0};
+    char log_dest_cmd[2] = {0, 0};
+    int ret = 0;
+    char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
+    char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-    req = strchr(req, '=');
-    if(NULL == req) {
-        ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
-        goto out;
-    }
-    req++;
-    ptr_cmd[0] = *req;
+    property_get("persist.sys.modem.log_dest", modem_log_dest, "0");
+    property_get("persist.sys.wcn.log_dest", wcn_log_dest, "0");    
 
-    if(ptr_cmd[0] == '1') {
-        // start cp log
-        ENG_LOG("%s: enable cp log\n", __FUNCTION__);
-        g_armlog_enable = 1;
-        sem_post(&g_armlog_sem);
-    }else if(ptr_cmd[0] == '0'){
-        ENG_LOG("%s: disable cp log\n", __FUNCTION__);
-        g_armlog_enable = 0;
+    if (strchr(req, '?') != NULL) {
+        if (strstr(req, "=1?")!=NULL) { // modem log_dest req
+            sprintf(rsp, "+SPATCPLOG:MODEMLOG=%d%s", atoi(modem_log_dest), ENG_STREND);
+        } else if (strstr(req, "=2?")!=NULL) {  // wcn log_dest req
+            sprintf(rsp, "+SPATCPLOG:WCNLOG=%d%s", atoi(wcn_log_dest), ENG_STREND);
+        } else {
+          ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+          goto out;
+        }
     }else{
-        goto out;
+        req = strchr(req, '=');
+        if(NULL == req || NULL == req + 1) {
+            ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+            goto out;
+        }
+        req++;
+        log_type_cmd[0] = *req;
+        req = strchr(req, ',');
+        if(NULL == req || NULL == req + 1) {
+            ENG_LOG("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+            goto out;
+        }
+        req++;
+        log_dest_cmd[0] = *req;
+        ENG_LOG("%s: %d %d\n", __FUNCTION__,log_type_cmd[0], log_dest_cmd[0]);
+
+        ret = cplogctrl_setlocation(log_type_cmd[0], log_dest_cmd[0]);
+        if(ret == -1) {
+            goto out;
+        }
+        eng_socket_update_to_engmode(atoi(log_type_cmd),atoi(log_dest_cmd));
+        sprintf(rsp, "%s%s", SPRDENG_OK, ENG_STREND);
     }
-    sprintf(rsp, "+CPLOGCTL:%s%s", SPRDENG_OK, ENG_STREND);
     return 0;
 
   out:
-    sprintf(rsp, "CPLOGCTL:%s%s", SPRDENG_ERROR, ENG_STREND);
+    sprintf(rsp, "%s%s", SPRDENG_ERROR, ENG_STREND);
     return 0;
 }
 

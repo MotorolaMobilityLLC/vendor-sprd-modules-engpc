@@ -35,6 +35,8 @@
 #define AUDIO_DSP_MEM 2
 static uint32_t m_sn;
 
+extern int modemlog_to_pc;
+extern char g_run_type[32];
 extern sem_t g_armlog_sem;
 extern int g_autotest_flag;
 extern int g_armlog_enable;
@@ -446,7 +448,8 @@ void* eng_vlog_thread(void* x) {
   }
 
   ENG_LOG("eng_vlog put log data from SIPC to serial\n");
-  while (1) {
+  //while (1) {
+  while(modemlog_to_pc || 0 != strcmp(g_run_type, "l")){
 
     if (g_armlog_enable) {
       sem_post(&g_armlog_sem);
@@ -504,7 +507,7 @@ void* eng_vdiag_rthread(void* x) {
     set_raw_data_speed(ser_fd, 115200);
   }
 
-  s_ser_diag_fd = ser_fd;
+  //s_ser_diag_fd = ser_fd;
 
   /*open vbpipe/spipe*/
   ENG_LOG("eng_vdiag_r open SIPC channel...\n");
@@ -534,7 +537,8 @@ void* eng_vdiag_rthread(void* x) {
   }
 
   ENG_LOG("eng_vdiag_r put log data from SIPC to serial\n");
-  while (1) {
+  //while (1) {
+  while(modemlog_to_pc || 0 != strcmp(g_run_type, "l")) {
     r_cnt = read(modem_fd, diag_data, DATA_BUF_SIZE);
     if (r_cnt <= 0) {
       ENG_LOG("eng_vdiag_r read no log data : r_cnt=%d, %s\n", r_cnt,

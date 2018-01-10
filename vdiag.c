@@ -23,6 +23,8 @@
 int g_ass_start = 0;
 extern int g_assert_cmd;
 extern int g_ap_cali_flag;
+extern int modemlog_to_pc;
+extern char g_run_type[32];
 
 #define DATA_BUF_SIZE (4096 * 4)
 #define MAX_OPEN_TIMES 100
@@ -266,7 +268,7 @@ void *eng_vdiag_wthread(void *x) {
 
   ENG_LOG("%s: dev_diag=%s\n", __FUNCTION__, dev_info->host_int.dev_diag);
   /*open usb/usart*/
-  ser_fd = eng_open_dev(dev_info->host_int.dev_diag, O_RDONLY);
+  ser_fd = eng_open_dev(dev_info->host_int.dev_diag, O_RDWR);
   if (ser_fd < 0) {
     ENG_LOG("eng_vdiag cannot open general serial\n");
     return NULL;
@@ -275,6 +277,8 @@ void *eng_vdiag_wthread(void *x) {
   if (dev_info->host_int.dev_type == CONNECT_UART) {
     set_raw_data_speed(ser_fd, 115200);
   }
+
+  update_ser_diag_fd(ser_fd);
 
   /*open modem int*/
   if (!g_ap_cali_flag) {
@@ -421,7 +425,7 @@ void *eng_vdiag_wthread(void *x) {
     }
 
     offset = 0;  // reset offset value
-    if (modem_fd > 0) {
+    if (modem_fd > 0 && (modemlog_to_pc || 0 != strcmp(g_run_type, "l"))) {
       do {
         w_cnt = write(modem_fd, backup_data_buf + offset, backup_data_len);
         if (w_cnt < 0) {

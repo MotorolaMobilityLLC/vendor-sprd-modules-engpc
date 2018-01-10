@@ -18,6 +18,7 @@
 #include "eng_uevent.h"
 #include "eng_debug.h"
 #include "eng_cmd4linuxhdlr.h"
+#include "eng_socket.h"
 
 #define VLOG_PRI -20
 #define USB_CONFIG_VSER "vser"
@@ -32,6 +33,9 @@ eng_dev_info_t *g_dev_info = 0;
 int g_ap_cali_flag = 0;
 int g_agdsp_flag = 0;//ag dsp log flag
 pthread_mutex_t g_time_sync_lock = PTHREAD_MUTEX_INITIALIZER;
+int modemlog_to_pc = 1;
+int wcnlog_to_pc = 1;
+char g_run_type[32] = {'t'};
 extern int g_armlog_enable;
 extern int disconnect_vbus_charger(void);
 extern int turnoff_calibration_backlight(void);
@@ -421,6 +425,7 @@ static void eng_get_usb_int(int argc, char** argv, char* at_dev, char* diag_dev,
     switch (opt) {
       case 'p':
         strcpy(type, optarg);
+        strcpy(g_run_type, optarg);
         if(!strcmp(type, "ag")) {
             strcpy(at_dev, "");
             strcpy(diag_dev, "");
@@ -498,10 +503,36 @@ static void eng_check_whether_iqfeed(void) {
   }
 }
 
+
+void cplogctrl_init(void) {
+  char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
+  char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
+
+  property_get("persist.sys.modem.log_dest", modem_log_dest, "0");
+  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "0");
+
+  ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest,
+          wcn_log_dest);
+
+  if (0 == strcmp(modem_log_dest, "1")) {
+    modemlog_to_pc = 1;
+  } else { // just care whether modem_log_dest is "1" or not
+    modemlog_to_pc = 0;
+  }
+
+  if (0 == strcmp(wcn_log_dest, "1")) {
+    wcnlog_to_pc = 1;
+  } else { // just care whether wcn_log_dest is "1" or not
+    wcnlog_to_pc = 0;
+  }  
+  ENG_LOG("%s modemlog_to_pc=%d, wcnlog_to_pc=%d", __FUNCTION__, modemlog_to_pc, wcnlog_to_pc);  
+}
+
 int main(int argc, char** argv) {
   char cmdline[ENG_CMDLINE_LEN];
   char run_type[32] = {'t'};
   eng_thread_t t0, t1, t2, t3, t4, t5;
+  eng_thread_t t_eng_soc;
   int fd;
   char set_propvalue[] = {"1"};
   char get_propvalue[PROPERTY_VALUE_MAX] = {0};
@@ -591,6 +622,20 @@ int main(int argc, char** argv) {
         }
       }
     }
+  }
+
+  /* cplogctrl init :keep before design when cali mode*/
+  if (1 != cmdparam.califlag) {
+    cplogctrl_init();
+//    if (0 == strcmp(run_type, "wcn") && 0 == wcnlog_to_pc){
+//      ENG_LOG("engpcclientwcn exit!");
+//      exit(0);
+//    }
+  }
+
+  /* creat thread to listen socket */  
+  if (0 != eng_thread_create(&t_eng_soc, eng_socket_thread, run_type)) {
+    ENG_LOG("eng_soc thread start error");
   }
 
   /* Check whether the iqfeed shall be started. */

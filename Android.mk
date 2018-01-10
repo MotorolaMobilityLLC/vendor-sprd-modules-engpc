@@ -99,6 +99,7 @@ LOCAL_SRC_FILES     := eng_pcclient.c  \
                        eng_ap_modem_time_sync.c \
 					   emmc.cpp \
 					   ddr.c \
+                       eng_socket.c \
 					   eng_modules.c
 
 ifneq ($(CONFIG_MINIENGPC), true)

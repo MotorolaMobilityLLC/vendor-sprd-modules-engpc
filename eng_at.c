@@ -20,6 +20,7 @@ static int pc_fd = -1;
 #include <cutils/sockets.h>
 #include <dlfcn.h>
 
+#define MAX_OPEN_TIMES 200
 
 static int start_gser(char* ser_path)
 {
@@ -161,10 +162,27 @@ write_again:
 int eng_at_pcmodem(eng_dev_info_t* dev_info)
 {
     eng_thread_t t1,t2;
+    int wait_cnt = 0;
 
     start_gser(dev_info->host_int.dev_at);
 
-    at_mux_fd = open(dev_info->modem_int.at_chan, O_RDWR);
+    do {
+      at_mux_fd = open(dev_info->modem_int.at_chan, O_RDWR);
+      if (at_mux_fd < 0) {
+        if (0 == wait_cnt)
+          ENG_LOG("eng_at_pcmodem cannot open %s, error: %s\n",
+                  dev_info->modem_int.at_chan, strerror(errno));
+        if (wait_cnt++ >= MAX_OPEN_TIMES) {
+          ENG_LOG(
+              "eng_at_pcmodem cannot open SIPC, try times exceed the max open "
+              "times\n");
+          break;
+        }
+        usleep(200 * 1000);
+      }
+    } while (at_mux_fd < 0);
+
+    //at_mux_fd = open(dev_info->modem_int.at_chan, O_RDWR);
     if(at_mux_fd < 0){
         ENG_LOG("%s: open %s fail [%s]\n",__FUNCTION__, dev_info->modem_int.at_chan,strerror(errno));
         return -1;

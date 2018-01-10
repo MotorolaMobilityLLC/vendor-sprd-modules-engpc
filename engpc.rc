@@ -9,7 +9,6 @@ service engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyGS6 -l /
     class core
     user root
     group system radio shell
-    disabled
     oneshot
 
 service engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
@@ -46,3 +45,9 @@ service engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
     group system radio shell
     disabled
     oneshot
+
+on property:persist.sys.wcn.log_dest=1
+   start engpcclientwcn
+
+on property:persist.sys.wcn.log_dest=2
+   stop engpcclientwcn

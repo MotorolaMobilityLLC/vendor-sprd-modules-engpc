@@ -14,6 +14,7 @@
 #include <cutils/sockets.h>
 #include <poll.h>
 #include <sys/sysinfo.h>
+#include <dlfcn.h>
 #include "engopt.h"
 #include "eng_attok.h"
 #include "eng_pcclient.h"
@@ -115,6 +116,10 @@ char *at_sipc_devname[] = {
     "/dev/stty_td30",  // AT channel in TD mode
     "/dev/stty_w30"    // AT channel in W mode
 };
+
+typedef int (*IFAA_SOTER_FUNC)(char *buf, int len, char *rsp, int rsplen);
+static const char *ifaa_so_path = "/vendor/lib/libifaacheck.so";
+static const char *soter_so_path = "/system/lib/libteeproduction.so";
 
 struct list_head eng_head;
 int g_list_ok = 0;
@@ -719,6 +724,12 @@ int eng_diag_parse(char *buf, int len, int *num) {
         ret = CMD_USER_GET_MONITORDATA;
       }
       break;
+    case DIAG_CMD_PQ:
+      ENG_LOG("%s: Handle DIAG_CMD_PQ", __FUNCTION__);
+      if (head_ptr->subtype == 0x02) {
+        ret = CMD_USER_IFFA_SOFTER_REQ;
+      }
+      break;
     default:
       ENG_LOG("%s: Default\n", __FUNCTION__);
       ret = CMD_COMMON;
@@ -1288,6 +1299,82 @@ at_write:
     return 1;
 }
 
+
+int eng_diag_iffa_softer_cmds_process(char *buf, int len, char *rsp,
+                                      int rsplen) {
+  unsigned int *data_cmd = NULL;
+  int ret_len = 0;
+  char rsp_data[68];
+  int rsp_len = 0;
+  MSG_HEAD_T *rsp_head_ptr = NULL;
+  IFAA_SOTER_FUNC register_func = NULL;
+  void *handler;
+  char tmp_rsp[128];
+
+  if(NULL == buf){
+    ENG_LOG("%s,null pointer",__FUNCTION__);
+    return 0;
+  }
+
+  if (len + 68 > rsplen) {
+    ENG_LOG("%s,buf len:%d too long!", __FUNCTION__, len);
+    return 0;
+  }
+
+  memset(rsp_data, 0, sizeof(rsp_data));
+  data_cmd = (unsigned int *)(buf + DIAG_HEADER_LENGTH + 1); // data command;
+  ENG_LOG("%s data_cmd=%d", __FUNCTION__, *data_cmd);
+
+  switch (*data_cmd) {
+  case CMD_IFFA_SOFTER_IFFA: // IFFA
+    // ret_len = eng_diag_ifaa_check(buf, len, rsp_data, 68);
+    if (access(ifaa_so_path, R_OK) == 0) {
+      handler = dlopen(ifaa_so_path, RTLD_LAZY);
+      register_func = (IFAA_SOTER_FUNC)dlsym(handler, "eng_diag_ifaa_check");
+
+      if (!register_func) {
+        ENG_LOG("%s dlsym fail! %s\n", ifaa_so_path, dlerror());
+      } else {
+        ret_len = register_func(buf, len, rsp_data, 68);
+      }
+      dlclose(handler);
+    } else {
+      ENG_LOG("%s access fail!\n", ifaa_so_path);
+    }
+    break;
+  case CMD_IFFA_SOFTER_SOFTER: // SOFTER
+// ret_len = eng_diag_soter_check(buf, len, rsp_data, 68);
+    if (access(soter_so_path, R_OK) == 0) {
+      handler = dlopen(soter_so_path, RTLD_LAZY);
+      register_func = (IFAA_SOTER_FUNC)dlsym(handler, "eng_diag_soter_check");
+
+      if (!register_func) {
+        ENG_LOG("%s dlsym fail! %s\n", soter_so_path, dlerror());
+      } else {
+        ret_len = register_func(buf, len, rsp_data, 68);
+      }
+      dlclose(handler);
+    } else {
+      ENG_LOG("%s access fail!\n", soter_so_path);
+    }
+    break;
+  default:
+    ENG_LOG("%s invalid data cmd type!", __FUNCTION__);
+    break;
+  }
+
+  memset(tmp_rsp, 0, sizeof(tmp_rsp));
+  memcpy(tmp_rsp, buf + 1, DIAG_HEADER_LENGTH + sizeof(unsigned int));
+  memcpy(tmp_rsp + DIAG_HEADER_LENGTH + sizeof(unsigned int), rsp_data, 68);
+  rsp_head_ptr = (MSG_HEAD_T *)(tmp_rsp);
+  rsp_head_ptr->len += 68;
+  rsp_len = translate_packet(rsp, (unsigned char *)tmp_rsp,
+                            DIAG_HEADER_LENGTH + sizeof(unsigned int) + 68);
+  ENG_LOG("%s rsp_len=%d", __FUNCTION__, rsp_len);
+
+  return rsp_len;
+}
+
 int eng_diag_user_handle(int type, char *buf, int len) {
   int rlen = 0, i;
   int extra_len = 0;
@@ -1646,6 +1733,13 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       rlen = eng_diag_set_max_current(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf, eng_diag_len,fd);
+      return 0;
+    case CMD_USER_IFFA_SOFTER_REQ:
+      ENG_LOG("%s: CMD_USER_IFFA_SOFTER_REQ Req!\n", __FUNCTION__);
+      memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
+      rlen = eng_diag_iffa_softer_cmds_process(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
       return 0;
     default:
       break;

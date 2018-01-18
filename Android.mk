@@ -208,7 +208,7 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_LDLIBS        += -Idl
 #LOCAL_CFLAGS += -DENG_API_LOG
 
-LOCAL_SHARED_LIBRARIES := libcutils
+LOCAL_SHARED_LIBRARIES := libcutils liblog
 LOCAL_C_INCLUDES  += eng_hardware_test.h
 
 LOCAL_SRC_FILES     :=   eng_hardware_test.c \

@@ -1275,7 +1275,7 @@ at_write:
       msg_head_ptr->seq_num = 0;
       msg_head_ptr->type = 0x9c;
       msg_head_ptr->subtype = 0x00;
-      rsplen = strlen(rsp) + sizeof(MSG_HEAD_T) + 6;
+      rsplen = strlen(rsp) + sizeof(MSG_HEAD_T)/* + 6*/;
       rsp_ptr = (char *)malloc(rsplen);
       if (NULL == rsp_ptr) {
         ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
@@ -1284,7 +1284,7 @@ at_write:
       memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
       ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
       memcpy(rsp_ptr + sizeof(MSG_HEAD_T), rsp, strlen(rsp));
-      memcpy(rsp_ptr + sizeof(MSG_HEAD_T) + strlen(rsp), "\r\nOK\r\n", 6);
+      //memcpy(rsp_ptr + sizeof(MSG_HEAD_T) + strlen(rsp), "\r\nOK\r\n", 6);
     } while (0);
 
     rsplen = translate_packet(rsp, (unsigned char *)rsp_ptr, ((MSG_HEAD_T *)rsp_ptr)->len);
@@ -1296,6 +1296,7 @@ at_write:
     write(get_ser_diag_fd(), emptyDiag, sizeof(emptyDiag));
     fd = get_ser_diag_fd();
     eng_diag_write2pc(rsp, rsplen, fd);
+    eng_diag_write2pc(okRsp, sizeof(okRsp)/sizeof(unsigned char), fd);
     return 1;
 }
 

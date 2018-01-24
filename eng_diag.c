@@ -123,6 +123,10 @@ static const char *soter_so_path = "/system/lib/libteeproduction.so";
 
 struct list_head eng_head;
 int g_list_ok = 0;
+//for case : first at cmd is for handshake, second at cmd is data
+struct eng_callback next_data_callback = {
+  .eng_linuxcmd_func = NULL
+};
 
 int g_reset = 0;
 int g_setuart_ok = 0;
@@ -1186,12 +1190,16 @@ static int eng_diag_modem_db_read(char *buf, int len, char *rsp) {
 
 int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
 
-  int rlen = 0, rsplen = 0;
+  int rlen = 0, rsplen = 0, also_need_to_cp = 0;
+  int at_ret_error = 0; // whether at cmd return "ERROR"
   eng_modules *modules_list = NULL;
   struct list_head *list_find;
   unsigned char *rsp_ptr;
   unsigned char emptyDiag[] = {0x7e, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0xd5, 0x00, 0x7e};
   unsigned char okRsp[] = {0x7E, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x00, 0x9C, 0x00, 0x0D, 0x0A, 0x4F, 0x4B, 0x0D, 0x0A, 0x7E};
+  unsigned char *pending_mark = "\r\nPENDING\r\n";
+  int pending_mark_len = strlen(pending_mark);
+  int sub_pendig_mark = 0;
   int fd = -1;
   MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
   unsigned int *data_cmd = NULL;
@@ -1204,6 +1212,7 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
   }
 
   ENG_LOG("type:%d,subtype:%d",msg_head_ptr->type,msg_head_ptr->subtype);
+
   list_for_each(list_find,&eng_head){
     modules_list = list_entry(list_find, eng_modules, node);
 
@@ -1211,6 +1220,12 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
       ENG_LOG("%s: Dymic CMD=%s finded\n",__FUNCTION__,modules_list->callback.at_cmd);
       if (NULL != modules_list->callback.eng_linuxcmd_func) {
         rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
+
+        //for case :need to ap & cp
+        if (modules_list->callback.also_need_to_cp) {
+          also_need_to_cp = 1;
+        }
+
         goto at_write;
       } else {
         ENG_LOG("%s: Dymic eng_linuxcmd_func == NULL\n",__FUNCTION__);
@@ -1237,6 +1252,12 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
 
       if (NULL != modules_list->callback.eng_diag_func) {
         rlen = modules_list->callback.eng_diag_func(buf, len, rsp, rsp_len/2);
+
+        //for case :need to ap & cp
+        if (modules_list->callback.also_need_to_cp) {
+          also_need_to_cp = 1;
+        }
+
         goto diag_write;
       } else {
         ENG_LOG("%s: Dymic eng_diag_func == NULL\n",__FUNCTION__);
@@ -1247,18 +1268,29 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
     }
   }
 
-return 0;
+  // for case : first at cmd is for handshake, second at cmd is data
+  // if mark exist, send this at cmd as one at data cmd
+  if (NULL != next_data_callback.eng_linuxcmd_func && 0x68 == msg_head_ptr->type) {
+    if (strcasestr(buf + 9, "AT") == NULL) {  //if there is no AT
+      ENG_LOG("%s: Dymic next_data_callback", __FUNCTION__);
+      rlen = next_data_callback.eng_linuxcmd_func(buf, rsp);
+      goto at_write;
+    } 
+  }
+  next_data_callback.eng_linuxcmd_func = NULL;
+
+return DYMIC_RET_NO_DEAL;
 
 diag_write:
     //write rsp to pc
     rsp_ptr = (char *)malloc(rlen);
     if (NULL == rsp_ptr) {
       ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
-      return 0;
+      return DYMIC_RET_NO_DEAL;
     }
     if (rlen < 2) {
       ENG_LOG("%s: rlen is too small:%d\n", __FUNCTION__, rlen);
-      return 0;
+      return DYMIC_RET_NO_DEAL;
     }
     memcpy(rsp_ptr, rsp + 1, rlen - 2);
     rlen = translate_packet(rsp, (unsigned char *)rsp_ptr, rlen - 2);
@@ -1267,23 +1299,36 @@ diag_write:
     eng_diag_write2pc(rsp, rlen, fd);
     //write OK to pc
     //eng_diag_write2pc(okRsp, sizeof(okRsp)/sizeof(unsigned char), fd);
-    return 1;
+    return (also_need_to_cp == 1 ? DYMIC_RET_ALSO_NEED_TO_CP : DYMIC_RET_DEAL_SUCCESS);
 
 at_write:
-    // write rsp to pc
+    // whether rsp contains "ERROR"
+    at_ret_error = ((strcasestr(rsp, "ERROR")) != NULL) ? 1 : 0;
+
+    // whether rsp contains "\r\nPENDING\r\n"
+    next_data_callback.eng_linuxcmd_func = NULL;
+    sub_pendig_mark = 0;    
+    if (!at_ret_error && (strcasestr(rsp, pending_mark)) != NULL) {
+      if (0 == strncmp(rsp + strlen(rsp) - pending_mark_len, pending_mark, pending_mark_len)) {
+        next_data_callback.eng_linuxcmd_func = modules_list->callback.eng_linuxcmd_func;
+        sub_pendig_mark = pending_mark_len;
+      } 
+    } 
+    ENG_LOG("%s at_ret_error:%d sub_pending_mark:%d", __FUNCTION__, at_ret_error, sub_pendig_mark);
+    // write rsp to pc    
     do {
       msg_head_ptr->seq_num = 0;
       msg_head_ptr->type = 0x9c;
       msg_head_ptr->subtype = 0x00;
-      rsplen = strlen(rsp) + sizeof(MSG_HEAD_T)/* + 6*/;
+      rsplen = strlen(rsp) + sizeof(MSG_HEAD_T)/* + 6*/ - sub_pendig_mark;
       rsp_ptr = (char *)malloc(rsplen);
       if (NULL == rsp_ptr) {
         ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
-        return 0;
+        return DYMIC_RET_NO_DEAL;
       }
       memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
       ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
-      memcpy(rsp_ptr + sizeof(MSG_HEAD_T), rsp, strlen(rsp));
+      memcpy(rsp_ptr + sizeof(MSG_HEAD_T), rsp, strlen(rsp) - sub_pendig_mark);
       //memcpy(rsp_ptr + sizeof(MSG_HEAD_T) + strlen(rsp), "\r\nOK\r\n", 6);
     } while (0);
 
@@ -1296,8 +1341,8 @@ at_write:
     write(get_ser_diag_fd(), emptyDiag, sizeof(emptyDiag));
     fd = get_ser_diag_fd();
     eng_diag_write2pc(rsp, rsplen, fd);
-    eng_diag_write2pc(okRsp, sizeof(okRsp)/sizeof(unsigned char), fd);
-    return 1;
+    eng_diag_write2pc(okRsp, sizeof(okRsp)/sizeof(unsigned char), get_ser_diag_fd());
+    return (also_need_to_cp == 1 ? DYMIC_RET_ALSO_NEED_TO_CP : DYMIC_RET_DEAL_SUCCESS);
 }
 
 
@@ -3086,7 +3131,7 @@ int eng_diag(char *buf, int len) {
   ret = eng_diag_dymic_hdlr(buf, len - num, eng_diag_buf, sizeof(eng_diag_buf));
   ENG_LOG("eng_diag_dymic_hdlr ret=%d\n",ret);
 
-  if (type != CMD_COMMON && 0 == ret) {
+  if (type != CMD_COMMON && DYMIC_RET_NO_DEAL == ret) {
     ret_val = eng_diag_user_handle(type, buf, len - num);
     ENG_LOG("%s:ret_val=%d\n", __FUNCTION__, ret_val);
 
@@ -3126,6 +3171,10 @@ int eng_diag(char *buf, int len) {
       memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
       ret = eng_diag_dymic_hdlr(buf, len - num, eng_diag_buf, sizeof(eng_diag_buf));
   }*/
+
+  if (DYMIC_RET_ALSO_NEED_TO_CP == ret) {
+    ret = 0;
+  }
 
   ENG_LOG("%s: ret=%d\n", __FUNCTION__, ret);
 

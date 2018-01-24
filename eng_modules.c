@@ -39,6 +39,7 @@ eng_modules* get_eng_modules(struct eng_callback p)
     modules->callback.type = p.type;
     modules->callback.subtype = p.subtype;
     modules->callback.diag_ap_cmd = p.diag_ap_cmd;
+    modules->callback.also_need_to_cp = p.also_need_to_cp;
     sprintf(modules->callback.at_cmd, "%s", p.at_cmd);
     modules->callback.eng_diag_func = p.eng_diag_func;
     modules->callback.eng_linuxcmd_func = p.eng_linuxcmd_func;

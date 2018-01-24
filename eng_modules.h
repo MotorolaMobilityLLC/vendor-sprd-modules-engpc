@@ -24,6 +24,7 @@ struct eng_callback{
     unsigned char type; //command
     unsigned char subtype; //data command
     char at_cmd[32];
+    int also_need_to_cp;
     int (*eng_diag_func)(char *buf, int len, char *rsp, int rsplen);
     int (*eng_linuxcmd_func)(char *req, char *rsp);
 };

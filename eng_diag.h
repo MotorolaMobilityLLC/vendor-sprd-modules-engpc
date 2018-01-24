@@ -415,6 +415,12 @@ typedef struct __attribute__((packed)) {
 
 typedef struct { uint8_t lpSHA1[SHA1_SIZE]; } DBSHA1_T;
 
+typedef enum {
+  DYMIC_RET_NO_DEAL = 0,
+  DYMIC_RET_DEAL_SUCCESS = 1,
+  DYMIC_RET_ALSO_NEED_TO_CP = 2,
+} DYMIC_RET_E;
+
 int eng_diag(char *buf, int len);
 int eng_diag_writeimei(char *req, char *rsp);
 void *eng_vlog_thread(void *x);

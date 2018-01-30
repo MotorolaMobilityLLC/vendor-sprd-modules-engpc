@@ -1345,6 +1345,53 @@ at_write:
     return (also_need_to_cp == 1 ? DYMIC_RET_ALSO_NEED_TO_CP : DYMIC_RET_DEAL_SUCCESS);
 }
 
+int eng_at_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len, DYMIC_WRITETOPC_FUNC writetopc_func) {
+
+  int rlen = 0, ret = 0;
+  eng_modules *modules_list = NULL;
+  struct list_head *list_find;
+  int fd = -1;
+
+  ENG_LOG("%s buf:%s len:%d rsp_len:%d", __FUNCTION__, buf, len, rsp_len);
+
+  if(g_list_ok == 0){
+    ENG_LOG("%s:engmode list init!\n",__FUNCTION__);
+    g_list_ok = 1;
+    eng_modules_load(&eng_head);
+  }
+
+  list_for_each(list_find, &eng_head) {
+    modules_list = list_entry(list_find, eng_modules, node);
+
+    if ((0 != strlen(modules_list->callback.at_cmd)) &&
+        (0 == strncmp((const char *) buf, (const char *)(modules_list->callback.at_cmd),
+         strlen(modules_list->callback.at_cmd)))) { // at command
+        ENG_LOG("%s: Dymic CMD=%s finded\n", __FUNCTION__,
+                modules_list->callback.at_cmd);
+        if (NULL != modules_list->callback.eng_linuxcmd_func) {
+          rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
+
+          goto at_write;
+        } else {
+          ENG_LOG("%s: Dymic eng_linuxcmd_func == NULL\n", __FUNCTION__);
+          break;
+        }
+      }
+    else {
+      continue;
+    }
+  }
+
+  return DYMIC_RET_NO_DEAL;
+
+at_write:
+  // write rsp to pc
+  ENG_LOG("%s: Send data to pc\n", __FUNCTION__);
+  if (NULL != writetopc_func) {
+    writetopc_func(rsp, strlen(rsp));
+  }
+  return DYMIC_RET_DEAL_SUCCESS;
+}
 
 int eng_diag_iffa_softer_cmds_process(char *buf, int len, char *rsp,
                                       int rsplen) {

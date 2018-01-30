@@ -231,6 +231,8 @@ struct eng_autotestcmd_str {
 #define ENG_MODEMDB_DIAG_SIZE (64 * 1024)
 #define MAX_DIAG_TRANSMIT_MODEMDB_LEN (ENG_MODEMDB_DIAG_SIZE - 128)
 
+typedef int (*DYMIC_WRITETOPC_FUNC)(char *rsp, int len);
+
 typedef enum {
   USB_SPEED_UNKNOWN = 0,
   /* enumerating */
@@ -431,4 +433,5 @@ void *eng_timesync_thread(void *x);
 void *eng_sd_log(void *args);
 void *eng_gps_log_thread(void *x);
 int eng_diag_decode7d7e(unsigned char *buf, int len);
+int eng_at_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len, DYMIC_WRITETOPC_FUNC writetopc_func);
 #endif

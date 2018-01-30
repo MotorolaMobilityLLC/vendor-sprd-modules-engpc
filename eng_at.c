@@ -19,6 +19,7 @@ static int pc_fd = -1;
 #include <cutils/str_parms.h>
 #include <cutils/sockets.h>
 #include <dlfcn.h>
+#include "eng_diag.h"
 
 #define MAX_OPEN_TIMES 200
 
@@ -50,8 +51,30 @@ static int start_gser(char* ser_path)
     return 0;
 }
 
+int at_write_to_pc(char *rsp, int len){
+  int ret = -1;
 
+  ENG_LOG("%s: pc_fd:%d\n", __FUNCTION__, pc_fd);
+  if (NULL == rsp) {
+      ENG_LOG("%s rsp == NULL", __FUNCTION__);
+      return ret;
+  }
 
+at_write:
+  if (pc_fd >= 0) {
+    ret = write(pc_fd, rsp, len);
+    if (ret <= 0) {
+      ENG_LOG("%s: write length error %s\n", __FUNCTION__, strerror(errno));
+      sleep(1);
+      start_gser(s_dev_info->host_int.dev_at);
+      goto at_write;
+    }
+  } else {
+    ENG_LOG("%s: write fail : pc_fd < 0 \n", __FUNCTION__);
+  }
+
+  return ret;
+}
 
 static void *eng_readpcat_thread(void *par)
 {
@@ -60,6 +83,7 @@ static void *eng_readpcat_thread(void *par)
     int cur;
     char engbuf[ENG_BUFFER_SIZE];
     char databuf[ENG_BUFFER_SIZE];
+    char eng_rsp_buf[2 * ENG_DIAG_SIZE];
     int i, offset_read, length_read, status;
     eng_dev_info_t* dev_info = (eng_dev_info_t*)par;
     int ret;
@@ -98,6 +122,13 @@ static void *eng_readpcat_thread(void *par)
 
             ENG_LOG("pc got: %s: %d", engbuf, len);
 
+            memset(eng_rsp_buf, 0, 2 * ENG_DIAG_SIZE);
+            if (DYMIC_RET_DEAL_SUCCESS ==
+                eng_at_dymic_hdlr(engbuf, len, eng_rsp_buf,
+                                  sizeof(eng_rsp_buf), at_write_to_pc)) {
+              ENG_LOG("%s eng_at_dymic_hdrl deal success!", __FUNCTION__);
+              continue;
+            }
         } else {
             ENG_LOG("warning !!!");
         }

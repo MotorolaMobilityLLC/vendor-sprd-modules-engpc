@@ -119,7 +119,7 @@ char *at_sipc_devname[] = {
 
 typedef int (*IFAA_SOTER_FUNC)(char *buf, int len, char *rsp, int rsplen);
 static const char *ifaa_so_path = "/vendor/lib/libifaacheck.so";
-static const char *soter_so_path = "/system/lib/libteeproduction.so";
+static const char *soter_so_path = "/vendor/lib/libteeproduction.so";
 
 struct list_head eng_head;
 int g_list_ok = 0;

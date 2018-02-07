@@ -41,6 +41,7 @@
 #include "atci.h"
 #endif
 #endif
+#include "diag_trace_dump.h"
 #include "calibration.h"
 #include "eng_cmd4linuxhdlr.h"
 #include "wifi_eut_sprd.h"
@@ -732,6 +733,8 @@ int eng_diag_parse(char *buf, int len, int *num) {
       ENG_LOG("%s: Handle DIAG_CMD_PQ", __FUNCTION__);
       if (head_ptr->subtype == 0x02) {
         ret = CMD_USER_IFFA_SOFTER_REQ;
+      } else if (head_ptr->subtype == 0x04) {
+        ret = CMD_USER_TRACE_DUMP;
       }
       break;
     default:
@@ -1275,7 +1278,7 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
       ENG_LOG("%s: Dymic next_data_callback", __FUNCTION__);
       rlen = next_data_callback.eng_linuxcmd_func(buf, rsp);
       goto at_write;
-    } 
+    }
   }
   next_data_callback.eng_linuxcmd_func = NULL;
 
@@ -1307,15 +1310,15 @@ at_write:
 
     // whether rsp contains "\r\nPENDING\r\n"
     next_data_callback.eng_linuxcmd_func = NULL;
-    sub_pendig_mark = 0;    
+    sub_pendig_mark = 0;
     if (!at_ret_error && (strcasestr(rsp, pending_mark)) != NULL) {
       if (0 == strncmp(rsp + strlen(rsp) - pending_mark_len, pending_mark, pending_mark_len)) {
         next_data_callback.eng_linuxcmd_func = modules_list->callback.eng_linuxcmd_func;
         sub_pendig_mark = pending_mark_len;
-      } 
-    } 
+      }
+    }
     ENG_LOG("%s at_ret_error:%d sub_pending_mark:%d", __FUNCTION__, at_ret_error, sub_pendig_mark);
-    // write rsp to pc    
+    // write rsp to pc
     do {
       msg_head_ptr->seq_num = 0;
       msg_head_ptr->type = 0x9c;
@@ -1831,6 +1834,11 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       ENG_LOG("%s: CMD_USER_IFFA_SOFTER_REQ Req!\n", __FUNCTION__);
       memset(eng_diag_buf, 0, sizeof(eng_diag_buf));
       rlen = eng_diag_iffa_softer_cmds_process(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
+      eng_diag_len = rlen;
+      eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
+      return 0;
+    case CMD_USER_TRACE_DUMP:
+      rlen = trace_dump(buf, len, eng_diag_buf, sizeof(eng_diag_buf));
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
       return 0;

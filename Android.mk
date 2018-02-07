@@ -42,6 +42,8 @@ endif
 endif
 endif
 
+LOCAL_SHARED_LIBRARIES += libtracedump
+
 LOCAL_STATIC_LIBRARIES  := libbt-utils
 LOCAL_LDLIBS        += -Idl
 ifeq ($(strip $(BOARD_USE_EMMC)),true)
@@ -60,7 +62,8 @@ LOCAL_C_INCLUDES    += hardware/libhardware/include \
                        hardware/libhardware_legacy/include \
                        frameworks/opt/net/wifi/libwifi_hal/include \
                        system/core/include \
-                       system/media/audio/include
+                       system/media/audio/include \
+                       $(TOP)/vendor/sprd/proprietories-source/engmode/libtracedump
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_C_INCLUDES    +=  vendor/sprd/modules/audio/voiceband/effect/include \

@@ -16,6 +16,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include "eng_modules.h"
+#include "eng_diag.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,23 +30,8 @@ extern "C" {
 #define FUN_ENTER             LOGD("[ %s ++ ]\n", __FUNCTION__)
 #define FUN_EXIT              LOGD("[ %s -- ]\n", __FUNCTION__)
 
-struct eng_callback{
-    unsigned int diag_ap_cmd; //data area: unsigned int for data command
-    unsigned char type; //command
-    unsigned char subtype; //data command
-    char at_cmd[32];
-    int (*eng_diag_func)(char *buf, int len, char *rsp, int rsplen);
-    int (*eng_linuxcmd_func)(char *req, char *rsp);
-};
-
-// This is the communication frame head
-typedef struct msg_head_tag {
-  unsigned int seq_num;  // Message sequence number, used for flow control
-  unsigned short len;    // The totoal size of the packet "sizeof(MSG_HEAD_T)
-  // + packet size"
-  unsigned char type;     // Main command type
-  unsigned char subtype;  // Sub command type
-} __attribute__((packed)) MSG_HEAD_T;
+//结构体eng_callback定义在vendor/sprd/proprietories-source/engmode/eng_modules.h文件中
+//如下结构体MSG_HEAD_T;定义在vendor/sprd/proprietories-source/engmode/eng_diag.h文件中
 
 #ifdef __cplusplus
 }

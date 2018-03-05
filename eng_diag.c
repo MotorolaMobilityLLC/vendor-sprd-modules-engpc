@@ -309,6 +309,12 @@ static int eng_autotest_sensor(char *req, char *rsp);
 //-- ]]
 static int eng_autotest_gps(char *req, char *rsp);
 
+DYMIC_WRITETOPC_FUNC write_interface[WRITE_TO_MAX] = {
+write_to_host_diag,/*pc lte diag*/
+NULL,/*write_to_host_log*/
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+};
+
 static struct eng_autotestcmd_str eng_autotestcmd[] = {
     {CMD_AUTOTEST_DUMMY, eng_autotest_dummy},
     {CMD_AUTOTEST_KEYPAD, eng_autotest_keypad},
@@ -1254,6 +1260,9 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
       }
 
       if (NULL != modules_list->callback.eng_diag_func) {
+        if (NULL != modules_list->callback.eng_set_writeinterface_func) {
+          modules_list->callback.eng_set_writeinterface_func(write_interface);
+        }
         rlen = modules_list->callback.eng_diag_func(buf, len, rsp, rsp_len/2);
 
         //for case :need to ap & cp

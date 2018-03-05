@@ -424,6 +424,17 @@ typedef enum {
   DYMIC_RET_ALSO_NEED_TO_CP = 2,
 } DYMIC_RET_E;
 
+typedef enum {
+  WRITE_TO_START = 0,
+  WRITE_TO_HOST_DIAG = WRITE_TO_START,
+  WRITE_TO_HOST_LOG,
+  WRITE_TO_HOST_AT,
+  WRITE_TO_MODEM_DIAG,
+  WRITE_TO_MODEM_LOG,
+  WRITE_TO_MODEM_AT,
+  WRITE_TO_MAX = WRITE_TO_START + 16,
+} WRITE_INTERFACE_E;
+
 int eng_diag(char *buf, int len);
 int eng_diag_writeimei(char *req, char *rsp);
 void *eng_vlog_thread(void *x);

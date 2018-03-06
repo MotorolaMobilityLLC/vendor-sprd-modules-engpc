@@ -33,6 +33,14 @@
 #define AUDIO_DSP_LOG 0
 #define AUDIO_DSP_PCM 1
 #define AUDIO_DSP_MEM 2
+
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+#define SL_EFUSE_HUK_RD 0x10
+#define SL_EFUSE_HUK_WT 0x20
+#define SL_EFUSE_PUK_RD 0x40
+#define SL_EFUSE_PUK_WT 0x80
+#endif
+
 static uint32_t m_sn;
 
 extern int modemlog_to_pc;
@@ -46,6 +54,10 @@ extern int g_gps_log_enable;
 extern int g_ap_cali_flag;
 static char log_data[DATA_BUF_SIZE];
 static char diag_data[DATA_BUF_SIZE];
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+static char modem_cmd_buf[DATA_BUF_SIZE];
+static int modem_cmd_buf_buf_len = 0;
+#endif
 static char gps_log_data[GPS_DATA_BUF_SIZE] = {0};
 static int s_ser_diag_fd = 0;
 static eng_dev_info_t* s_dev_info;
@@ -57,6 +69,10 @@ char top_logdir[MAX_NAME_LEN];
 extern void eng_usb_enable(void);
 extern void eng_usb_maximum_speed(USB_DEVICE_SPEED_ENUM speed);
 extern void set_raw_data_speed(int fd, int speed);
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+//static int eng_simlock_efuse_req_check(char* diag_data, int r_cnt, int fd);
+static int eng_simlock_efuse_req_process(char *data, int len, int fd);
+#endif
 
 static void dump_mem_len_print(int r_cnt, int* dumplen, char *data) {
   unsigned int head, len, tail;
@@ -481,6 +497,68 @@ out:
   return 0;
 }
 
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+int check_diag_valid(char *data, int len){
+    if (NULL == data) {
+      return 0;
+    }
+
+    if (len < sizeof(MSG_HEAD_T) + 2) {
+        ENG_LOG("%s diag frame len:%d less than minus diag frame length!\n", __FUNCTION__, len);
+        return 0;
+    }
+
+    return 1;
+}
+
+// Find a valid diag framer.
+int get_modem_diag_buf( unsigned char *buf, int len, int *offset) {
+  int i;
+  int is_find = 0;
+  //eng_dump(buf, len, 20, 1, __FUNCTION__);
+
+  //reset diag buf
+  //memset(modem_cmd_buf, 0, sizeof(modem_cmd_buf));
+  //modem_cmd_buf_buf_len = 0;
+
+  if (len > DATA_BUF_SIZE || len <= 0) {
+    ENG_LOG("%s : length(%d) is ilegal!\n", __FUNCTION__, len);
+    return 0;
+  }
+
+  for (i = 0; i < len; i++) {
+    (*offset) ++;
+
+    if (buf[i] == 0x7e && modem_cmd_buf_buf_len == 0) {  // start
+      modem_cmd_buf[modem_cmd_buf_buf_len++] = buf[i];
+    } else if (modem_cmd_buf_buf_len > 0 && modem_cmd_buf_buf_len < DATA_BUF_SIZE) {
+      modem_cmd_buf[modem_cmd_buf_buf_len] = buf[i];
+      modem_cmd_buf_buf_len++;
+      if (buf[i] == 0x7e) {
+        is_find = 1;
+        break;
+      }
+    } else if (modem_cmd_buf_buf_len >= DATA_BUF_SIZE) {
+      //reset diag buf
+      memset(modem_cmd_buf, 0, sizeof(modem_cmd_buf));
+      modem_cmd_buf_buf_len = 0;
+    }
+  }
+  if (is_find) {
+      eng_dump(modem_cmd_buf, modem_cmd_buf_buf_len, 20, 1, __FUNCTION__);
+      if (!check_diag_valid(modem_cmd_buf, modem_cmd_buf_buf_len)) {
+        (*offset)--;
+        // reset diag buf
+        memset((void *)modem_cmd_buf, 0, sizeof(modem_cmd_buf));
+        modem_cmd_buf_buf_len = 0;
+        is_find = 0;
+      }
+  }
+  ENG_LOG("%s : ************************is_find = %d .final.", __FUNCTION__, is_find);
+  return is_find;
+}
+#endif
+
 void* eng_vdiag_rthread(void* x) {
   int ser_fd, modem_fd, test_fd = -1;
   int r_cnt, w_cnt, offset;
@@ -490,6 +568,9 @@ void* eng_vdiag_rthread(void* x) {
   int flag = 0;
   s_dev_info = (eng_dev_info_t*)x;
   char get_propvalue[PROPERTY_VALUE_MAX] = {0};
+  #if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+  char *modem_data_ptr = NULL;
+  #endif
 
   ENG_LOG("eng_vdiag_r thread start\n");
 
@@ -512,7 +593,7 @@ void* eng_vdiag_rthread(void* x) {
   /*open vbpipe/spipe*/
   ENG_LOG("eng_vdiag_r open SIPC channel...\n");
   do {
-    modem_fd = open(s_dev_info->modem_int.diag_chan, O_RDONLY);
+    modem_fd = open(s_dev_info->modem_int.diag_chan, O_RDWR);
     if (modem_fd < 0) {
       if(0 == retry_num)
       ENG_LOG("eng_vdiag_r cannot open %s, error: %s\n",
@@ -549,6 +630,31 @@ void* eng_vdiag_rthread(void* x) {
       property_set("sys.config.engcplog.enable", "1");
     }
     property_get("sys.config.engcplog.enable", get_propvalue, "not_find");
+
+    #if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+    if (1 == s_dev_info->host_int.cali_flag) {
+      // eng_simlock_efuse_req_check(diag_data, r_cnt, modem_fd);
+      offset = 0;
+      modem_data_ptr = diag_data;
+      do {
+        offset = 0;
+        if (get_modem_diag_buf((unsigned char *)modem_data_ptr, r_cnt - (modem_data_ptr - diag_data), &offset)) {
+          eng_simlock_efuse_req_process(modem_cmd_buf, modem_cmd_buf_buf_len, modem_fd);
+          // reset diag buf
+          memset(modem_cmd_buf, 0, sizeof(modem_cmd_buf));
+          modem_cmd_buf_buf_len = 0;
+        }
+        // ENG_LOG("%s diag frame offset:%d\n", __FUNCTION__, offset);
+        if (0 == offset) {
+          break;
+        }
+        modem_data_ptr += offset;
+        // ENG_LOG("%s 1111 r_cnt:%d cur_pos:%d\n", __FUNCTION__, r_cnt,
+        // (modem_data_ptr - diag_data));
+      } while (modem_data_ptr - diag_data < r_cnt);
+    }
+    #endif
+
     if ((0 == strcmp(get_propvalue, "1")) &&
         (1 == s_dev_info->host_int.cali_flag)) {
       ENG_LOG("%s sys.config.engcplog.enable= %s\n", __FUNCTION__,
@@ -941,3 +1047,205 @@ void eng_filter_calibration_log_diag(char* diag_data, int r_cnt, int *fd_ptr) {
 
   return;
 }
+
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+static void EndianConvert(uint8_t *dst, uint8_t *src, int count)
+{
+    char *tmp = dst;
+    char *s = src + count - 1;
+    while(count --) {
+        *tmp ++= *s--;
+    }
+}
+
+static int eng_simlock_efuse_req_process(char *data, int len, int fd)
+{
+  uint8_t sl_rsp[32] = {0};
+  unsigned char rsp[32] = {0};
+  int rsp_len = 0;
+  //char *rsp_ptr;
+  int ret = -1;
+  int num = eng_diag_decode7d7e((unsigned char *)(data + 1), (len - 2));  // remove the start 0x7e and the last 0x7e
+  MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T*)(data + 1);
+
+  //check diag command length
+  ENG_LOG("%s diag command length:%d num:%d", __FUNCTION__, len, num);
+  if (len - num < sizeof(MSG_HEAD_T) + 2) {
+    ENG_LOG("%s diag command length:%d < diag cmd min length!", __FUNCTION__, len - num);
+    return 0;
+  }
+
+  if (len - 2 != msg_head_ptr->len) {
+    ENG_LOG("%s msg_head_ptr->len:%d is not matched!", __FUNCTION__, msg_head_ptr->len);
+    return 0;
+  }
+  // 60:simlock efuse operation request
+  if(60 == msg_head_ptr->type) {
+    uint32_t tee_rsp_len = 0;
+    tee_msg_rd_t tee_msg_rd = {0x19000000, 0x0201, 0x80, {0xB3,0x78,0xEA,0x66,0x48,0xF7,0x11,0xE6,
+        0xB8,0x78,0xE3,0xFF,0xB7,0x61,0x7E,0x0B}, 0x02010010, 0x1, 0x0};
+    tee_msg_wr_t tee_msg_wr = {0x1d000000, 0x0001, 0x80, {0xB3,0x78,0xEA,0x66,0x48,0xF7,0x11,0xE6,
+        0xB8,0x78,0xE3,0xFF,0xB7,0x61,0x7E,0x0B}, 0x00010010, 0x0, 0x1, 0x0};
+    tee_rsp_wr_t tee_wr_rsp = {0};
+    tee_rsp_rd_t tee_rd_rsp = {0};
+
+    ENG_LOG("%s: type:%x,subtype:%x\n", __FUNCTION__, msg_head_ptr->type, msg_head_ptr->subtype);
+    memcpy(sl_rsp, data, sizeof(MSG_HEAD_T) + 2);
+    switch(msg_head_ptr->subtype){
+        case SL_EFUSE_HUK_RD:
+            msg_head_ptr = (MSG_HEAD_T*)(sl_rsp + 1);
+            tee_msg_rd.x_or = (((uint8_t*)(&tee_msg_rd))[0]);
+            for(int i = 1; i < (sizeof(tee_msg_rd_t) - 1); i ++){
+                tee_msg_rd.x_or = tee_msg_rd.x_or^(((uint8_t*)(&tee_msg_rd))[i]);
+            }
+            ENG_LOG("eng_simlock_huk_rd_req: len:%x,id:%x,flag:%x,cmdid:%x,ver:%x,xor:%x.\n", tee_msg_rd.len,
+                tee_msg_rd.id, tee_msg_rd.flag,tee_msg_rd.cmd_id,tee_msg_rd.ver,tee_msg_rd.x_or);
+            ret = TEECex_SendMsg_To_TEE(&tee_msg_rd, sizeof(tee_msg_rd_t), &tee_rd_rsp, &tee_rsp_len);
+            ENG_LOG("%s: ret = %x\n", __FUNCTION__, ret);
+            if(ret){
+                msg_head_ptr->subtype |= 0x1;
+            }else{
+                EndianConvert((uint8_t*)(msg_head_ptr+1), (uint8_t*)&(tee_rd_rsp.cmd_data), 4);
+            }
+            ENG_LOG("eng_simlock_huk_rd_rsp: len:%x,id:%x,flag:%x,ret_code:%x,cmd_data:%x,xor:%x.\n", tee_rd_rsp.len,
+                tee_rd_rsp.id, tee_rd_rsp.flag,tee_rd_rsp.ret_code,tee_rd_rsp.cmd_data,tee_rd_rsp.x_or);
+            msg_head_ptr->len = sizeof(MSG_HEAD_T) + sizeof(uint32_t);
+            *(sl_rsp + msg_head_ptr->len + 1) = 0x7e;
+            break;
+        case SL_EFUSE_PUK_RD:
+            msg_head_ptr = (MSG_HEAD_T*)(sl_rsp + 1);
+            tee_msg_rd.id = 0x0301;
+            tee_msg_rd.cmd_id = 0x03010010;
+            tee_msg_rd.x_or = (((uint8_t*)(&tee_msg_rd))[0]);
+            for(int i = 1; i < (sizeof(tee_msg_rd_t) - 1); i ++){
+                tee_msg_rd.x_or = tee_msg_rd.x_or^(((uint8_t*)(&tee_msg_rd))[i]);
+            }
+            ENG_LOG("eng_simlock_puk_rd_req: len:%x,id:%x,flag:%x,cmdid:%x,ver:%x,xor:%x.\n", tee_msg_rd.len,
+                tee_msg_rd.id, tee_msg_rd.flag,tee_msg_rd.cmd_id,tee_msg_rd.ver,tee_msg_rd.x_or);
+            ret = TEECex_SendMsg_To_TEE(&tee_msg_rd, sizeof(tee_msg_rd_t), &tee_rd_rsp, &tee_rsp_len);
+            ENG_LOG("%s: ret = %x\n", __FUNCTION__, ret);
+            if(ret){
+                msg_head_ptr->subtype |= 0x1;
+            }else{
+                EndianConvert((uint8_t*)(msg_head_ptr+1), (uint8_t*)&(tee_rd_rsp.cmd_data), 4);
+            }
+            ENG_LOG("eng_simlock_puk_rd_rsp: len:%x,id:%x,flag:%x,ret_code:%x,cmd_data:%x,xor:%x.\n", tee_rd_rsp.len,
+                tee_rd_rsp.id, tee_rd_rsp.flag,tee_rd_rsp.ret_code,tee_rd_rsp.cmd_data,tee_rd_rsp.x_or);
+            msg_head_ptr->len = sizeof(MSG_HEAD_T) + sizeof(uint32_t);
+            *(sl_rsp + msg_head_ptr->len + 1) = 0x7e;
+            break;
+        case SL_EFUSE_HUK_WT:
+            EndianConvert((uint8_t*)(&(tee_msg_wr.cmd_data)), ((uint8_t*)(msg_head_ptr + 1)), 4);
+            tee_msg_wr.x_or = (((uint8_t*)(&tee_msg_wr))[0]);
+            for(int i = 1; i < (sizeof(tee_msg_wr_t) - 1); i ++){
+                tee_msg_wr.x_or = tee_msg_wr.x_or^(((uint8_t*)(&tee_msg_wr))[i]);
+            }
+            msg_head_ptr = (MSG_HEAD_T*)(sl_rsp + 1);
+            ENG_LOG("eng_simlock_huk_wt_req: len:%x,id:%x,flag:%x,cmdid:%x,cmd_data:%x,ver:%x,xor:%x.\n", tee_msg_wr.len, tee_msg_wr.id, tee_msg_wr.flag,tee_msg_wr.cmd_id,tee_msg_wr.cmd_data,tee_msg_wr.ver,tee_msg_wr.x_or);
+            ret = TEECex_SendMsg_To_TEE(&tee_msg_wr, sizeof(tee_msg_wr_t), &tee_wr_rsp, &tee_rsp_len);
+            if(ret){
+                ENG_LOG("%s: ret = %x\n", __FUNCTION__, ret);
+                msg_head_ptr->subtype |= 0x1;
+            }
+            ENG_LOG("eng_simlock_huk_wt_rsp: len:%x,id:%x,flag:%x,ret_code:%x,xor:%x.\n", tee_wr_rsp.len,
+                tee_wr_rsp.id, tee_wr_rsp.flag,tee_wr_rsp.ret_code,tee_rd_rsp.x_or);
+            msg_head_ptr->len = sizeof(MSG_HEAD_T);
+            *(sl_rsp + msg_head_ptr->len + 1) = 0x7e;
+            break;
+        case SL_EFUSE_PUK_WT:
+            EndianConvert((uint8_t*)(&(tee_msg_wr.cmd_data)), ((uint8_t*)(msg_head_ptr + 1)), 4);
+            msg_head_ptr = (MSG_HEAD_T*)(sl_rsp + 1);
+            tee_msg_wr.id = 0x0101;
+            tee_msg_wr.cmd_id = 0x01010010;
+            tee_msg_wr.x_or = (((uint8_t*)(&tee_msg_wr))[0]);
+            for(int i = 1; i < (sizeof(tee_msg_wr_t) - 1); i ++){
+                tee_msg_wr.x_or = tee_msg_wr.x_or^(((uint8_t*)(&tee_msg_wr))[i]);
+            }
+            ENG_LOG("eng_simlock_puk_wt_req: len:%x,id:%x,flag:%x,cmdid:%x,cmd_data:%x,ver:%x,xor:%x.\n", tee_msg_wr.len, tee_msg_wr.id, tee_msg_wr.flag,tee_msg_wr.cmd_id,tee_msg_wr.cmd_data,tee_msg_wr.ver,tee_msg_wr.x_or);
+            ret = TEECex_SendMsg_To_TEE(&tee_msg_wr, sizeof(tee_msg_wr_t), &tee_wr_rsp, &tee_rsp_len);
+            if(ret){
+                ENG_LOG("%s: ret = %x\n", __FUNCTION__, ret);
+                msg_head_ptr->subtype |= 0x1;
+            }
+            ENG_LOG("eng_simlock_puk_wt_rsp: len:%x,id:%x,flag:%x,ret_code:%x,xor:%x.\n", tee_wr_rsp.len,
+                tee_wr_rsp.id, tee_wr_rsp.flag,tee_wr_rsp.ret_code,tee_rd_rsp.x_or);
+            msg_head_ptr->len = sizeof(MSG_HEAD_T);
+            *(sl_rsp + msg_head_ptr->len + 1) = 0x7e;
+            break;
+        default:
+            break;
+    }
+    if(fd > 0) {
+        memset(rsp, 0, sizeof(rsp));
+        rsp_len = translate_packet(rsp, (unsigned char *)(sl_rsp + 1), msg_head_ptr->len);
+        eng_dump(rsp, rsp_len, 20, 1, __FUNCTION__);
+        ret = write(fd, rsp, rsp_len);
+        ENG_LOG("%s: ret: %d\n", __FUNCTION__, ret);
+    }
+  } else {
+    // Other diag command, do nothing.
+  }
+
+  return 0;
+}
+#if 0
+static int eng_simlock_efuse_req_check(char* diag_data, int r_cnt, int fd)
+{
+  int processlen = 0;
+  int remainlen = 0;
+  int log_state = ENG_LOG_NO_WAIT;
+  int ret = -1;
+  char* tmp = diag_data;
+
+  do {
+    if (log_state == ENG_LOG_WAIT_END &&
+        *tmp == 0x7e) {  // the start is 0x7e and the last data is not a
+                         // complete diag
+      goto FRAME;
+    }
+
+    while (*tmp == 0x7e) {
+      ext_log_data_buf[ext_log_buf_len++] = *tmp;
+      tmp++;  // skip header 0x7e
+    }
+
+    // All the left bytes are 0x7E,so don't wait end byte.
+    if ((int)(tmp - diag_data) == r_cnt) break;
+
+    while (*tmp != 0x7e) {
+      remainlen = (int)(tmp - diag_data);
+      if (r_cnt == remainlen) {
+        break;  // the last is not the 0x7e
+      }
+      ext_log_data_buf[ext_log_buf_len++] = *tmp;
+      tmp++;  // find the end 0x7e
+    }
+
+    if (*tmp != 0x7e) {
+      log_state = ENG_LOG_WAIT_END;  // continue to receive,wait for the end
+                                     // 0x7e,herit on the last break
+      break;
+    } else {
+    FRAME:
+      ext_log_data_buf[ext_log_buf_len++] = *tmp;
+
+      eng_simlock_efuse_req_process(ext_log_data_buf, ext_log_buf_len, fd);
+
+      if (log_state == ENG_LOG_WAIT_END) {
+        processlen = (int)(tmp - diag_data) + 1;
+        log_state = ENG_LOG_NO_WAIT;
+      } else {
+        processlen += ext_log_buf_len;
+      }
+      memset(ext_log_data_buf, 0, ext_log_buf_len);
+      ext_log_buf_len = 0;
+      if (processlen != r_cnt) {
+        tmp++;
+      }
+    }
+  } while (processlen != r_cnt);
+
+  return 0;
+}
+#endif
+#endif

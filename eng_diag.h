@@ -418,6 +418,46 @@ typedef struct __attribute__((packed)) {
 
 typedef struct { uint8_t lpSHA1[SHA1_SIZE]; } DBSHA1_T;
 
+#if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+typedef struct __attribute__((packed)) {
+  uint32_t len;
+  uint16_t id;
+  uint8_t flag;
+  uint8_t uuid[16];
+  uint32_t cmd_id;
+  uint32_t cmd_data;
+  uint8_t ver;
+  uint8_t x_or;
+} tee_msg_wr_t;
+
+typedef struct __attribute__((packed)) {
+  uint32_t len;
+  uint16_t id;
+  uint8_t flag;
+  uint8_t uuid[16];
+  uint32_t cmd_id;
+  uint8_t ver;
+  uint8_t x_or;
+} tee_msg_rd_t;
+
+typedef struct __attribute__((packed)) {
+  uint32_t len;
+  uint16_t id;
+  uint8_t flag;
+  uint32_t ret_code;
+  uint8_t x_or;
+} tee_rsp_wr_t;
+
+typedef struct __attribute__((packed)) {
+  uint32_t len;
+  uint16_t id;
+  uint8_t flag;
+  uint32_t ret_code;
+  uint32_t cmd_data;
+  uint8_t x_or;
+} tee_rsp_rd_t;
+#endif
+
 typedef enum {
   DYMIC_RET_NO_DEAL = 0,
   DYMIC_RET_DEAL_SUCCESS = 1,

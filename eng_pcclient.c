@@ -532,6 +532,7 @@ int main(int argc, char** argv) {
   char cmdline[ENG_CMDLINE_LEN];
   char run_type[32] = {'t'};
   eng_thread_t t0, t1, t2, t3, t4, t5;
+  eng_thread_t t_eng_at;
   eng_thread_t t_eng_soc;
   int fd;
   char set_propvalue[] = {"1"};
@@ -667,7 +668,10 @@ int main(int argc, char** argv) {
   }
 
   if (cmdparam.califlag != 1 || cmdparam.nativeflag != 1) {
-    eng_at_pcmodem(&dev_info);
+    // eng_at_pcmodem(&dev_info);
+    if (0 != eng_thread_create(&t_eng_at, eng_at_pcmodem_thread, &dev_info)) {
+      ENG_LOG("eng_thread_create start error");
+    }
   }
 
 #ifdef HAVE_EUT_BLUETOOTH_SPRD

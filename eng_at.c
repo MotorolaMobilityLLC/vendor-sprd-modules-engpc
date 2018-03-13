@@ -228,3 +228,9 @@ int eng_at_pcmodem(eng_dev_info_t* dev_info)
     }
     return 0;
 }
+
+//Include time-consuming operations
+void *eng_at_pcmodem_thread(void *dev_info){
+    eng_at_pcmodem((eng_dev_info_t*)dev_info);
+    return NULL;
+}

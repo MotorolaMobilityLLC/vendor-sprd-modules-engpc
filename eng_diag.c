@@ -5336,7 +5336,7 @@ static int eng_diag_read_efuse_v2(char *buf, int len, char *rsp, int rsplen) {
   unsigned char uid_buf[33] = {0};
   unsigned char data_buf[16] = {0};
   char *rsp_ptr;
-  char * at_cmd[20];
+  char at_cmd[20];
   int at_find_flg = 0;
   int rlen;
   unsigned int block0,block1;
@@ -5348,17 +5348,22 @@ static int eng_diag_read_efuse_v2(char *buf, int len, char *rsp, int rsplen) {
     return 0;
   }
 
-  sprintf(at_cmd, "AT+GETDYNAMICUID", sizeof(at_cmd));      //search this at command, if find use dymic lib else use old func
+  memset(at_cmd, 0, sizeof(at_cmd));
+  sprintf(at_cmd, "%s", "AT+GETDYNAMICUID");      //search this at command, if find use dymic lib else use old func
 
   list_for_each(list_find,&eng_head){
     modules_list = list_entry(list_find, eng_modules, node);
-    if(!strncmp(modules_list->callback.at_cmd, at_cmd, strlen(modules_list->callback.at_cmd))){
+    if (!strcasecmp(modules_list->callback.at_cmd, at_cmd)) {
       ENG_LOG("engpc find at cmd %s\n",at_cmd);
-      at_find_flg = 1;
-      rlen = modules_list->callback.eng_linuxcmd_func(at_cmd, rsp);      //change diag command to at command for get uid_v2
-      sprintf(uid_buf,rsp,sizeof(uid_buf)); //copy string to uid_buf
-      ENG_LOG("%s,efuse_uid_read_dymic = %s", __FUNCTION__, uid_buf);
-      break;
+      if (NULL != modules_list->callback.eng_linuxcmd_func) {
+        at_find_flg = 1;
+        rlen = modules_list->callback.eng_linuxcmd_func(at_cmd, rsp); // change diag command to at command for get uid_v2
+        sprintf(uid_buf, rsp, sizeof(uid_buf)); // copy string to uid_buf
+        ENG_LOG("%s,efuse_uid_read_dymic = %s", __FUNCTION__, uid_buf);
+        break;
+      } else {
+        ENG_LOG("engpc find at cmd %s ,but eng_linuxcmd_func == null\n", at_cmd);
+      }
     }
   }
 

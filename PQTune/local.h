@@ -17,10 +17,10 @@ typedef unsigned char u8;
 #define DpuSlp    	"/sys/class/display/dispc0/PQ/slp"
 #define DpuCm   	"/sys/class/display/dispc0/PQ/cm"
 #define DpuHsv   	"/sys/class/display/dispc0/PQ/hsv"
-#define bld_xml 	"/data/bld.xml"
-#define abc_xml 	"/data/abc.xml"
-#define gamma_xml 	"/data/gamma.xml"
-#define cms_xml 	"/data/cms.xml"
+#define bld_xml 	"/productinfo/enhance/bld.xml"
+#define abc_xml 	"/productinfo/enhance/abc.xml"
+#define gamma_xml 	"/productinfo/enhance/gamma.xml"
+#define cms_xml 	"/productinfo/enhance/cms.xml"
 
 #endif
 

@@ -16,7 +16,6 @@ int open_log_path();
 int eng_diag_write2pc(char* diag_data, int r_cnt, int fd);
 int eng_diag_write2pc_ptr(char* diag_data, int r_cnt, int *fd_ptr);
 void eng_filter_calibration_log_diag(char* diag_data, int r_cnt, int *fd_ptr);
-int write_to_host_diag(char* nmea, int length);
 
 #ifdef __cplusplus
 }

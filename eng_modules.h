@@ -2,7 +2,6 @@
 #define __ENG_DIAG_MODULES_H__
 
 #include "eng_list.h"
-#include "eng_diag.h"
 
 #ifndef byte
 typedef unsigned char  byte;
@@ -28,7 +27,6 @@ struct eng_callback{
     int also_need_to_cp;
     int (*eng_diag_func)(char *buf, int len, char *rsp, int rsplen);
     int (*eng_linuxcmd_func)(char *req, char *rsp);
-    int (*eng_set_writeinterface_func)(DYMIC_WRITETOPC_FUNC * write_interface_ptr);
 };
 
 

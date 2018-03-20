@@ -242,7 +242,7 @@ int parse_abc_xml(struct abc_common *abc)
 	doc = xmlReadFile(abc_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-        ENG_LOG("Document not parsed successfully.\n");
+        ENG_LOG("read %s Document not parsed successfully.\n",__func__);
         return -1;
 	}
 
@@ -279,7 +279,7 @@ int update_abc_xml(struct abc_common *abc)
 	doc = xmlReadFile(abc_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-        ENG_LOG("Document not parsed successfully.\n");
+        ENG_LOG("write %s Document not parsed successfully.\n",__func__);
 		return -1;
 	}
 	curNode = xmlDocGetRootElement(doc);

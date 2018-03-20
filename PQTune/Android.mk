@@ -1,6 +1,7 @@
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
+LOCAL_MODULE := PQTune.$(TARGET_BOARD_PLATFORM)
 LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_RELATIVE_PATH := npidevice
 LOCAL_PROPRIETARY_MODULE := ture
@@ -15,7 +16,6 @@ LOCAL_SRC_FILES := PQTuneDiag.c \
 		ParseAbc.c \
 		Ambient.cpp \
 
-LOCAL_MODULE := libPQTune
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 

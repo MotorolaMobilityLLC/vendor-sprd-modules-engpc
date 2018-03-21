@@ -81,6 +81,7 @@ static int parse_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 			}
 		}
 		i++;
+		j = 0;
 		subNode = subNode->next;
 	}
 
@@ -122,6 +123,7 @@ static int parse_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 			}
 		}
 		i++;
+		j = 0;
 		subNode = subNode->next;
 	}
 
@@ -151,11 +153,11 @@ static int update_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
                 	if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"ambient")) {
 						snprintf(numStr, sizeof(numStr), "%d", abc->slp_table[i].item[j].ambient);
 						xmlSetProp(propNode, BAD_CAST "ambient", (const xmlChar*)numStr);
-						ENG_LOG("ambient %d \n", abc->slp_table[i].item[j].ambient);
+						ENG_LOG("wr ambient  d \n", abc->slp_table[i].item[j].ambient);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"brightness")) {
 						snprintf(numStr, sizeof(numStr), "%d", abc->slp_table[i].item[j].slp_brightness_factor);
 						xmlSetProp(propNode, BAD_CAST "brightness", (const xmlChar*)numStr);
-						ENG_LOG("brightness %d \n", abc->slp_table[i].item[j].slp_brightness_factor);
+						ENG_LOG("wr brightness %d i = %d j =  %d \n", abc->slp_table[i].item[j].slp_brightness_factor, i,j);
 					}
 					attrPtr = attrPtr->next;
             	}
@@ -164,6 +166,7 @@ static int update_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 			}
 		}
 		i++;
+		j = 0;
 		subNode = subNode->next;
 	}
 
@@ -193,11 +196,11 @@ static int update_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
                 	if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"ambient")) {
 							snprintf(numStr, sizeof(numStr), "%d", abc->bl_table[i].item[j].ambient);
 							xmlSetProp(propNode, BAD_CAST "ambient", (const xmlChar*)numStr);
-							ENG_LOG("ambient %d \n", abc->bl_table[i].item[j].ambient);
+							ENG_LOG("wr ambient %d \n", abc->bl_table[i].item[j].ambient);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"brightness")) {
 						snprintf(numStr, sizeof(numStr), "%d", abc->bl_table[i].item[j].backlight);
 						xmlSetProp(propNode, BAD_CAST "brightness", (const xmlChar*)numStr);
-						ENG_LOG("brightness %d \n", abc->bl_table[i].item[j].backlight);
+						ENG_LOG("wr brightness %d \n", abc->bl_table[i].item[j].backlight);
 					}
 					attrPtr = attrPtr->next;
             	}
@@ -206,6 +209,7 @@ static int update_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 			}
 		}
 		i++;
+		j = 0;
 		subNode = subNode->next;
 	}
 

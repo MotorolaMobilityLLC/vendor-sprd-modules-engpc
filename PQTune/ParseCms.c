@@ -148,7 +148,6 @@ static int parse_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 
 static int parse_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 {
-	int i = 0;
 	const char *endptr = NULL;
 	xmlNodePtr subNode;
 	xmlNodePtr propNode;
@@ -160,14 +159,19 @@ static int parse_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
-			if(!xmlStrcmp(szPropity, (const xmlChar *) "auto"))
-				parse_hsvcm(cms, subNode->children, i);
-			else if (!xmlStrcmp(szPropity, (const xmlChar *) "enhance"))
-				parse_hsvcm(cms, subNode->children, i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard"))
-				parse_hsvcm(cms, subNode->children, i);
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "auto")) {
+				ENG_LOG("PQ CMS coef auto\n");
+				parse_hsvcm(cms, subNode->children, 0);
+			}
+			else if (!xmlStrcmp(szPropity, (const xmlChar *) "enhance")) {
+				ENG_LOG("PQ CMS enhance coef\n");
+				parse_hsvcm(cms, subNode->children, 1);
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard")) {
+				ENG_LOG("PQ CMS coef standard\n");
+				parse_hsvcm(cms, subNode->children, 2);
+			}
 		}
-		i++;
 		subNode = subNode->next;
 	}
 	return 0;
@@ -297,7 +301,6 @@ static int update_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 
 int update_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 {
-	int i = 0;
 	const char *endptr = NULL;
 	xmlNodePtr subNode;
 	xmlNodePtr propNode;
@@ -310,14 +313,19 @@ int update_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
-			if(!xmlStrcmp(szPropity, (const xmlChar *) "auto"))
-				update_hsvcm(cms, subNode->children, i);
-			else if (!xmlStrcmp(szPropity, (const xmlChar *) "enhance"))
-				update_hsvcm(cms, subNode->children, i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard"))
-				update_hsvcm(cms, subNode->children, i);
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "auto")) {
+				ENG_LOG("PQ wr CMS coef auto\n");
+				update_hsvcm(cms, subNode->children, 0);
+			}
+			else if (!xmlStrcmp(szPropity, (const xmlChar *) "enhance")) {
+				ENG_LOG("PQ wr CMS coef enhance\n");
+				update_hsvcm(cms, subNode->children, 1);
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard")) {
+				ENG_LOG("PQ wr CMS coef standard\n");
+				update_hsvcm(cms, subNode->children, 2);
+			}
 		}
-		i++;
 		subNode = subNode->next;
 	}
 	return 0;

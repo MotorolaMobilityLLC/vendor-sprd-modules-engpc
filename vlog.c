@@ -619,7 +619,7 @@ void report_nmea_log(const char* nmea, int length) {
           usleep(59000);
         } else {
           retry_num = 0;
-          while (-1 == restart_gser(&ser_fd, vdev_info->host_int.dev_log)) {
+          while (-1 == restart_gser(&ser_fd, vdev_info->host_int.dev_diag)) {
             ENG_LOG("eng_gps_log open ser port failed\n");
             sleep(1);
             retry_num++;
@@ -628,6 +628,7 @@ void report_nmea_log(const char* nmea, int length) {
               return;
             }
           }
+          s_ser_diag_fd = ser_fd;
         }
       } else {
         r_cnt -= w_cnt;

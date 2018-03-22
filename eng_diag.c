@@ -139,6 +139,7 @@ extern int g_ap_cali_flag;
 #ifndef USE_AUDIO_WHALE_HAL
 extern AUDIO_TOTAL_T *audio_total;
 #endif
+extern eng_dev_info_t *g_dev_info;
 extern void *thread_fastsleep(void *para);
 extern void eng_check_factorymode(int normal_cali);
 #ifndef USE_AUDIO_WHALE_HAL
@@ -5094,7 +5095,7 @@ static int eng_diag_gps_autotest_hdlr(char *buf, int len, char *rsp,
     set_pc_mode(1);
     if (0 == init) {
       sem_init(&g_gps_sem, 0, 0);
-      if (0 != eng_thread_create(&gps_thread_hdlr, eng_gps_log_thread, 0)) {
+      if (0 != eng_thread_create(&gps_thread_hdlr, eng_gps_log_thread, g_dev_info)) {
         ENG_LOG("gps log thread start error");
       }
       init = 1;

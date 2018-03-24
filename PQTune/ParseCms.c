@@ -233,25 +233,29 @@ static int parse_cm_config_table(struct cms_common *cms, xmlNodePtr curNode)
 				PARSE_CM_CONFIG_ARRAYS(i);
 			else if (!xmlStrcmp(szPropity, (const xmlChar *) "warm"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "00"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "0")) {
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "01"))
+				ENG_LOG("PQ auto_auto read 0 \n");
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "1")) {
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "02"))
+				ENG_LOG("PQ auto_auto 1 read \n");
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "2"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "03"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "3"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "04"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "4"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "05"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "5"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "06"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "6"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "07"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "7"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "08"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "8"))
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "09"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "9"))
 				PARSE_CM_CONFIG_ARRAYS(i);
 		}
 		i++;
@@ -390,25 +394,29 @@ static int update_cm_config_table(struct cms_common *cms, xmlNodePtr curNode)
 				UPDATE_CM_CONFIG_ARRAYS(i);
 			else if (!xmlStrcmp(szPropity, (const xmlChar *) "warm"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "00"))
-				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "01"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "0")) {
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "02"))
+				ENG_LOG("PQ auto_auto 0\n");
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "1")) {
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "03"))
+				ENG_LOG("PQ auto_auto 1\n");
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "2"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "04"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "3"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "05"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "4"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "06"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "5"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "07"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "6"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "08"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "7"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "09"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "8"))
+				UPDATE_CM_CONFIG_ARRAYS(i);
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "9"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
 		}
 		i++;

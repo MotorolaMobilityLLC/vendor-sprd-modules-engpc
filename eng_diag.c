@@ -2555,7 +2555,7 @@ int eng_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
 
   if (module_index == GPS_MODULE_INDEX) {
 #ifndef CONFIG_MINIENGPC
-    gps_eut_parse(buf, rsp);
+    /* gps_eut_parse(buf, rsp); */
 #endif
     return 0;
   }
@@ -3003,7 +3003,7 @@ int eng_gps_atdiag_euthdlr(char *buf, int len, char *rsp, int module_index) {
 
   if (module_index == GPS_MODULE_INDEX) {
 #ifndef CONFIG_MINIENGPC
-    gps_eut_parse(buf, rsp);
+    /* gps_eut_parse(buf, rsp); */
 #endif
     return 0;
   }
@@ -5088,6 +5088,9 @@ static void eng_diag_cft_switch_hdlr(char *buf, int len, char *rsp,
 #ifndef CONFIG_MINIENGPC
 static int eng_diag_gps_autotest_hdlr(char *buf, int len, char *rsp,
                                       int rsplen) {
+	return 0; 
+
+#if 0
   int ret = 0, init_mode = 0, stop_mode = 0;
   char tmpbuf[ENG_DIAG_SIZE] = {0};
   static int init = 0;
@@ -5137,6 +5140,7 @@ static int eng_diag_gps_autotest_hdlr(char *buf, int len, char *rsp,
   ENG_LOG("%s: ret: %d\n", __FUNCTION__, ret);
 
   return ret;
+#endif
 }
 #endif
 

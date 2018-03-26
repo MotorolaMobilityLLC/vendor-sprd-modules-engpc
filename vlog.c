@@ -746,7 +746,7 @@ void report_nmea_log(const char* nmea, int length) {
 #ifndef CONFIG_MINIENGPC
 void* eng_gps_log_thread(void* x) {
   vdev_info = (eng_dev_info_t*)x;
-  set_report_ptr(report_nmea_log);
+  /* set_report_ptr(report_nmea_log); */
 
   return 0;
 }

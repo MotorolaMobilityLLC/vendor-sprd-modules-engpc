@@ -22,10 +22,10 @@ LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy
 else
 ifeq ($(USE_AUDIO_WHALE_HAL), true)
 LOCAL_CFLAGS += -DUSE_AUDIO_WHALE_HAL
-LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libgpspc libbm \
+LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libbm \
                            libeng-audio
 else
-LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libvbeffect libvbpga libnvexchange libatci libefuse libgpspc libbm \
+LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libvbeffect libvbpga libnvexchange libatci libefuse libbm \
                            libeng-audio
 endif
 ifeq ($(strip $(BOARD_TEE_CONFIG)), watchdata)

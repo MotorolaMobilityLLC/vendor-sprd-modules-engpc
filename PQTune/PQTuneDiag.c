@@ -674,9 +674,36 @@ int pq_cmd_rd_ambient(char *buf, int len, char *rsp, int rsplen)
 	MSG_HEAD_T *rsp_head;
 	u32 rsp_len = 0;
 	u32 value = 0;
+	int ret;
+	int fd;
+	long long tvalue;
+	float *tfpvalue;
 	int extra_len = 0;
+	char tbuf[256];
 
-	getAmbient(&value);
+
+	fd = open(SensorLight, O_RDONLY);
+	if (fd < 0) {
+		ENG_LOG("%s: open file failed, err: %s\n", __func__,
+			strerror(errno));
+		return errno;
+	}
+
+	ret = read(fd, tbuf, sizeof(tbuf));
+	if (ret == -1) {
+		ENG_LOG("PQ read Ambient Light value Fail\n");
+		return -1;
+	} else if (ret == 0) {
+			 ENG_LOG("PQ read Ambient Light ret 0\n");
+	} else {
+			ENG_LOG("PQ read %d bytes, buf = %s\n", ret, tbuf);
+			tvalue = atoll(tbuf);
+			ENG_LOG("PQ tval = %llu\n", tvalue);
+			tfpvalue = &tvalue;
+			ENG_LOG("PQ float tval = %f\n", *tfpvalue);
+			value = (u32)*tfpvalue;
+			ENG_LOG("PQ int val = %d\n", value);
+	}
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	pdata = (u32 *)(rsp + DIAG_HEADER_LENGTH + 5);
 	*pdata = value;

@@ -47,6 +47,7 @@
 #include "wifi_eut_sprd.h"
 #include "eng_ap_modem_time_sync.h"
 #include "eng_modules.h"
+#include "eng_util.h"
 
 #if defined(ENGMODE_EUT_BCM)
 #include "bt_eut_pandora.h"
@@ -309,6 +310,12 @@ static int eng_autotest_reserve(char *req, char *rsp);
 static int eng_autotest_sensor(char *req, char *rsp);
 //-- ]]
 static int eng_autotest_gps(char *req, char *rsp);
+
+DYMIC_WRITETOPC_FUNC write_interface[WRITE_TO_MAX] = {
+write_to_host_diag,/*pc lte diag*/
+NULL,/*write_to_host_log*/
+NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+};
 
 static struct eng_autotestcmd_str eng_autotestcmd[] = {
     {CMD_AUTOTEST_DUMMY, eng_autotest_dummy},
@@ -1255,6 +1262,9 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
       }
 
       if (NULL != modules_list->callback.eng_diag_func) {
+        if (NULL != modules_list->callback.eng_set_writeinterface_func) {
+          modules_list->callback.eng_set_writeinterface_func(write_interface);
+        }
         rlen = modules_list->callback.eng_diag_func(buf, len, rsp, rsp_len/2);
 
         //for case :need to ap & cp
@@ -1349,7 +1359,7 @@ at_write:
     return (also_need_to_cp == 1 ? DYMIC_RET_ALSO_NEED_TO_CP : DYMIC_RET_DEAL_SUCCESS);
 }
 
-int eng_at_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len, DYMIC_WRITETOPC_FUNC writetopc_func) {
+int eng_at_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len, int (*writetopc_func)(char *rsp, int len)) {
 
   int rlen = 0, ret = 0;
   eng_modules *modules_list = NULL;

@@ -9,6 +9,12 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include "eng_util.h"
+#include "engopt.h"
+
+#ifdef MAX_OPEN_TIMES
+#undef MAX_OPEN_TIMES
+#endif
+#define MAX_OPEN_TIMES 100
 
 int eng_open_dev(char* dev, int mode) {
   int fd;
@@ -24,4 +30,70 @@ int eng_open_dev(char* dev, int mode) {
   }
 
   return fd;
+}
+
+/**
+ * command interface: send data to lte diag
+ * @nmea:        data buffer
+ * @length:     data buffer length
+ *
+ * If operation succeed, return data buffer length, otherwise, return -1.
+ */
+int write_to_host_diag(char* nmea, int length) {
+  int r_cnt = 0, w_cnt = 0, offset = 0;
+  int retry_num = 0;
+  int ser_fd;
+  char* diag_data = NULL;
+
+  ENG_LOG("%s: length=%d \n", __FUNCTION__, length);
+
+  ser_fd = get_ser_diag_fd();
+
+  if (length >= 2) {
+    diag_data = (char *)malloc(length * 2);
+    if (NULL == diag_data) {
+      ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+      goto err;
+    }
+
+    r_cnt = translate_packet(diag_data, nmea + 1, length - 2);
+
+    offset = 0;
+    w_cnt = 0;
+    do {
+      w_cnt = write(ser_fd, diag_data + offset, r_cnt);
+      ENG_LOG("%s: w_cnt = %d\n r_cnt = %d offset = %d", __FUNCTION__, w_cnt, r_cnt, offset);
+      if (w_cnt < 0) {
+        if (errno == EBUSY) {
+          usleep(59000);
+        } else {
+          retry_num = 0;
+          while (-1 == restart_gser(&ser_fd, get_ser_diag_path())) {
+            ENG_LOG("eng_gps_log open ser port failed\n");
+            sleep(1);
+            retry_num++;
+            if (retry_num > MAX_OPEN_TIMES) {
+              ENG_LOG("eng_gps_log: thread stop for open ser error!\n");
+              goto err;
+            }
+          }
+          update_ser_diag_fd(ser_fd);
+        }
+      } else {
+        r_cnt -= w_cnt;
+        offset += w_cnt;
+      }
+    } while (r_cnt > 0);
+  }
+
+  free(diag_data);
+  diag_data = NULL;
+  return length;
+
+err:
+  if (NULL != diag_data){
+    free(diag_data);
+    diag_data = NULL;
+  }
+  return -1;
 }

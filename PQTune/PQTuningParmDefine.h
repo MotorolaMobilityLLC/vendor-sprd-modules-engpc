@@ -75,8 +75,8 @@ struct slp_cfg
 
 struct slp_mapping_table_item
 {
-    u8 ambient;
-    u8 slp_brightness_factor;
+    u16 ambient;
+    u16 slp_brightness_factor;
 };
 
 struct slp_mapping_table
@@ -87,8 +87,8 @@ struct slp_mapping_table
 
 struct bl_mapping_table_item
 {
-    u8 ambient;
-    u8 backlight;
+    u16 ambient;
+    u16 backlight;
 };
 
 struct bl_mapping_table

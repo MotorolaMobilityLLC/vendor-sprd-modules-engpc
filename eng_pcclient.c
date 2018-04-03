@@ -508,8 +508,8 @@ void cplogctrl_init(void) {
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-  property_get("persist.sys.modem.log_dest", modem_log_dest, "0");
-  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "0");
+  property_get("persist.sys.modem.log_dest", modem_log_dest, "not_find");
+  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "not_find");
 
   ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest,
           wcn_log_dest);

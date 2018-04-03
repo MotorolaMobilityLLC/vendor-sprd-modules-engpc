@@ -1744,8 +1744,8 @@ int cplogctrl_setlocation(char log_type, char location) {
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-  property_get("persist.sys.modem.log_dest", modem_log_dest, "0");
-  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "0");
+  property_get("persist.sys.modem.log_dest", modem_log_dest, "not_find");
+  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "not_find");
 
   ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest, wcn_log_dest);
   ENG_LOG("%s log_type=%d, location=%d", __FUNCTION__, log_type, location);
@@ -1790,6 +1790,21 @@ int cplogctrl_setlocation(char log_type, char location) {
       }
       break;
 
+    case '0': // no log
+      ENG_LOG("%s: no log case\n", __FUNCTION__);
+      if (0 != strcmp(modem_log_dest, "0")) { //1 to 0 , 2 to 0
+        if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0) {
+          ret = -1;
+        } else { // notice slogomodem success
+          modemlog_to_pc = 0;
+          property_set("persist.sys.modem.log_dest", "0");
+        }
+      } else {
+        ENG_LOG("modem log already to no log!");
+        ret = -1;
+      }
+      break;
+
     default:
       ret = -1;
       break;
@@ -1825,6 +1840,21 @@ int cplogctrl_setlocation(char log_type, char location) {
         }
       } else {
         ENG_LOG("wcn log already to t card!");
+        ret = -1;
+      }
+      break;
+
+    case '0': // t card
+      // stop engpcclientwcn
+      if (0 != strcmp(wcn_log_dest, "0")) { //1 to 0 , 2 to 0
+        if (notice_slogmodem(DISABLE_WCN_LOG_CMD) < 0) {
+          ret = -1;
+        } else {
+          wcnlog_to_pc = 0;
+          property_set("persist.sys.wcn.log_dest", "0");
+        }
+      } else {
+        ENG_LOG("wcn log already no log!");
         ret = -1;
       }
       break;

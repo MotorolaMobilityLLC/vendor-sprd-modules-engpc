@@ -46,6 +46,9 @@ service engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
     disabled
     oneshot
 
+on property:persist.sys.wcn.log_dest=0
+   stop engpcclientwcn
+
 on property:persist.sys.wcn.log_dest=1
    start engpcclientwcn
 

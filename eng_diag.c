@@ -263,6 +263,9 @@ static int eng_diag_read_enable_secure_bit(char *buf, int len, char *rsp,
                                            int rsplen);
 static int eng_detect_process(char *process_name);
 static int eng_open_wifi_switch();
+static int eng_diag_get_ftm_result(unsigned char *buf,int len, char *rsp);
+static int eng_diag_get_customer_ver(unsigned char *buf,int len, char *rsp);
+static int eng_diag_get_internal_ver(unsigned char *buf,int len, char *rsp);
 static int eng_diag_set_backlight(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_txdata(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_txdata_ext(char *buf, int len, char *rsp, int rsplen);
@@ -685,6 +688,16 @@ int eng_diag_parse(char *buf, int len, int *num) {
         ret = CMD_USER_DEEP_SLEEP;
       } else if (head_ptr->subtype == 0xe) {
         ret = CMD_USER_SHUT_DOWN;
+      }
+      break;
+    case DIAG_CMD_TINNO_TEST:
+      ENG_LOG("%s: Handle DIAG_CMD_TINNO_TEST", __FUNCTION__);
+      if(head_ptr->subtype==0x1) {
+          ret = CMD_USER_GET_FTM_RESULT;
+      }else if(head_ptr->subtype==0x2) {
+          ret = CMD_USER_GET_CUSTOMER_VER;
+      }else if(head_ptr->subtype==0x3) {
+          ret = CMD_USER_GET_INTERNAL_VER;
       }
       break;
     case DIAG_CMD_GPS_AUTO_TEST:
@@ -1834,6 +1847,15 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       eng_diag_len = rlen;
       eng_diag_write2pc(eng_diag_buf, eng_diag_len,fd);
       return 0;
+    case CMD_USER_GET_FTM_RESULT:
+      rlen = eng_diag_get_ftm_result((unsigned char*)buf,len, rsp);
+      break;
+    case CMD_USER_GET_CUSTOMER_VER:
+      rlen = eng_diag_get_customer_ver((unsigned char*)buf,len, rsp);
+      break;
+    case CMD_USER_GET_INTERNAL_VER:
+      rlen = eng_diag_get_internal_ver((unsigned char*)buf,len, rsp);
+      break;
     case CMD_USER_SET_MAX_CURRENT:
       ENG_LOG("%s: CMD_USER_CHARGE_CURRENT Req!\n", __FUNCTION__);
       memset(eng_diag_buf,0,sizeof(eng_diag_buf));
@@ -3246,6 +3268,109 @@ int eng_diag(char *buf, int len) {
 
   return ret;
 }
+
+
+int eng_diag_get_ftm_result(unsigned char *buf,int len, char *rsp) {
+  int wlen,fd;
+  int maxlen=248;
+  int rlen = 0;
+  int cmdlen;
+  int sipc_fd;
+  MSG_HEAD_T head,*head_ptr=NULL;
+  char androidver[256];
+  char sprdver[256];
+  char modemver[512];
+  char *ptr, *atrsp;
+
+  int read_len;
+  char buffer[256];
+
+  fd = open("/productinfo/tinnoresult.txt",O_RDONLY);
+
+  if(fd < 0) {
+    ENG_LOG("%s open failed\n",__FUNCTION__);
+    goto out;
+  }
+  read_len = read(fd,buffer,1);
+  if(read_len < 0) {
+    ENG_LOG("%s read failed! read_len = %d\n",__FUNCTION__,read_len);
+    goto out;
+  }
+
+    //ok
+  sprintf(rsp, "%c",buffer[0]);
+  rlen = strlen(rsp);
+
+  if(rlen > maxlen) {
+    rlen=maxlen;
+    rsp[rlen]=0;
+  }
+  ENG_LOG("%s:rlen=%d; %s", __FUNCTION__,rlen, rsp);
+
+out:
+  if(fd >= 0 )
+  close(fd);
+  return rlen;
+}
+
+int eng_diag_get_customer_ver(unsigned char *buf,int len, char *rsp) {
+  int wlen,fd;
+  int maxlen=248;
+  int rlen = 0;
+  int cmdlen;
+  int sipc_fd;
+  MSG_HEAD_T head,*head_ptr=NULL;
+  char androidver[256];
+  char sprdver[256];
+  char modemver[512];
+  char *ptr, *atrsp;
+
+  //get sprd version
+  memset(sprdver, 0, sizeof(sprdver));
+  property_get("ro.custom.build.version", sprdver, "");
+  ENG_LOG("%s: %s",__FUNCTION__, sprdver);
+
+  //ok
+  sprintf(rsp, "%s",sprdver);
+  rlen = strlen(rsp);
+
+  if(rlen > maxlen) {
+    rlen=maxlen;
+    rsp[rlen]=0;
+  }
+  ENG_LOG("%s:rlen=%d; %s", __FUNCTION__,rlen, rsp);
+  return rlen;
+}
+
+int eng_diag_get_internal_ver(unsigned char *buf,int len, char *rsp) {
+  int wlen,fd;
+  int maxlen=248;
+  int rlen = 0;
+  int cmdlen;
+  int sipc_fd;
+  MSG_HEAD_T head,*head_ptr=NULL;
+  char androidver[256];
+  char sprdver[256];
+  char modemver[512];
+  char *ptr, *atrsp;
+
+  //get sprd version
+  memset(sprdver, 0, sizeof(sprdver));
+  property_get("ro.internal.build.version", sprdver, "");
+  ENG_LOG("%s: %s",__FUNCTION__, sprdver);
+
+  //ok
+  sprintf(rsp, "%s",sprdver);
+  rlen = strlen(rsp);
+
+  if(rlen > maxlen) {
+    rlen=maxlen;
+    rsp[rlen]=0;
+  }
+  ENG_LOG("%s:rlen=%d; %s", __FUNCTION__,rlen, rsp);
+  return rlen;
+}
+
 
 // send at should from ril interface @allen
 // enable this function temporarily @alvin
@@ -5088,7 +5213,7 @@ static void eng_diag_cft_switch_hdlr(char *buf, int len, char *rsp,
 #ifndef CONFIG_MINIENGPC
 static int eng_diag_gps_autotest_hdlr(char *buf, int len, char *rsp,
                                       int rsplen) {
-	return 0; 
+	return 0;
 
 #if 0
   int ret = 0, init_mode = 0, stop_mode = 0;

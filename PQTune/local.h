@@ -15,6 +15,7 @@ typedef unsigned char u8;
 
 #define PQEnable			"/sys/class/display/dispc0/PQ/enable"
 #define PQDisable			"/sys/class/display/dispc0/PQ/disable"
+#define PQStatus			"/sys/class/display/dispc0/PQ/status"
 #define DpuGamma			"/sys/class/display/dispc0/PQ/gamma"
 #define DpuSlp				"/sys/class/display/dispc0/PQ/slp"
 #define DpuCm				"/sys/class/display/dispc0/PQ/cm"
@@ -24,6 +25,9 @@ typedef unsigned char u8;
 #define abc_xml				"/productinfo/enhance/abc.xml"
 #define gamma_xml			"/productinfo/enhance/gamma.xml"
 #define cms_xml				"/productinfo/enhance/cms.xml"
+
+#define ChipInfo			"/proc/cmdline"
+#define Brightness			"/sys/class/backlight/sprd_backlight/brightness"
 
 #endif
 

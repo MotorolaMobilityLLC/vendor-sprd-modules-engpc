@@ -108,26 +108,39 @@ void parse_panelsize(char *data,u32 count,DUT_INFO_T  *dut_info_t)
 
 int pq_cmd_connect(char *buf, int len, char *rsp, int rsplen)
 {
-	u8 *pdata = NULL;
 	DUT_INFO_T  *dut_info;
 	MSG_HEAD_T *rsp_head;
 	u32 rsp_len = 0;
 	char info[1024] = {0};
 	u32 sizes = 0;
 	int fd;
+	int fd1;
+	char *pchar;
+	char *ptemp;
 
 	fd = open(PanelSize, O_RDONLY);
-	if (fd < 0) {
+	fd1 = open(ChipInfo, O_RDONLY);
+	if (fd < 0 || fd1 < 0) {
 		ENG_LOG("%s: open file failed, err: %s\n", __func__,
 			strerror(errno));
 		return errno;
 	}
 
-	rsp_head = (MSG_HEAD_T *)(rsp + 1);
-	pdata = (u8 *)(buf + DIAG_HEADER_LENGTH + 5);
-	sizes = read(fd, info, 1024);
 	dut_info =  (DUT_INFO_T  *)malloc(sizeof(DUT_INFO_T));
+	if(!dut_info) {
+		ENG_LOG("PQ dut info alloc fail\n");
+		return -1;
+	}
+	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	memset(dut_info, 0, sizeof(DUT_INFO_T));
+	sizes = read(fd1, info, 1024);
+	pchar = strstr(info, "androidboot.hardware");
+	pchar = strstr(pchar, "=");
+	ptemp = strchr(pchar + 1, ' ');
+	sizes = ptemp - pchar - 1;
+	strncpy(dut_info->szModelName, pchar + 1, sizes);
+	strncpy(dut_info->szChipName, pchar + 1, sizes);
+	sizes = read(fd, info, 1024);
 	parse_panelsize(info, sizes , dut_info);
 	memcpy(rsp, buf, DIAG_HEADER_LENGTH + 5);
 	memcpy(rsp + DIAG_HEADER_LENGTH + 5, dut_info, sizeof(DUT_INFO_T));

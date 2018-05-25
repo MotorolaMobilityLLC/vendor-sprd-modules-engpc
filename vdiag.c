@@ -8,10 +8,6 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 #include "engopt.h"
-#ifndef USE_AUDIO_WHALE_HAL
-#include "eng_audio.h"
-#include "eng_audio_ext.h"
-#endif
 #include "eng_diag.h"
 #include <ctype.h>
 #include "cutils/properties.h"
@@ -37,10 +33,6 @@ static char backup_data_buf[DATA_EXT_DIAG_SIZE];
 static char diag_header[DIAG_BUF_SIZE];
 static int ext_buf_len, backup_data_len;
 static int g_diag_status = ENG_DIAG_RECV_TO_AP;
-#ifndef USE_AUDIO_WHALE_HAL
-// AUDIO_TOTAL_T audio_total[4];
-AUDIO_TOTAL_T *audio_total = NULL;
-#endif
 
 static int s_speed_arr[] = {
     B921600, B460800, B230400, B115200, B38400, B19200, B9600, B4800, B2400, B1200, B300,
@@ -123,104 +115,6 @@ int get_user_diag_buf( unsigned char *buf, int len) {
   return is_find;
 }
 
-#ifndef USE_AUDIO_WHALE_HAL
-int check_audio_para_file_size(char *config_file) {
-  int fileSize = 0;
-  int tmpFd;
-
-  ENG_LOG("%s: enter", __FUNCTION__);
-  tmpFd = open(config_file, O_RDONLY);
-  if (tmpFd < 0) {
-    ENG_LOG("%s: open error", __FUNCTION__);
-    return -1;
-  }
-  fileSize = lseek(tmpFd, 0, SEEK_END);
-  if (fileSize <= 0) {
-    ENG_LOG("%s: file size error", __FUNCTION__);
-    close(tmpFd);
-    return -1;
-  }
-  close(tmpFd);
-  ENG_LOG("%s: check OK", __FUNCTION__);
-  return 0;
-}
-
-int ensure_audio_para_file_exists(char *config_file) {
-  char buf[2048];
-  int srcfd, destfd;
-  struct stat sb;
-  int nread;
-  int ret;
-
-  ENG_LOG("%s: enter", __FUNCTION__);
-  ret = access(config_file, R_OK | W_OK);
-  if ((ret == 0) || (errno == EACCES)) {
-    if ((ret != 0) &&
-        (chmod(config_file, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) != 0)) {
-      ENG_LOG("eng_vdiag Cannot set RW to \"%s\": %s", config_file,
-            strerror(errno));
-      return -1;
-    }
-    if (0 == check_audio_para_file_size(config_file)) {
-      ENG_LOG("%s: ensure OK", __FUNCTION__);
-      return 0;
-    }
-  } else if (errno != ENOENT) {
-    ENG_LOG("eng_vdiag Cannot access \"%s\": %s", config_file, strerror(errno));
-    return -1;
-  }
-
-  srcfd = open((char *)(ENG_AUDIO_PARA), O_RDONLY);
-  if (srcfd < 0) {
-    ENG_LOG("eng_vdiag Cannot open \"%s\": %s", (char *)(ENG_AUDIO_PARA),
-          strerror(errno));
-    return -1;
-  }
-
-  destfd = open(config_file, O_CREAT | O_RDWR, 0660);
-  if (destfd < 0) {
-    close(srcfd);
-    ENG_LOG("eng_vdiag Cannot create \"%s\": %s", config_file, strerror(errno));
-    return -1;
-  }
-
-  ENG_LOG("%s: start copy", __FUNCTION__);
-  while ((nread = read(srcfd, buf, sizeof(buf))) != 0) {
-    if (nread < 0) {
-      ENG_LOG("eng_vdiag Error reading \"%s\": %s", (char *)(ENG_AUDIO_PARA),
-            strerror(errno));
-      close(srcfd);
-      close(destfd);
-      unlink(config_file);
-      return -1;
-    }
-    write(destfd, buf, nread);
-  }
-
-  close(destfd);
-  close(srcfd);
-
-  /* chmod is needed because open() didn't set permisions properly */
-  if (chmod(config_file, 0660) < 0) {
-    ENG_LOG("eng_vdiag Error changing permissions of %s to 0660: %s", config_file,
-          strerror(errno));
-    unlink(config_file);
-    return -1;
-  }
-
-#if 0
-    if (chown(config_file, AID_SYSTEM, AID_SYSTEM) < 0) {
-        ENG_LOG("eng_vdiag Error changing group ownership of %s to %d: %s",
-                config_file, AID_SYSTEM, strerror(errno));
-        unlink(config_file);
-        return -1;
-    }
-#endif
-  ENG_LOG("%s: ensure done", __FUNCTION__);
-  return 0;
-}
-#endif
-
 void set_raw_data_speed(int fd, int speed) {
   unsigned long i = 0;
   int status = 0;
@@ -258,9 +152,6 @@ void *eng_vdiag_wthread(void *x) {
   int ser_fd = -1;
   int r_cnt, w_cnt, offset;
   int has_processed = 0;
-#ifndef USE_AUDIO_WHALE_HAL
-  int audio_fd;
-#endif
   int wait_cnt = 0;
   int type, num;
   int ret = 0;
@@ -301,19 +192,7 @@ void *eng_vdiag_wthread(void *x) {
     ENG_LOG("eng_vdiag open %s success, the first %d times fail\n",
             dev_info->modem_int.diag_chan, wait_cnt);
   }
-#if (!defined USE_AUDIO_WHALE_HAL) && (!defined CONFIG_MINIENGPC)
 
-  audio_total = calloc(1, sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng());
-  if (!audio_total) {
-    ENG_LOG("eng_vdiag_wthread malloc audio_total memory error\n");
-    close(modem_fd);
-    close(ser_fd);
-    return NULL;
-  }
-  memset(audio_total, 0, sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng());
-  ret = ensure_audio_para_file_exists((char *)(ENG_AUDIO_PARA_DEBUG));
-  eng_getpara();
-#endif
   ENG_LOG("eng_vdiag put diag data from serial to SIPC\n");
   // initialize extra data buffer
   init_user_diag_buf();

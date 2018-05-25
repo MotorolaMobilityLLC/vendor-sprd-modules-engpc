@@ -15,19 +15,11 @@ endif
 
 ifeq ($(CONFIG_MINIENGPC), true)
 LOCAL_CFLAGS += -DCONFIG_MINIENGPC
-ifeq ($(USE_AUDIO_WHALE_HAL), true)
-LOCAL_CFLAGS += -DUSE_AUDIO_WHALE_HAL
-endif
 LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy
 else
-ifeq ($(USE_AUDIO_WHALE_HAL), true)
-LOCAL_CFLAGS += -DUSE_AUDIO_WHALE_HAL
-LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libbm \
-                           libeng-audio
-else
-LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libvbeffect libvbpga libnvexchange libatci libefuse libbm \
-                           libeng-audio
-endif
+
+LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libbm 
+
 ifeq ($(strip $(BOARD_TEE_CONFIG)), watchdata)
 LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
 LOCAL_SHARED_LIBRARIES  += libteeproduction
@@ -44,7 +36,7 @@ endif
 
 LOCAL_SHARED_LIBRARIES += libtracedump
 
-LOCAL_STATIC_LIBRARIES  := libbt-utils
+#LOCAL_STATIC_LIBRARIES  := libbt-utils
 LOCAL_LDLIBS        += -Idl
 ifeq ($(strip $(BOARD_USE_EMMC)),true)
 LOCAL_CFLAGS += -DCONFIG_EMMC

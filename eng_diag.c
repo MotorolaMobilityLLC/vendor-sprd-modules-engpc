@@ -24,10 +24,6 @@
 #include "vlog.h"
 #include "crc16.h"
 #include "string.h"
-#ifndef USE_AUDIO_WHALE_HAL
-#include "eng_audio.h"
-#include "eng_audio_ext.h"
-#endif
 #include "eut_opt.h"
 #include <ctype.h>
 #include "cutils/properties.h"
@@ -137,19 +133,9 @@ int g_gps_log_enable = 0;
 int g_assert_cmd = 0;
 extern int g_run_mode;
 extern int g_ap_cali_flag;
-#ifndef USE_AUDIO_WHALE_HAL
-extern AUDIO_TOTAL_T *audio_total;
-#endif
 extern eng_dev_info_t *g_dev_info;
 extern void *thread_fastsleep(void *para);
 extern void eng_check_factorymode(int normal_cali);
-#ifndef USE_AUDIO_WHALE_HAL
-extern int parse_vb_effect_params(void *audio_params_ptr,
-                                  unsigned int params_size);
-extern int SetAudio_pga_parameter_eng(AUDIO_TOTAL_T *aud_params_ptr,
-                                      unsigned int params_size,
-                                      uint32_t vol_level);
-#endif
 extern int eng_battery_calibration(char *data, unsigned int count,
                                    char *out_msg, int out_len);
 extern void adc_get_result(char *chan);
@@ -202,9 +188,6 @@ static int eng_diag_getver(unsigned char *buf, int len, char *rsp);
 static int eng_diag_bootreset(unsigned char *buf, int len, char *rsp);
 static int eng_diag_getband(char *buf, int len, char *rsp);
 static int eng_diag_btwifiimei(char *buf, int len, char *rsp, int rsplen);
-#if (!defined USE_AUDIO_WHALE_HAL) && (!defined CONFIG_MINIENGPC)
-static int eng_diag_audio(char *buf, int len, char *rsp);
-#endif
 static int eng_diag_product_ctrl(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_product_ctrl_ex(char *buf, int len, char *rsp, int rsplen);
 static int eng_diag_direct_phschk(char *buf, int len, char *rsp, int rsplen);
@@ -225,9 +208,6 @@ static int eng_diag_write_imei(REF_NVWriteDirect_T *direct, int num);
 static void ImeiConvStr2NV(unsigned char *szImei, unsigned char *nvImei);
 static void ImeiConvNV2Str(unsigned char *nvImei, unsigned char *szImei);
 static char MAKE1BYTE2BYTES(unsigned char high4bit, unsigned char low4bit);
-#if (!defined USE_AUDIO_WHALE_HAL) && (!defined CONFIG_MINIENGPC)
-int is_audio_at_cmd_need_to_handle(char *buf, int len);
-#endif
 int is_rm_cali_nv_need_to_handle(char *buf, int len);
 int eng_diag_factorymode(char *buf, int len, char *rsp);
 int eng_diag_mmicit_read(char *buf, int len, char *rsp, int rsplen);
@@ -631,14 +611,7 @@ int eng_diag_parse(char *buf, int len, int *num) {
       ret = CMD_USER_FM;
       break;
     case DIAG_CMD_AT:
-#if (!defined USE_AUDIO_WHALE_HAL) && (!defined CONFIG_MINIENGPC)
-      if (is_audio_at_cmd_need_to_handle(buf, len)) {
-        ENG_LOG("%s: Handle DIAG_CMD_AUDIO\n", __FUNCTION__);
-        ret = CMD_USER_AUDIO;
-#else
-      if (1 == 0) {
-#endif
-      } else if (is_ap_at_cmd_need_to_handle(buf, len)) {
+      if (is_ap_at_cmd_need_to_handle(buf, len)) {
         if (CMD_TO_APCP == eng_cmd_get_type(s_cmd_index)) {
           s_cp_ap_proc = 1;
         }
@@ -772,11 +745,7 @@ static void eng_attest_build_rsphead(char *buf, MSG_HEAD_T *head, int rlen) {
 }
 
 static int eng_diag_attest(char *data, int count, char *out_msg) {
-#ifdef USE_AUDIO_WHALE_HAL
   char sub_type;
-#else
-  uint8 sub_type;
-#endif
   int rlen;
   MSG_HEAD_T head, *head_ptr = NULL;
   char rsp[512];
@@ -1565,12 +1534,6 @@ int eng_diag_user_handle(int type, char *buf, int len) {
       ENG_LOG("%s: after hex rlen=%d\n",__FUNCTION__, rlen);
       rlen = eng_atdiag_rsp(eng_get_csclient_fd(), eng_atdiag_buf, rlen);*/
       break;
-#if (!defined USE_AUDIO_WHALE_HAL) && (!defined CONFIG_MINIENGPC)
-    case CMD_USER_AUDIO:
-      memset(eng_audio_diag_buf, 0, sizeof(eng_audio_diag_buf));
-      rlen = eng_diag_audio(buf, len, eng_audio_diag_buf);
-      break;
-#endif
     case CMD_USER_GETVOLTAGE:
     case CMD_USER_APCALI:
       rlen =
@@ -1861,11 +1824,7 @@ int eng_diag_user_handle(int type, char *buf, int len) {
   head.len = sizeof(MSG_HEAD_T) + rlen - extra_len;
   ENG_LOG("%s: head.len=%d\n", __FUNCTION__, head.len);
   eng_diag_buf[0] = 0x7e;
-#ifdef USE_AUDIO_WHALE_HAL
   if (type == CMD_USER_APCMD) {
-#else
-  if ((type == CMD_USER_AUDIO) || (type == CMD_USER_APCMD)) {
-#endif
     head.seq_num = 0;
     head.type = 0x9c;
     head.subtype = 0x00;
@@ -1877,14 +1836,7 @@ int eng_diag_user_handle(int type, char *buf, int len) {
 
   memcpy(eng_diag_buf + 1, &head, sizeof(MSG_HEAD_T));
 
-#ifdef USE_AUDIO_WHALE_HAL
   if (type == CMD_USER_ADC) {
-#else
-  if (type == CMD_USER_AUDIO) {
-    memcpy(eng_diag_buf + sizeof(MSG_HEAD_T) + 1, eng_audio_diag_buf,
-           strlen(eng_audio_diag_buf));
-  } else if (type == CMD_USER_ADC) {
-#endif
     memcpy(eng_diag_buf + sizeof(MSG_HEAD_T) + 1, adc_rsp, sizeof(adc_rsp));
   } else {
     memcpy(eng_diag_buf + sizeof(MSG_HEAD_T) + 1, rsp, sizeof(rsp));
@@ -1904,13 +1856,8 @@ int eng_diag_user_handle(int type, char *buf, int len) {
     eng_diag_reboot(g_reset);
   }
 
-#ifdef USE_AUDIO_WHALE_HAL
   if (CMD_USER_APCMD == type) {
     ENG_LOG("%s: this is audio type !\n", __FUNCTION__);
-#else
-  if (type == CMD_USER_AUDIO || (CMD_USER_APCMD == type)) {
-    ENG_LOG("%s: this is audio type !\n", __FUNCTION__);
-#endif
     return 1;
   }
 
@@ -3722,126 +3669,6 @@ int is_ap_at_cmd_need_to_handle(char *buf, int len) {
   }
 }
 
-/**
- * @brief judge if the AT cmd need to handle
- *
- * @param buf diag buf
- * @param len diag len
- *
- * @return 1 if the cmd need to handle,otherwise 0
- */
-#if (!defined USE_AUDIO_WHALE_HAL) && (!defined CONFIG_MINIENGPC)
-int is_audio_at_cmd_need_to_handle(char *buf, int len) {
-  unsigned int i, ret = 0;
-  MSG_HEAD_T *head_ptr = NULL;
-  char *ptr = NULL;
-
-  if (NULL == buf) {
-    ENG_LOG("%s,null pointer", __FUNCTION__);
-    return 0;
-  }
-
-  head_ptr = (MSG_HEAD_T *)(buf + 1);
-  ptr = buf + 1 + sizeof(MSG_HEAD_T);
-
-  if (g_is_data) {
-    // if not AT cmd
-    ret = strncmp(ptr, "AT", strlen("AT"));
-    if ((ret != 0 && isdigit(*ptr)) || (ret != 0 && isupper(*ptr))) {
-      return 1;
-    }
-  }
-
-  // AT+SADM4AP
-  ret = strncmp(ptr, at_sadm, strlen(at_sadm));
-  if (0 == ret) {
-    at_tok_equel_start(&ptr);
-    at_tok_nextint(&ptr, &cmd_type);
-    ENG_LOG("%s,SADM4AP :value = 0x%02x", __FUNCTION__, cmd_type);
-    for (i = 0; i < sizeof(at_sadm_cmd_to_handle) / sizeof(int); i += 1) {
-      if (-1 == at_sadm_cmd_to_handle[i]) {
-        ENG_LOG("end of at_sadm_cmd_to_handle");
-        return 0;
-      }
-      if (at_sadm_cmd_to_handle[i] == cmd_type) {
-        ENG_LOG("at_sadm_cmd_to_handle=%d", at_sadm_cmd_to_handle[i]);
-        if (GET_ARM_VOLUME_MODE_COUNT != cmd_type) {
-          ENG_LOG("NOT CMD TO GET COUNT");
-          g_index = atoi(ptr);
-          // g_index -= '0';
-          ENG_LOG("index = %d", g_index);
-          if (g_index >= adev_get_audiomodenum4eng()) {
-            return 0;
-          }
-        }
-        return 1;
-      }
-    }
-  }
-
-  // AT+SPENHA
-  ret = strncmp(ptr, at_spenha, strlen(at_spenha));
-  if (0 == ret) {
-    at_tok_equel_start(&ptr);
-    at_tok_nextint(&ptr, &eq_or_tun_type);
-    at_tok_nextint(&ptr, &cmd_type);
-    ENG_LOG("%s,SPENHA :value = 0x%02x", __FUNCTION__, cmd_type);
-    for (i = 0; i < sizeof(at_spenha_cmd_to_handle) / sizeof(int); i += 1) {
-      if (-1 == at_spenha_cmd_to_handle[i]) {
-        ENG_LOG("end of at_spenha_cmd_to_handle");
-        return 0;
-      }
-
-      if (at_spenha_cmd_to_handle[i] == cmd_type) {
-        ENG_LOG("at_spenha_cmd_to_handle=%d", at_spenha_cmd_to_handle[i]);
-        if (GET_AUDIO_ENHA_MODE_COUNT != cmd_type) {
-          at_tok_nextint(&ptr, &g_index);
-          if ((g_index > adev_get_audiomodenum4eng()) || (g_index <= 0)) {
-            return 0;
-          }
-          g_index--;
-          ENG_LOG("BINARY index = %x", g_index);
-          if (SET_AUDIO_ENHA_DATA_TO_MEMORY == cmd_type) {
-            eq_mode_sel_type = *ptr;
-            eq_mode_sel_type -= '0';
-            ENG_LOG("BINARY eq_mode_sel_type = %x", eq_mode_sel_type);
-          }
-        }
-
-        return 1;
-      }
-    }
-  }
-  // AT+CALIBR
-  ret = strncmp(ptr, at_calibr, strlen(at_calibr));
-  if (0 == ret) {
-    at_tok_equel_start(&ptr);
-    at_tok_nextint(&ptr, &cmd_type);
-    ENG_LOG("%s,CALIBR :value = 0x%02x", __FUNCTION__, cmd_type);
-    return 1;
-  }
-
-  // AT+PEINFO
-  ret = strncmp(ptr, at_phoneinfo, strlen(at_phoneinfo));
-  if (0 == ret) {
-    ENG_LOG("%s,PEINFO", __FUNCTION__);
-    return 1;
-  }
-  // AT+PELOOP
-  ENG_LOG("%s,ptr:%s",__FUNCTION__,ptr);
-  ret = strncmp(ptr,at_phoneloop,strlen(at_phoneloop));
-  if (0 == ret) {
-      at_tok_equel_start(&ptr);
-      at_tok_nextint(&ptr,&loop_enable);
-      at_tok_nextint(&ptr,&loop_route);
-      ENG_LOG("%s,PELOOP : enable %d, route:%d",__FUNCTION__,loop_enable,loop_route);
-      return 1;
-  }
-  ENG_LOG("%s,cmd don't need to handle", __FUNCTION__);
-
-  return 0;
-}
-#endif
 int eng_diag_adc(char *buf, int *Irsp) {
   MSG_HEAD_T *head_ptr = NULL;
   unsigned char buf1[8];
@@ -3881,424 +3708,7 @@ void At_cmd_back_sig(void) {
   eng_diag_write2pc(eng_diag_buf, eng_diag_len, fd);
   memset(eng_diag_buf, 0, 10);
 }
-#if (!defined USE_AUDIO_WHALE_HAL) && (!defined CONFIG_MINIENGPC)
-static AUDIO_TOTAL_T *eng_regetpara(void) {
-  int srcfd;
-  char *filename = NULL;
-  // eng_getparafromnvflash();
-  ENG_LOG("wangzuo eng_regetpara 1");
 
-  AUDIO_TOTAL_T *aud_params_ptr;
-  int len = sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng();
-
-  aud_params_ptr = calloc(1, len);
-  if (!aud_params_ptr) return 0;
-  memset(aud_params_ptr, 0, len);
-  srcfd = open((char *)(ENG_AUDIO_PARA_DEBUG), O_RDONLY);
-  filename = (srcfd < 0) ? (ENG_AUDIO_PARA) : (ENG_AUDIO_PARA_DEBUG);
-  if (srcfd >= 0) {
-    close(srcfd);
-  }
-
-  ENG_LOG("eng_regetpara %s", filename);  ////done,into
-  stringfile2nvstruct(filename, aud_params_ptr, len);
-
-  return aud_params_ptr;
-}
-
-static void eng_setpara(AUDIO_TOTAL_T *ptr) {  // to do
-  int len = sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng();
-
-  ENG_LOG("wangzuo eng_setpara 2");
-  nvstruct2stringfile(ENG_AUDIO_PARA_DEBUG, ptr, len);
-}
-static int eng_notify_mediaserver_updatapara(int ram_ops, int index,
-                                             AUDIO_TOTAL_T *aud_params_ptr) {
-  int result = 0;
-  int fifo_id = -1;
-  int receive_fifo_id = -1;
-  int ret;
-  int length = 0;
-  ENG_LOG("eng_notify_mediaserver_updatapara E,%d:%d!\n", ram_ops, index);
-  fifo_id = open(AUDFIFO, O_WRONLY);
-  if (fifo_id != -1) {
-    int buff = 1;
-    ENG_LOG("eng_notify_mediaserver_updatapara notify OPS!\n");
-    result = write(fifo_id, &ram_ops, sizeof(int));
-    if (ram_ops & ENG_RAM_OPS) {
-      result = write(fifo_id, &index, sizeof(int));
-      result = write(fifo_id, aud_params_ptr, sizeof(AUDIO_TOTAL_T));
-      ENG_LOG("eng_notify_mediaserver_updatapara,index:%d,size:%d!\n", index,
-            sizeof(AUDIO_TOTAL_T));
-    }
-    if (ram_ops & ENG_PHONEINFO_OPS) {
-      receive_fifo_id = open(AUDFIFO_2, O_RDONLY);
-      if (receive_fifo_id != -1) {
-        result = read(receive_fifo_id, &length, sizeof(int));
-        if (result < 0) {
-          goto error;
-        }
-        sprintf((char *)aud_params_ptr, "%d", length);
-        result =
-            read(receive_fifo_id, (void *)aud_params_ptr + sizeof(int), length);
-        if (result < 0) {
-          goto error;
-        }
-        result += sizeof(int);
-        close(receive_fifo_id);
-        receive_fifo_id = -1;
-        ENG_LOG("eng_notify_mediaserver_updatapara,result:%d,received:%d!\n",
-              result, length);
-      } else {
-        ENG_LOG("%s open audio FIFO_2 error %s,fifo_id:%d\n", __FUNCTION__,
-              strerror(errno), fifo_id);
-      }
-    }
-    if (ram_ops & ENG_PHONELOOP_OPS) {
-        ENG_LOG("eng_notify_mediaserver_updatapara,loop entry, enable:%d, loop_route:%d!!!\n",loop_enable, loop_route);
-        result = write(fifo_id,&loop_enable,sizeof(int));
-        result = write(fifo_id,&loop_route,sizeof(int));
-    }
-    close(fifo_id);
-    fifo_id = -1;
-  } else {
-    ENG_LOG("%s open audio FIFO error %s,fifo_id:%d\n", __FUNCTION__,
-          strerror(errno), fifo_id);
-  }
-  ENG_LOG("eng_notify_mediaserver_updatapara X,result:%d,length:%d!\n", result,
-        length);
-  return result;
-error:
-  ENG_LOG("eng_notify_mediaserver_updatapara X,ERROR,result:%d!\n", result);
-  if (receive_fifo_id != -1) {
-    close(receive_fifo_id);
-    receive_fifo_id = -1;
-  }
-
-  if (fifo_id != -1) {
-    close(fifo_id);
-    fifo_id = -1;
-  }
-  return result;
-}
-
-void *eng_getpara(void) {
-  int srcfd;
-  char *filename = NULL;
-  ENG_LOG("wangzuo eng_getpara 3");  ////done,into
-  int audio_fd;
-  static int read = 0;
-  int len = sizeof(AUDIO_TOTAL_T) * adev_get_audiomodenum4eng();
-  if (read) {
-    ENG_LOG("eng_getpara read already.");  ////done,into
-    return audio_total;
-  } else {
-    read = 1;
-  }
-  memset(audio_total, 0, len);
-  srcfd = open((char *)(ENG_AUDIO_PARA_DEBUG), O_RDONLY);
-  filename = (srcfd < 0) ? (ENG_AUDIO_PARA) : (ENG_AUDIO_PARA_DEBUG);
-  if (srcfd >= 0) {
-    close(srcfd);
-  }
-  ENG_LOG("wangzuo eng_getpara %s", filename);  ////done,into
-  stringfile2nvstruct(filename, audio_total,
-                      len);  // get data from audio_hw.txt.
-  return audio_total;
-}
-int eng_diag_audio(char *buf, int len, char *rsp) {
-  int fd;
-  int wlen, rlen, ret = 0;
-  MSG_HEAD_T *head_ptr = NULL;
-  char *ptr = NULL;
-  AUDIO_TOTAL_T *audio_ptr;
-  int audio_fd = -1;
-  int audiomode_count = 0;
-  int ram_ofs = 0;
-  if (rsp != NULL) {
-    sprintf(rsp, "\r\nERROR\r\n");
-  }
-
-  if ((NULL == buf) || (NULL == rsp)) {
-    goto out;
-  }
-
-  head_ptr = (MSG_HEAD_T *)(buf + 1);
-  ENG_LOG("Call %s, subtype=%x\n", __FUNCTION__, head_ptr->subtype);
-  ptr = buf + 1 + sizeof(MSG_HEAD_T);
-  ENG_LOG("Call %s, ptr=%s\n", __FUNCTION__, ptr);
-
-  // AT+CALIBR
-  ret = strncmp(ptr, at_calibr, strlen(at_calibr));
-  if (0 == ret) {
-    if (SET_CALIBRATION_ENABLE == cmd_type) {
-      enable_calibration();
-      sprintf(rsp, "\r\nenable_calibration   \r\n");
-    } else if (SET_CALIBRATION_DISABLE == cmd_type) {
-      disable_calibration();
-      sprintf(rsp, "\r\ndisable_calibration   \r\n");
-    }
-    At_cmd_back_sig();
-    // return rsp != NULL ? strlen(rsp):0;
-    return strlen(rsp);
-  }
-  // AT+PEINFO
-  // buffer format like bellow:
-  // [+PEINFO:][int][-----------phoneinfo---------------------]
-  ret = strncmp(ptr, at_phoneinfo, strlen(at_phoneinfo));
-  if (0 == ret) {
-    int length = 0;
-    char bin_tmp[2 * ENG_DIAG_SIZE];
-    memcpy(rsp, "+PEINFO:", sizeof("+PEINFO:"));
-    length = eng_notify_mediaserver_updatapara(ENG_PHONEINFO_OPS, 0, bin_tmp);
-    if (length > 0) {
-      bin2ascii(rsp + strlen("+PEINFO:"), bin_tmp, length);
-      ENG_LOG("Call %s, rsp=%s\n", __FUNCTION__, rsp);
-      ENG_LOG("Call %s, rsp=%s,%s\n", __FUNCTION__, (rsp + strlen("+PEINFO:")),
-              (rsp + strlen("+PEINFO:")));
-      ENG_LOG("Call %s, item1=%s,%s\n", __FUNCTION__,
-              (rsp + strlen("+PEINFO:") + AUDIO_AT_HARDWARE_NAME_LENGTH),
-              (rsp + strlen("+PEINFO:") + AUDIO_AT_HARDWARE_NAME_LENGTH +
-               AUDIO_AT_ITEM_NAME_LENGTH));
-      ENG_LOG("Call %s, item2=%s,%s\n", __FUNCTION__,
-              (rsp + strlen("+PEINFO:") + AUDIO_AT_HARDWARE_NAME_LENGTH +
-               AUDIO_AT_ITEM_NAME_LENGTH + AUDIO_AT_ITEM_VALUE_LENGTH),
-              rsp + strlen("+PEINFO:") + AUDIO_AT_HARDWARE_NAME_LENGTH +
-                  AUDIO_AT_ITEM_NAME_LENGTH + AUDIO_AT_ITEM_VALUE_LENGTH +
-                  AUDIO_AT_ITEM_NAME_LENGTH);
-      return strlen(rsp + strlen("+PEINFO:")) + strlen("+PEINFO:");
-    } else {
-      goto out;
-    }
-  }
-  // audio_fd = open(ENG_AUDIO_PARA_DEBUG,O_RDWR);
-  if (g_is_data) {
-    ENG_LOG("HEY,DATA HAS COME!!!!");
-    g_is_data = g_is_data;
-    wlen = head_ptr->len - sizeof(MSG_HEAD_T) - 1;
-    ENG_LOG("NOTICE:length is %x,%x,%x,%x", wlen, sizeof(AUDIO_TOTAL_T),
-            sizeof(AUDIO_NV_ARM_MODE_INFO_T), sizeof(AUDIO_ENHA_EQ_STRUCT_T));
-
-    audio_ptr = (AUDIO_TOTAL_T *)eng_regetpara();  // audio_ptr = (AUDIO_TOTAL_T
-    // *)mmap(0,4*sizeof(AUDIO_TOTAL_T),PROT_READ|PROT_WRITE,MAP_SHARED,audio_fd,0);
-    if ((AUDIO_TOTAL_T *)(-1) == audio_ptr ||
-        (AUDIO_TOTAL_T *)(0) == audio_ptr) {
-      ENG_LOG("mmap failed %s", strerror(errno));
-      goto out;
-    }
-
-    if (g_is_data & AUDIO_NV_ARM_DATA_MEMORY) {
-      ram_ofs |= ENG_RAM_OPS;
-      g_is_data &= (~AUDIO_NV_ARM_DATA_MEMORY);
-      g_indicator |= AUDIO_NV_ARM_INDI_FLAG;
-      ascii2bin(
-          (unsigned char *)(&audio_total[g_index]
-                                 .audio_nv_arm_mode_info.tAudioNvArmModeStruct),
-          (unsigned char *)ptr, wlen);
-    }
-    if (g_is_data & AUDIO_NV_ARM_DATA_FLASH) {
-      ram_ofs |= ENG_FLASH_OPS;
-      g_is_data &= (~AUDIO_NV_ARM_DATA_FLASH);
-      g_indicator |= AUDIO_NV_ARM_INDI_FLAG;
-      ascii2bin(
-          (unsigned char *)(&audio_total[g_index]
-                                 .audio_nv_arm_mode_info.tAudioNvArmModeStruct),
-          (unsigned char *)ptr, wlen);
-      audio_ptr[g_index].audio_nv_arm_mode_info.tAudioNvArmModeStruct =
-          audio_total[g_index].audio_nv_arm_mode_info.tAudioNvArmModeStruct;
-    }
-    if (g_is_data & AUDIO_ENHA_DATA_MEMORY) {
-      ram_ofs |= ENG_RAM_OPS;
-      g_is_data &= (~AUDIO_ENHA_DATA_MEMORY);
-      g_indicator |= AUDIO_ENHA_EQ_INDI_FLAG;
-      ascii2bin((unsigned char *)(&audio_total[g_index].audio_enha_eq),
-                (unsigned char *)ptr, wlen);
-    }
-    if (g_is_data & AUDIO_ENHA_DATA_FLASH) {
-      ram_ofs |= ENG_FLASH_OPS;
-      g_is_data &= (~AUDIO_ENHA_DATA_FLASH);
-      g_indicator |= AUDIO_ENHA_EQ_INDI_FLAG;
-      ascii2bin((unsigned char *)(&audio_total[g_index].audio_enha_eq),
-                (unsigned char *)ptr, wlen);
-      audio_ptr[g_index].audio_enha_eq = audio_total[g_index].audio_enha_eq;
-    }
-    if (g_is_data & AUDIO_ENHA_TUN_DATA_MEMORY) {
-      ram_ofs |= ENG_RAM_OPS;
-      g_is_data &= (~AUDIO_ENHA_TUN_DATA_MEMORY);
-      ascii2bin((unsigned char *)tun_data, (unsigned char *)ptr, wlen);
-    }
-
-    ENG_LOG("g_indicator = 0x%x,%x\n", g_indicator, AUDIO_DATA_READY_INDI_FLAG);
-
-    if (audio_ptr) {
-      if (ram_ofs & ENG_FLASH_OPS) {
-        eng_setpara(audio_ptr);
-      }
-
-      if (g_indicator) {
-        ram_ofs |= ENG_PGA_OPS;
-      }
-      eng_notify_mediaserver_updatapara(ram_ofs, g_index,
-                                        &audio_total[g_index]);
-      free(audio_ptr);
-    }
-
-    if (g_indicator) {
-      ENG_LOG("data is ready!g_indicator = 0x%x,g_index:%d\n", g_indicator,
-              g_index);
-      g_indicator = 0;
-      parse_vb_effect_params((void *)audio_total, adev_get_audiomodenum4eng() *
-                                                      sizeof(AUDIO_TOTAL_T));
-    }
-
-    sprintf(rsp, "\r\nOK\r\n");
-    goto out;
-  }
-
-  //if ptr points to "AT+PELOOP" 3026
-  ret = strncmp(ptr,at_phoneloop,strlen(at_phoneloop));
-  if ( 0 == ret ) {
-      int length = 0;
-      char bin_tmp[2*ENG_DIAG_SIZE];
-      memcpy(rsp,"+PELOOP:",sizeof("+PELOOP:"));
-      length = eng_notify_mediaserver_updatapara(ENG_PHONELOOP_OPS,0, bin_tmp);
-      if(length > 0)
-          sprintf(rsp,"\r\nOK\r\n");
-      else
-          goto out;
-  }
-
-  // if ptr points to "AT+SADM4AP"
-  ret = strncmp(ptr, at_sadm, strlen(at_sadm));
-  if (0 == ret) {
-    switch (cmd_type) {
-      case GET_ARM_VOLUME_MODE_COUNT:
-        ENG_LOG("%s,GET MODE COUNT:%d\n", __FUNCTION__,
-                adev_get_audiomodenum4eng());
-        sprintf(rsp, "+SADM4AP: %d", adev_get_audiomodenum4eng());
-        ENG_LOG("%s,GET MODE COUNT:%s\n", __FUNCTION__, rsp);
-        break;
-      case GET_ARM_VOLUME_MODE_NAME:
-        ENG_LOG("ARM VOLUME NAME is %s",
-                audio_total[g_index].audio_nv_arm_mode_info.ucModeName);
-        sprintf(rsp, "+SADM4AP: %d,\"%s\"", g_index,
-                audio_total[g_index].audio_nv_arm_mode_info.ucModeName);
-        ENG_LOG("%s,GET_ARM_VOLUME_MODE_NAME:%d ---- >%s \n", __FUNCTION__,
-                g_index, rsp);
-        break;
-      case SET_ARM_VOLUME_DATA_TO_RAM:
-        ENG_LOG("%s,set arm nv mode data to memory\n", __FUNCTION__);
-        g_is_data |= AUDIO_NV_ARM_DATA_MEMORY;
-        sprintf(rsp, "\r\n> ");
-        break;
-      case SET_ARM_VOLUME_DATA_TO_FLASH:
-        ENG_LOG("%s,set arm nv mode data to flash\n", __FUNCTION__);
-        g_is_data |= AUDIO_NV_ARM_DATA_FLASH;
-        sprintf(rsp, "\r\n> ");
-        break;
-      case GET_ARM_VOLUME_DATA_FROM_FLASH:
-        audio_ptr = (AUDIO_TOTAL_T *)eng_regetpara();  //(AUDIO_TOTAL_T
-        //*)mmap(0,4*sizeof(AUDIO_TOTAL_T),PROT_READ|PROT_WRITE,MAP_SHARED,audio_fd,0);
-        if (((AUDIO_TOTAL_T *)(-1) != audio_ptr) &&
-            ((AUDIO_TOTAL_T *)(0) != audio_ptr)) {
-          // audio_total[g_index].audio_nv_arm_mode_info.tAudioNvArmModeStruct=audio_ptr[g_index].audio_nv_arm_mode_info.tAudioNvArmModeStruct;
-          // munmap((void *)audio_ptr,4*sizeof(AUDIO_TOTAL_T));
-          audio_total[g_index].audio_nv_arm_mode_info.tAudioNvArmModeStruct =
-              audio_ptr[g_index].audio_nv_arm_mode_info.tAudioNvArmModeStruct;
-          free(audio_ptr);
-        }
-      // there is no break in this case,'cause it will share the code with the
-      // following case
-      case GET_ARM_VOLUME_DATA_FROM_RAM:
-        ENG_LOG("%s,get arm volume data,audio_total:0x%0x,--->%d \n",
-                __FUNCTION__, audio_total, g_index);
-        sprintf(rsp, "+SADM4AP: 0,\"%s\",",
-                audio_total[g_index].audio_nv_arm_mode_info.ucModeName);
-        bin2ascii((unsigned char *)(rsp + strlen(rsp)),
-                  (unsigned char *)(&audio_total[g_index]
-                                         .audio_nv_arm_mode_info
-                                         .tAudioNvArmModeStruct),
-                  sizeof(AUDIO_NV_ARM_MODE_STRUCT_T));
-        break;
-
-      default:
-        sprintf(rsp, "\r\nERROR\r\n");
-        break;
-    } /* -----  end switch  ----- */
-  }
-
-  // AT+SPENHA
-  ret = strncmp(ptr, at_spenha, strlen(at_spenha));
-  if (0 == ret) {
-    ENG_LOG("receive AT+SPENHA cmd\n");
-    if (1 == eq_or_tun_type) {
-      switch (cmd_type) {
-        case GET_AUDIO_ENHA_MODE_COUNT:
-          sprintf(rsp, "+SPENHA: 1");
-          break;
-        case SET_AUDIO_ENHA_DATA_TO_MEMORY:
-        case SET_AUDIO_ENHA_DATA_TO_FLASH:
-          ENG_LOG("%s,set enha tun data to flash\n", __FUNCTION__);
-          g_is_data |= AUDIO_ENHA_TUN_DATA_MEMORY;
-          sprintf(rsp, "\r\n> ");
-          break;
-        case GET_AUDIO_ENHA_DATA_FROM_FLASH:
-        case GET_AUDIO_ENHA_DATA_FROM_MEMORY:
-          ENG_LOG("%s,get audio enha data\n", __FUNCTION__);
-          sprintf(rsp, "+SPENHA: %d,", g_index);
-          bin2ascii((unsigned char *)(rsp + strlen(rsp)),
-                    (unsigned char *)tun_data, sizeof(tun_data));
-          break;
-        default:
-          break;
-      }
-    } else {
-      switch (cmd_type) {
-        case GET_AUDIO_ENHA_MODE_COUNT:
-          sprintf(rsp, "+SPENHA: %d", adev_get_audiomodenum4eng());
-          break;
-
-        case SET_AUDIO_ENHA_DATA_TO_MEMORY:
-          ENG_LOG("%s,set enha data to memory\n", __FUNCTION__);
-          g_is_data |= AUDIO_ENHA_DATA_MEMORY;
-          sprintf(rsp, "\r\n> ");
-          break;
-        case SET_AUDIO_ENHA_DATA_TO_FLASH:
-          ENG_LOG("%s,set enha data to flash\n", __FUNCTION__);
-          g_is_data |= AUDIO_ENHA_DATA_FLASH;
-          sprintf(rsp, "\r\n> ");
-          break;
-        case GET_AUDIO_ENHA_DATA_FROM_FLASH:
-          audio_ptr = (AUDIO_TOTAL_T *)eng_regetpara();  // (AUDIO_TOTAL_T
-          // *)mmap(0,4*sizeof(AUDIO_TOTAL_T),PROT_READ|PROT_WRITE,MAP_SHARED,audio_fd,0);
-          if (NULL != audio_ptr) {
-            audio_total[g_index].audio_enha_eq =
-                audio_ptr[g_index].audio_enha_eq;
-            free(audio_ptr);  // munmap((void
-                              // *)audio_ptr,4*sizeof(AUDIO_TOTAL_T));
-          }
-        // there is no break in this case,'cause it will share the code with the
-        // following case
-        case GET_AUDIO_ENHA_DATA_FROM_MEMORY:
-          ENG_LOG("%s,get audio enha data\n", __FUNCTION__);
-          sprintf(rsp, "+SPENHA: %d,", g_index);
-          bin2ascii((unsigned char *)(rsp + strlen(rsp)),
-                    (unsigned char *)(&audio_total[g_index].audio_enha_eq),
-                    sizeof(AUDIO_ENHA_EQ_STRUCT_T));
-          break;
-        default:
-          break;
-      } /* -----  end switch  ----- */
-    }
-  }
-
-out:
-  // if (audio_fd >=0)
-  // close(audio_fd);
-
-  return rsp != NULL ? strlen(rsp) : 0;
-}
-#endif
 static int eng_diag_product_ctrl(char *buf, int len, char *rsp, int rsplen) {
   int offset = 0;
   int data_len = 0;

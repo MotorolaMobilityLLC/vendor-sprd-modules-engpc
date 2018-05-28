@@ -14,7 +14,6 @@ LOCAL_SRC_FILES := PQTuneDiag.c \
 		ParseCms.c \
 		ParseBld.c \
 		ParseAbc.c \
-		Ambient.cpp \
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
@@ -24,7 +23,6 @@ LOCAL_SHARED_LIBRARIES += libcutils   \
                           libdl \
 			  libxml2 \
 			  liblog \
-			  libandroid \
 
 include $(BUILD_SHARED_LIBRARY)
 

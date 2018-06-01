@@ -6,9 +6,11 @@ LOCAL_PRELINK_MODULE := false
 
 LOCAL_SRC_FILES := fm_cmd_executer.cpp
 
-LOCAL_C_INCLUDES    += packages/apps/FMRadio/jni/fmr   \
-             vendor/sprd/platform/packages/apps/FMRadio/jni/fmr\
-             vendor/sprd/platform/packages/apps/DreamFMRadio/jni/fmr
+LOCAL_C_INCLUDES := $(JNI_H_INCLUDE) \
+		    system/core/include \
+		    packages/apps/FMRadio/jni/fmr \
+                    vendor/sprd/platform/packages/apps/FMRadio/jni/fmr \
+                    vendor/sprd/platform/packages/apps/DreamFMRadio/jni/fmr
 
 LOCAL_SHARED_LIBRARIES += liblog
 

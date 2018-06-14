@@ -1744,7 +1744,7 @@ int cplogctrl_setlocation(char log_type, char location) {
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-  property_get("persist.sys.modem.log_dest", modem_log_dest, "not_find");
+  property_get("persist.vendor.modem.log_dest", modem_log_dest, "not_find");
   property_get("persist.sys.wcn.log_dest", wcn_log_dest, "not_find");
 
   ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest, wcn_log_dest);
@@ -1767,7 +1767,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           if (0 != eng_thread_create(&t3, eng_vdiag_rthread, g_dev_info)) {
             ENG_LOG("vdiag rthread start error");
           }          
-          property_set("persist.sys.modem.log_dest", "1");
+          property_set("persist.vendor.modem.log_dest", "1");
         }
       } else {
         ENG_LOG("modem log already to pc!");
@@ -1782,7 +1782,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           modemlog_to_pc = 0;
-          property_set("persist.sys.modem.log_dest", "2");
+          property_set("persist.vendor.modem.log_dest", "2");
         }
       } else {
         ENG_LOG("modem log already to t card!");
@@ -1797,7 +1797,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else { // notice slogomodem success
           modemlog_to_pc = 0;
-          property_set("persist.sys.modem.log_dest", "0");
+          property_set("persist.vendor.modem.log_dest", "0");
         }
       } else {
         ENG_LOG("modem log already to no log!");

@@ -452,15 +452,15 @@ static void eng_get_modem_int(char* type, char* at_chan, char* diag_chan,
                               char* log_chan) {
   char property_name[32] = {0};
 
-  sprintf(property_name, "%s%s%s", "ro.modem.", type, ".diag");
+  sprintf(property_name, "%s", "ro.vendor.modem.diag");
   property_get(property_name, diag_chan, "not_find");
   ENG_LOG("%s %s diag_chan:%s", __FUNCTION__, property_name, diag_chan);
 
-  sprintf(property_name, "%s%s%s", "ro.modem.", type, ".tty");
+  sprintf(property_name, "%s", "ro.vendor.modem.tty");
   property_get(property_name, at_chan, "not_find");
   ENG_LOG("%s %s at_chan:%s", __FUNCTION__, property_name, at_chan);
 
-  sprintf(property_name, "%s%s%s", "ro.modem.", type, ".log");
+  sprintf(property_name, "%s", "ro.vendor.modem.log");
   property_get(property_name, log_chan, "not_find");
   ENG_LOG("%s %s log_chan:%s", __FUNCTION__, property_name, log_chan);
 
@@ -508,7 +508,7 @@ void cplogctrl_init(void) {
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-  property_get("persist.sys.modem.log_dest", modem_log_dest, "not_find");
+  property_get("persist.vendor.modem.log_dest", modem_log_dest, "not_find");
   property_get("persist.sys.wcn.log_dest", wcn_log_dest, "not_find");
 
   ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest,

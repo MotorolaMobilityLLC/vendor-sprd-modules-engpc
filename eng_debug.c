@@ -12,22 +12,22 @@
 
 int eng_file_lock(void) {
   int fd;
-  if ((fd = open("/data/local/englog/file_lock.test", O_CREAT | O_RDONLY,
+  if ((fd = open("/data/vendor/local/englog/file_lock.test", O_CREAT | O_RDONLY,
                  0444)) != -1) {
-    ENG_LOG("open data/local/englog/file_lock.test fd = %d\n", fd);
+    ENG_LOG("open data/vendor/local/englog/file_lock.test fd = %d\n", fd);
     if (flock(fd, LOCK_EX | LOCK_NB) != -1) {
-      ENG_LOG("lock /data/local/englog/file_lock.test \n");
+      ENG_LOG("lock /data/vendor/local/englog/file_lock.test \n");
     }
     return fd;
   } else {
-    ENG_LOG("open data/local/englog/file_lock.test fail %s\n", strerror(errno));
+    ENG_LOG("open data/vendor/local/englog/file_lock.test fail %s\n", strerror(errno));
   }
   return -1;
 }
 
 int eng_file_unlock(int fd) {
   // flock(fd,LOCK_UN);
-  ENG_LOG("unlock /data/file_lock.test \n");
+  ENG_LOG("unlock /data/vendor/file_lock.test \n");
   if (fd >= 0) close(fd);
 
   return 0;
@@ -39,51 +39,51 @@ void* eng_printlog_thread(void* x) {
 
   ENG_LOG("eng_printlog_thread thread start\n");
 
-  if (0 != access("/data/local/englog", F_OK)) {
-    ret = mkdir("/data/local/englog", S_IRWXU | S_IRWXG | S_IRWXO);
+  if (0 != access("/data/vendor/local/englog", F_OK)) {
+    ret = mkdir("/data/vendor/local/englog", S_IRWXU | S_IRWXG | S_IRWXO);
     if (-1 == ret && (errno != EEXIST)) {
-      ENG_LOG("mkdir /data/local/englog failed.");
+      ENG_LOG("mkdir /data/vendor/local/englog failed.");
       return 0;
     }
   }
-  ret = chmod("/data/local/englog", S_IRWXU | S_IRWXG | S_IRWXO);
+  ret = chmod("/data/vendor/local/englog", S_IRWXU | S_IRWXG | S_IRWXO);
   if (-1 == ret) {
-    ENG_LOG("chmod /data/local/englog failed.");
+    ENG_LOG("chmod /data/vendor/local/englog failed.");
     return 0;
   }
 
-  if (0 == access("/data/local/englog/last_eng.log", F_OK)) {
-    ret = remove("/data/local/englog/last_eng.log");
+  if (0 == access("/data/vendor/local/englog/last_eng.log", F_OK)) {
+    ret = remove("/data/vendor/local/englog/last_eng.log");
     if (-1 == ret) {
       ENG_LOG("remove failed.");
       return 0;
     }
   }
 
-  if (0 == access("/data/local/englog/eng.log", F_OK)) {
+  if (0 == access("/data/vendor/local/englog/eng.log", F_OK)) {
     ret =
-        rename("/data/local/englog/eng.log", "/data/local/englog/last_eng.log");
+        rename("/data/vendor/local/englog/eng.log", "/data/vendor/local/englog/last_eng.log");
     if (-1 == ret) {
       ENG_LOG("rename failed.");
       return 0;
     }
   }
 
-  fd = open("/data/local/englog/eng.log", O_RDWR | O_CREAT,
+  fd = open("/data/vendor/local/englog/eng.log", O_RDWR | O_CREAT,
             S_IRWXU | S_IRWXG | S_IRWXO);
   if (fd == -1 && (errno != EEXIST)) {
-    ENG_LOG("creat /data/local/englog/eng.log failed.");
+    ENG_LOG("creat /data/vendor/local/englog/eng.log failed.");
     return 0;
   }
   if (fd >= 0) close(fd);
 
-  ret = chmod("/data/local/englog/eng.log", 0777);
+  ret = chmod("/data/vendor/local/englog/eng.log", 0777);
   if (-1 == ret) {
-    ENG_LOG("chmod /data/local/englog/eng.log failed.");
+    ENG_LOG("chmod /data/vendor/local/englog/eng.log failed.");
     return 0;
   }
 
-  ret = system("logcat -v threadtime -f /data/local/englog/eng.log -s ENGPC &");
+  ret = system("logcat -v threadtime -f /data/vendor/local/englog/eng.log -s ENGPC &");
   if (!WIFEXITED(ret) || WEXITSTATUS(ret) || -1 == ret) {
     ENG_LOG(" system failed.");
     return 0;

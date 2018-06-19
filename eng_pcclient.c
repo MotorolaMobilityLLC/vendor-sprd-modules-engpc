@@ -589,11 +589,11 @@ int main(int argc, char** argv) {
   if (0 != strcmp(run_type, "wcn") && 0 != strcmp(run_type, "ag")) {
     fd = eng_file_lock();
     if (fd >= 0) {
-      property_get("persist.vendor.onemodem.enable", get_propvalue, "not_find");
-      ENG_LOG("persist.vendor.onemodem.enable = %s", get_propvalue);
+      property_get("flag.engpc.onemodem.enable", get_propvalue, "not_find");
+      ENG_LOG("flag.engpc.onemodem.enable = %s", get_propvalue);
       if (0 == strcmp(get_propvalue, "not_find") ||
           0 != strcmp(get_propvalue, set_propvalue)) {
-        property_set("persist.vendor.onemodem.enable", set_propvalue);
+        property_set("flag.engpc.onemodem.enable", set_propvalue);
         eng_file_unlock(fd);
         eng_init_test_file();
         eng_sqlite_create();

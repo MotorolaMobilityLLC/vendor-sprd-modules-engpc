@@ -129,15 +129,15 @@ static void eng_get_agdsp_devpath(char* log_chan, char* pcm_chan, char* mem_chan
 {
     char property_name[32] = {0};
 
-    sprintf(property_name,"%s","ro.modem.ag.log");
+    sprintf(property_name,"%s","ro.vendor.modem.ag.log");
     property_get(property_name, log_chan, "not_find");
     ENG_LOG("%s %s log_chan:%s", __FUNCTION__,property_name,log_chan);
 
-    sprintf(property_name,"%s","ro.modem.ag.pcm");
+    sprintf(property_name,"%s","ro.vendor.modem.ag.pcm");
     property_get(property_name, pcm_chan, "not_find");
     ENG_LOG("%s %s pcm_chan:%s", __FUNCTION__,property_name,pcm_chan);
 
-    sprintf(property_name,"%s","ro.modem.ag.mem");
+    sprintf(property_name,"%s","ro.vendor.modem.ag.mem");
     property_get(property_name, mem_chan, "not_find");
     ENG_LOG("%s %s mem_chan:%s", __FUNCTION__,property_name,mem_chan);
 }
@@ -627,9 +627,9 @@ void* eng_vdiag_rthread(void* x) {
       continue;
     }
     if (CONNECT_UART == s_dev_info->host_int.dev_type) {
-      property_set("sys.config.engcplog.enable", "1");
+      property_set("vendor.sys.config.engcplog.enable", "1");
     }
-    property_get("sys.config.engcplog.enable", get_propvalue, "not_find");
+    property_get("vendor.sys.config.engcplog.enable", get_propvalue, "not_find");
 
     #if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
     if (1 == s_dev_info->host_int.cali_flag) {

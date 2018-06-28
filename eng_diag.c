@@ -74,7 +74,7 @@
 #define CMD_PUBLICKEYLEN "primpuklen="
 #define CMD_REGISTERSTRING "regvaluesis:"
 
-#define PERSIST_MODEM_CHAR "persist.modem."
+#define PERSIST_MODEM_CHAR "persist.vendor.modem."
 
 #define TD_MODEM 0x3434
 #define W_MODEM 0x5656
@@ -82,17 +82,12 @@
 #define LF_MODEM 0x6868
 #define TL_MODEM 0x9898
 
-#define TD_PROC_PROP "ro.modem.t.dev"
-#define W_PROC_PROP "ro.modem.w.dev"
-#define LTE_PROC_PROP "ro.modem.l.dev"
-#define LF_PROC_PROP "ro.modem.lf.dev"
-#define TL_PROC_PROP "ro.modem.tl.dev"
 
-#define TD_MODEM_ENABLE_PROP "persist.modem.t.enable"
-#define W_MODEM_ENABLE_PROP "persist.modem.w.enable"
-#define LTE_MODEM_ENABLE_PROP "persist.modem.l.enable"
-#define LF_MODEM_ENABLE_PROP "persist.modem.lf.enable"
-#define TL_MODEM_ENABLE_PROP "persist.modem.tl.enable"
+#define TD_MODEM_ENABLE_PROP "persist.vendor.modem.t.enable"
+#define W_MODEM_ENABLE_PROP "persist.vendor.modem.w.enable"
+#define LTE_MODEM_ENABLE_PROP "persist.vendor.modem.l.enable"
+#define LF_MODEM_ENABLE_PROP "persist.vendor.modem.lf.enable"
+#define TL_MODEM_ENABLE_PROP "persist.vendor.modem.tl.enable"
 
 #define DBHEADER_FLAG_MODEMIMG 1
 #define DBHEADER_FLAG_MODEMDB 2
@@ -788,7 +783,7 @@ static int get_modem_readpath(char *modem_file) {
   char prop[128] = {0};
   char modem_enable[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", modem_path, "")) {
+  if (-1 == property_get("ro.vendor.product.partitionpath", modem_path, "")) {
     ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
     return 0;
   }
@@ -4477,11 +4472,11 @@ static void eng_diag_cft_switch_hdlr(char *buf, int len, char *rsp,
 
   switch (type) {
     case 0:
-      property_set("sys.cfg.type", "0");
+      property_set("vendor.sys.cfg.type", "0");
       ((TOOLS_DIAG_AP_CNF_T *)(rsp_ptr + sizeof(MSG_HEAD_T)))->status = 0x00;
       break;
     case 1:
-      property_set("sys.cfg.type", "1");
+      property_set("vendor.sys.cfg.type", "1");
       ((TOOLS_DIAG_AP_CNF_T *)(rsp_ptr + sizeof(MSG_HEAD_T)))->status = 0x00;
       break;
     default:
@@ -5264,7 +5259,7 @@ static int eng_diag_get_modem_mode(char *buf, int len, char *rsp, int rsplen) {
   ((MSG_HEAD_T *)rsp_ptr)->len = rsplen;
   aprsp->status = 0x01;
 
-  property_get("ro.product.modem.mode", property_info, "not_find");
+  property_get("ro.vendor.product.modem.mode", property_info, "not_find");
   if (0 == strcmp(property_info, "not_find")) {
     ENG_LOG("%s: read ro.product.modem.mode failed !!!%s\n", __FUNCTION__,
             strerror(errno));

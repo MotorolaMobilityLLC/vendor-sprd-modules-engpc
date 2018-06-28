@@ -220,9 +220,9 @@ int eng_btwifimac_write(char *bt_mac, char *wifi_mac) {
   ret = write_mac2file(wifi_mac, bt_mac);
 
   if (ret > 0) {
-    property_set("sys.mac.wifi", wifi_mac);
-    property_set("sys.mac.bluetooth", bt_mac);
-    property_set("sys.bt.bdaddr_path", BT_MAC_FILE);
+    property_set("vendor.sys.mac.wifi", wifi_mac);
+    property_set("vendor.sys.mac.bluetooth", bt_mac);
+    property_set("vendor.sys.bt.bdaddr_path", BT_MAC_FILE);
     property_set("ctl.start", "set_mac");
   }
 

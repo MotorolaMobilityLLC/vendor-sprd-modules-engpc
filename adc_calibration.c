@@ -121,7 +121,7 @@ void initialize_ctrl_file(void) {
   unsigned int adc_magic = ADC_MAGIC;
   char miscdata_path[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", miscdata_path, "")){
     ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
     return;
   }else{
@@ -173,7 +173,7 @@ void disable_calibration(void) {
   int ret = 0;
   char miscdata_path[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", miscdata_path, "")){
     ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
     return;
   }else{
@@ -214,7 +214,7 @@ void enable_calibration(void) {
   CALI_INFO_DATA_T cali_info;
   char miscdata_path[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", miscdata_path, "")){
     ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
     return;
   }else{
@@ -276,7 +276,7 @@ static int AccessADCDataFile(unsigned char flag, char *lpBuff, int size) {
 
   char miscdata_path[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", miscdata_path, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", miscdata_path, "")){
     ENG_LOG("%s: get miscdata_path fail\n", __FUNCTION__);
     return 0;
   }else{

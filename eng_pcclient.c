@@ -111,7 +111,7 @@ void eng_check_factorymode(int normal_cali) {
     }
     property_get("ro.build.type", build_type, "not_find");
     ENG_LOG("%s: build_type: %s", __FUNCTION__, build_type);
-    property_get("persist.sys.modem.diag", modem_diag_value, "not_find");
+    property_get("ro.vendor.modem.diag", modem_diag_value, "not_find");
     ENG_LOG("%s: modem_diag_value: %s\n", __FUNCTION__, modem_diag_value);
     if ((status == 1) || (status == ENG_SQLSTR2INT_ERR)) {
       sprintf(status_buf, "%s", "1");
@@ -216,7 +216,7 @@ static int eng_parse_cmdline(struct eng_param* cmdvalue) {
           switch (mode) {
             case 1:
             case 5:
-              property_get("persist.modem.w.enable", w_enable_mode, "not_find");
+              property_get("persist.vendor.modem.w.enable", w_enable_mode, "not_find");
               if (0 == strcmp(w_enable_mode, "1")) {
                 strcpy(cmdvalue->cp_type, "w");
               } else {
@@ -233,7 +233,7 @@ static int eng_parse_cmdline(struct eng_param* cmdvalue) {
               break;
             case 14:
             case 15:
-              property_get("persist.modem.w.enable", w_enable_mode, "not_find");
+              property_get("persist.vendor.modem.w.enable", w_enable_mode, "not_find");
               if (0 == strcmp(w_enable_mode, "1")) {
                 strcpy(cmdvalue->cp_type, "w");
               } else {
@@ -252,9 +252,9 @@ static int eng_parse_cmdline(struct eng_param* cmdvalue) {
               break;
           }
 
-          property_get("ro.radio.modemtype", modemtype, "not_find");
+          property_get("ro.vendor.radio.modemtype", modemtype, "not_find");
           if (0 == strcmp(modemtype, "not_find")) {
-              property_get("persist.radio.modem.config", ssda_mode, "not_find");
+              property_get("persist.vendor.radio.modem.config", ssda_mode, "not_find");
               if(0 == strcmp(ssda_mode, "not_find")) {
                   property_get("persist.radio.ssda.mode", ssda_mode, "not_find");
 
@@ -477,7 +477,7 @@ static int eng_iqfeed_start(int num) {
     property_set("ctl.start", "iqfeed");
     usleep(100 * 1000);
 
-    property_get("init.svc.iqfeed", status, NULL);
+    property_get("init.svc.vendor.iqfeed", status, NULL);
     ENG_LOG("%s: svc iqfeed status = %s\n", __FUNCTION__, status);
 
     if (0 == strcmp(status, "running")) {
@@ -509,7 +509,7 @@ void cplogctrl_init(void) {
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
   property_get("persist.vendor.modem.log_dest", modem_log_dest, "not_find");
-  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "not_find");
+  property_get("persist.vendor.wcn.log_dest", wcn_log_dest, "not_find");
 
   ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest,
           wcn_log_dest);

@@ -8,7 +8,7 @@
 #include <ubi-user.h>
 #endif
 
-//	Android8.0 miscdata need getfrom  property_get("ro.product.partitionpath", miscdata_path, "")
+//	Android8.0 miscdata need getfrom  property_get("ro.vendor.product.partitionpath", miscdata_path, "")
 //#ifdef CONFIG_NAND
 //#define PRODUCTINFO_FILE "/dev/ubi0_miscdata"
 //#else
@@ -22,7 +22,7 @@ int eng_read_productnvdata(char *databuf, int data_len) {
   char miscdata_path[128] = {0};
   int fd = -1;
 
-  if (-1 == property_get("ro.product.partitionpath", prop, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", prop, "")){
     ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
     return 0;
   }
@@ -55,7 +55,7 @@ int eng_write_productnvdata(char *databuf, int data_len) {
   char prop[128] = {0};
   char miscdata_path[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", prop, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", prop, "")){
     ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
     return 0;
   }
@@ -93,7 +93,7 @@ int eng_read_productnvdata_with_offset(int offset, char *databuf, int data_len) 
   char prop[128] = {0};
   char miscdata_path[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", prop, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", prop, "")){
     ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
     return 0;
   }
@@ -133,7 +133,7 @@ int eng_write_productnvdata_with_offset(int offset, char *databuf, int data_len)
   char prop[128] = {0};
   char miscdata_path[128] = {0};
 
-  if (-1 == property_get("ro.product.partitionpath", prop, "")){
+  if (-1 == property_get("ro.vendor.product.partitionpath", prop, "")){
     ENG_LOG("%s: get partitionpath fail\n", __FUNCTION__);
     return 0;
   }

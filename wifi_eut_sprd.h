@@ -20,7 +20,7 @@
 #define IWNPI_RET_STA_FLAG ("status")
 #define IWNPI_RET_REG_FLAG ("reg")
 #define IWNPI_RET_PWR_FLAG ("level_a")
-#define WCN_HARDWARE_PRODUCT ("ro.wcn.hardware.product")
+#define WCN_HARDWARE_PRODUCT ("ro.vendor.wcn.hardware.product")
 #define ANDROID_VER_PROP ("ro.build.version.release")
 
 #define STR_RET_STATUS ("ret: status ")

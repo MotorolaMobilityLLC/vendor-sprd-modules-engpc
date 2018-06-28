@@ -1551,13 +1551,13 @@ int eng_linuxcmd_audiologctl(char *req, char *rsp) {
   int ret = -1;
   int len = 0;
 
-  property_get("ro.modem.ag.log", ag_log_chan, "");
+  property_get("ro.vendor.modem.ag.log", ag_log_chan, "");
   if (!ag_log_chan[0]) {
     ENG_LOG("%s fail to get agdsp log device file.", __FUNCTION__);
     goto out;
   }
 
-  property_get("ro.modem.ag.pcm", ag_pcm_chan, "");
+  property_get("ro.vendor.modem.ag.pcm", ag_pcm_chan, "");
   if (!ag_pcm_chan[0]) {
     ENG_LOG("%s fail to get agdsp pcm device file.", __FUNCTION__);
     goto out;
@@ -1745,7 +1745,7 @@ int cplogctrl_setlocation(char log_type, char location) {
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
   property_get("persist.vendor.modem.log_dest", modem_log_dest, "not_find");
-  property_get("persist.sys.wcn.log_dest", wcn_log_dest, "not_find");
+  property_get("persist.vendor.wcn.log_dest", wcn_log_dest, "not_find");
 
   ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest, wcn_log_dest);
   ENG_LOG("%s log_type=%d, location=%d", __FUNCTION__, log_type, location);
@@ -1819,7 +1819,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           wcnlog_to_pc = 1;
-          property_set("persist.sys.wcn.log_dest", "1");
+          property_set("persist.vendor.wcn.log_dest", "1");
           //system("start engpcclientwcn");
         }
       } else {
@@ -1835,7 +1835,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           wcnlog_to_pc = 0;
-          property_set("persist.sys.wcn.log_dest", "2");
+          property_set("persist.vendor.wcn.log_dest", "2");
           //system("stop engpcclientwcn");
         }
       } else {
@@ -1851,7 +1851,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           wcnlog_to_pc = 0;
-          property_set("persist.sys.wcn.log_dest", "0");
+          property_set("persist.vendor.sys.log_dest", "0");
         }
       } else {
         ENG_LOG("wcn log already no log!");
@@ -1893,8 +1893,8 @@ static int eng_linuxcmd_cplogctl(char *req, char *rsp) {
     char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
     char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-    property_get("persist.sys.modem.log_dest", modem_log_dest, "0");
-    property_get("persist.sys.wcn.log_dest", wcn_log_dest, "0");    
+    property_get("persist.vendor.modem.log_dest", modem_log_dest, "0");
+    property_get("persist.vendor.wcn.log_dest", wcn_log_dest, "0");    
 
     if (strchr(req, '?') != NULL) {
         if (strstr(req, "=1?")!=NULL) { // modem log_dest req

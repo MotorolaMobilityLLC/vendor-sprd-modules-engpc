@@ -109,7 +109,7 @@ int eng_autotestStart(void) {
     property_set("ctl.start", "autotest");
     usleep(100 * 1000);
 
-    property_get("init.svc.autotest", status, NULL);
+    property_get("init.svc.vendor.autotest", status, NULL);
     ENG_LOG("svc autotest status = %s\n", status);
 
     if (0 == strcmp(status, "running")) {

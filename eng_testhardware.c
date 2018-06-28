@@ -89,8 +89,8 @@ static void eng_pre_powersimon(void) {
   char simtype[PROPERTY_VALUE_MAX];
   int sim;
   memset(simtype, 0, sizeof(simtype));
-  property_get("persist.msms.phone_count", simtype, "");
-  ENG_LOG("%s: persist.msms.phone_count = %s", __FUNCTION__, simtype);
+  property_get("persist.vendor.radio.phone_count", simtype, "");
+  ENG_LOG("%s: persist.vendor.radio.phone_count = %s", __FUNCTION__, simtype);
 
   sim = atoi(simtype);
 
@@ -325,13 +325,13 @@ static int test_atv(int test_item, char *ret_buf) {
 }
 
 static int test_bt(int test_item, char *ret_buf) {
-  int ret = 0;
+  int ret = -1;
   char buf[PROPERTY_VALUE_MAX] = "";
 
   ENG_LOG("bt\n");
 
   // ret = property_get("ro.mac.bluetooth",mac,"");
-  ret = property_get("bccmd.download.status", buf, "");
+  //ret = property_get("bccmd.download.status", buf, "");
   ENG_LOG("ttt: result is: %s\n", buf);
   if (ret < 0) {
     strcpy(ret_buf, "FAIL");
@@ -345,7 +345,7 @@ static int test_wifi(int test_item, char *ret_buf) {
   char buff[PROPERTY_VALUE_MAX] = {0};
   ENG_LOG("wifi");
 
-  property_get("wifi.init", buff, "");
+  //property_get("wifi.init", buff, "");
 
   if (strstr(buff, "PASS") != NULL) {
     strcpy(ret_buf, "PASS");
@@ -362,7 +362,7 @@ static int test_gps(int test_item, char *ret_buf) {
   char buff[PROPERTY_VALUE_MAX] = {0};
   ENG_LOG("gps");
 
-  property_get("gps.init", buff, "");
+  //property_get("gps.init", buff, "");
 
   if (strstr(buff, "PASS") != NULL) {
     strcpy(ret_buf, "PASS");

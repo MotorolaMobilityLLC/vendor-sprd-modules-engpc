@@ -525,6 +525,7 @@ void cplogctrl_init(void) {
   } else { // just care whether wcn_log_dest is "1" or not
     wcnlog_to_pc = 0;
   }  
+
   ENG_LOG("%s modemlog_to_pc=%d, wcnlog_to_pc=%d", __FUNCTION__, modemlog_to_pc, wcnlog_to_pc);  
 }
 
@@ -605,7 +606,10 @@ int main(int argc, char** argv) {
           }
           // Check factory mode and switch device mode.
           eng_check_factorymode(cmdparam.normal_cali);
-          if (cmdparam.normal_cali) eng_autotestStart();
+          if (cmdparam.normal_cali) {
+            //eng_autotestStart();
+            ENG_LOG("process autotest remove, all feature implement by so");
+          }
         } else {
           // Initialize file for ADC
           initialize_ctrl_file();

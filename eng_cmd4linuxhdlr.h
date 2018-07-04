@@ -86,6 +86,6 @@ struct eng_linuxcmd_str {
 int eng_at2linux(char *buf);
 int eng_linuxcmd_hdlr(int cmd, char *req, char *rsp);
 eng_cmd_type eng_cmd_get_type(int cmd);
-int cplogctrl_setlocation(char log_type, char location);
+int cplogctrl_setlocation(char log_type, char location, int socket);
 
 #endif

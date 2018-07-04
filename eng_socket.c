@@ -82,7 +82,7 @@ static void eng_socket_rw_thread(void *fd)
             }
             ENG_LOG("%s  socket_read_buf = %d %d %d",__FUNCTION__, socket_rbuf[0], socket_rbuf[1], socket_rbuf[2]);
             eng_data_ptr = (ENG_DATA_T *)socket_rbuf;
-            eng_data_ptr->result = cplogctrl_setlocation(eng_data_ptr->log_type + '0', eng_data_ptr->location + '0');
+            eng_data_ptr->result = cplogctrl_setlocation(eng_data_ptr->log_type + '0', eng_data_ptr->location + '0', 1);
             memcpy(socket_wbuf,(char *)eng_data_ptr,ENG_DATA_LENGTH);
             ENG_LOG("%s  socket_wbuf = %d %d %d",__FUNCTION__, socket_wbuf[0], socket_wbuf[1], socket_wbuf[2]);
             write(soc_fd,socket_wbuf,ENG_DATA_LENGTH);

@@ -627,8 +627,18 @@ int main(int argc, char** argv) {
         eng_file_unlock(fd);
         eng_init_test_file();
         eng_sqlite_create();
-        if (cmdparam.califlag != 1) {
-          if (cmdparam.normal_cali) {
+        if (cmdparam.califlag == 1) {
+          // Initialize file for ADC
+          initialize_ctrl_file();
+        }
+      } else {
+        eng_file_unlock(fd);
+      }
+    }
+  }
+
+    if (cmdparam.califlag != 1) {
+        if (cmdparam.normal_cali) {
             // Change gser port
             memcpy(dev_info.host_int.dev_diag, "/dev/vser",
                    sizeof("/dev/vser"));
@@ -646,26 +656,14 @@ int main(int argc, char** argv) {
             //eng_autotestStart();
             ENG_LOG("process autotest remove, all feature implement by so");
           }
-        } else {
-          // Initialize file for ADC
-          ENG_LOG("setprop: %s = 1", PROP_USB_CONFIG);
-          property_set(PROP_USB_CONFIG, "1");
-          initialize_ctrl_file();
-        }
-        if (0 != eng_thread_create(&t4, eng_printlog_thread, NULL)) {
-          ENG_LOG("printlog thread start error");
-        }
-      } else {
-        eng_file_unlock(fd);
-      }
+    }
 
-      if (0 == cmdparam.califlag) {
+    if (0 == cmdparam.califlag) {
         if (0 != eng_thread_create(&t5, eng_timesync_thread, NULL)) {
           ENG_LOG("time sync thread start error");
         }
-      }
     }
-  }
+
 
   apcali_init();
 

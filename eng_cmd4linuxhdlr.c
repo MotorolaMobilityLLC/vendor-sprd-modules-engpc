@@ -1693,12 +1693,26 @@ static int eng_linuxcmd_get_emmcddrsize(char *req,char *rsp)
 
 }
 
+#define AT_DIAG_OPEN    "AT+DIAGOPEN"
+#define AT_DIAG_CLOSE   "AT+DIAGCLOSE"
+static void diagOpen()
+{
+    char eng_rsp_buf[2 * ENG_DIAG_SIZE] = {0};
+    eng_at_dymic_hdlr(AT_DIAG_OPEN, sizeof(AT_DIAG_OPEN), eng_rsp_buf,sizeof(eng_rsp_buf), NULL);
+}
+
+static void diagClose()
+{
+    char eng_rsp_buf[2 * ENG_DIAG_SIZE] = {0};
+    eng_at_dymic_hdlr(AT_DIAG_CLOSE, sizeof(AT_DIAG_CLOSE), eng_rsp_buf,sizeof(eng_rsp_buf), NULL);
+}
+
 // log_type :
 // 1: modem log 2: wcn log
 // location :
 // 1: pc 2: t card
 //
-int cplogctrl_setlocation(char log_type, char location) {
+int cplogctrl_setlocation(char log_type, char location, int socket) {
   int ret = 0;
   eng_thread_t t1, t3;
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
@@ -1728,6 +1742,8 @@ int cplogctrl_setlocation(char log_type, char location) {
             ENG_LOG("vdiag rthread start error");
           }          
           property_set(PROP_MODEM_LOG_DEST, "1");
+          if (socket == 1)
+            diagOpen();
         }
       } else {
         ENG_LOG("modem log already to pc!");
@@ -1781,6 +1797,8 @@ int cplogctrl_setlocation(char log_type, char location) {
           wcnlog_to_pc = 1;
           property_set(PROP_WCN_LOG_DEST, "1");
           //system("start engpcclientwcn");
+          if (socket == 1)
+            diagOpen();
         }
       } else {
         ENG_LOG("wcn log already to pc!");
@@ -1882,7 +1900,7 @@ static int eng_linuxcmd_cplogctl(char *req, char *rsp) {
         log_dest_cmd[0] = *req;
         ENG_LOG("%s: %d %d\n", __FUNCTION__,log_type_cmd[0], log_dest_cmd[0]);
 
-        ret = cplogctrl_setlocation(log_type_cmd[0], log_dest_cmd[0]);
+        ret = cplogctrl_setlocation(log_type_cmd[0], log_dest_cmd[0], 0);
         if(ret == -1) {
             goto out;
         }

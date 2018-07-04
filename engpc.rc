@@ -4,6 +4,12 @@ service vendor.engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyG
     group system radio shell net_bt_admin input audio wifi media camera
     oneshot
 
+service vendor.engpcclientlte_lite /vendor/bin/engpc -p l -a /dev/ttyGS0
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media
+    oneshot
+
 service vendor.engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
     class core
     user root
@@ -11,14 +17,44 @@ service vendor.engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/tt
     disabled
     oneshot
 
-on property:persist.vendor.wcn.log_dest=0
+service vendor.engpcclientwcn_lite /vendor/bin/engpc -p wcn -a /dev/ttyGS2
+    class core
+    user root
+    group system radio shell net_bt_admin media
+    disabled
+    oneshot
+
+on property:persist.vendor.wcn.log_dest=0 && property:persist.vendor.sys.modem.diag=,gser
+   stop vendor.engpcclientwcn_lite
    stop vendor.engpcclientwcn
 
-on property:persist.vendor.wcn.log_dest=1
+on property:persist.vendor.wcn.log_dest=1 && property:persist.vendor.sys.modem.diag=,gser
    start vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
 
-on property:persist.vendor.wcn.log_dest=2
+on property:persist.vendor.wcn.log_dest=2 && property:persist.vendor.sys.modem.diag=,gser
    stop vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
+
+on property:persist.vendor.wcn.log_dest=0 && property:persist.vendor.sys.modem.diag=none
+   stop vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
+
+on property:persist.vendor.wcn.log_dest=1 && property:persist.vendor.sys.modem.diag=none
+   start vendor.engpcclientwcn_lite
+   stop vendor.engpcclientwcn
+
+on property:persist.vendor.wcn.log_dest=2 && property:persist.vendor.sys.modem.diag=none
+   stop vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
+
+on property:persist.vendor.sys.modem.diag=,gser
+   stop vendor.engpcclientlte_lite
+   start vendor.engpcclientlte
+
+on property:persist.vendor.sys.modem.diag=none
+   stop vendor.engpcclientlte
+   start vendor.engpcclientlte_lite
 
 on property:ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
    setprop sys.usb.config vser

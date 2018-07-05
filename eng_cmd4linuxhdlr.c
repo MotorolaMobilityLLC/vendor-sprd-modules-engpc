@@ -1939,7 +1939,7 @@ static int eng_linuxcmd_cplogctl(char *req, char *rsp) {
 static int eng_linuxcmd_dbg_wfc(char *req,char *rsp)
 {
   char prop[PROPERTY_VALUE_MAX] = {0};
-  property_get("persist.dbg.wfc_avail_ovr", prop, "not_find");
+  property_get("persist.vendor.dbg.wfc_avail_ovr", prop, "not_find");
   if (0 == strcmp(prop, "not_find")) {
     ENG_LOG("%s: get wfc_avail_ovr fail\n", __FUNCTION__);
     return 0;

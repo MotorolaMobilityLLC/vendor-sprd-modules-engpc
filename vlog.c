@@ -74,6 +74,9 @@ extern void set_raw_data_speed(int fd, int speed);
 static int eng_simlock_efuse_req_process(char *data, int len, int fd);
 #endif
 
+extern pthread_mutex_t g_thread_vdiag_r_lock;
+extern pthread_mutex_t g_thread_vlog_lock;
+
 static void dump_mem_len_print(int r_cnt, int* dumplen, char *data) {
   unsigned int head, len, tail;
 
@@ -443,16 +446,24 @@ void* eng_vlog_thread(void* x) {
   int modem_fd;
   int r_cnt = -1;
   int dumpmemlen = 0;
+  int ret = -1;
 
   eng_dev_info_t* dev_info = (eng_dev_info_t*)x;
 
   ENG_LOG("eng_vlog thread start\n");
+
+  ret = pthread_mutex_trylock(&g_thread_vlog_lock);
+  if (ret == EBUSY){
+    ENG_LOG("eng_vlog_thread already exist...\n");
+    return NULL;
+  }
 
   /*open usb/uart*/
   ENG_LOG("eng_vlog open serial...\n");
   ser_fd = eng_open_dev(dev_info->host_int.dev_log, O_WRONLY);
   if (ser_fd < 0) {
     ENG_LOG("eng_vlog open serial failed, error: %s\n", strerror(errno));
+    pthread_mutex_unlock(&g_thread_vlog_lock);
     return NULL;
   }
 
@@ -493,6 +504,7 @@ out:
   ENG_LOG("eng_vlog thread end\n");
   if (modem_fd >= 0) close(modem_fd);
   close(ser_fd);
+  pthread_mutex_unlock(&g_thread_vlog_lock);
 
   return 0;
 }
@@ -574,6 +586,12 @@ void* eng_vdiag_rthread(void* x) {
 
   ENG_LOG("eng_vdiag_r thread start\n");
 
+  ret = pthread_mutex_trylock(&g_thread_vdiag_r_lock);
+  if (ret == EBUSY){
+    ENG_LOG("eng_vdiag_r already exist...\n");
+    return NULL;
+  }
+
   /*open usb/uart*/
   ENG_LOG("eng_vdiag_r open serial...\n");
   ENG_LOG("eng_vdiag_r s_dev_info->host_int.dev_diag=%s\n",
@@ -581,6 +599,7 @@ void* eng_vdiag_rthread(void* x) {
   ser_fd = eng_open_dev(s_dev_info->host_int.dev_diag, O_WRONLY);
   if (ser_fd < 0) {
     ENG_LOG("eng_vdiag_r open serial failed, error: %s\n", strerror(errno));
+    pthread_mutex_unlock(&g_thread_vdiag_r_lock);
     return NULL;
   }
 
@@ -684,6 +703,7 @@ void* eng_vdiag_rthread(void* x) {
       dump_mem_len_print(r_cnt, &dumpmemlen, diag_data);
       if (0 == eng_diag_write2pc_ptr(diag_data, r_cnt, &ser_fd)) {
         close(modem_fd);
+        pthread_mutex_unlock(&g_thread_vdiag_r_lock);
         return 0;
       }
     }
@@ -694,6 +714,7 @@ out:
   if (modem_fd >= 0) close(modem_fd);
   if (test_fd >= 0) close(test_fd);
   close(ser_fd);
+  pthread_mutex_unlock(&g_thread_vdiag_r_lock);
 
   return 0;
 }
@@ -785,7 +806,7 @@ int create_log_dir() {
     }
   }
 
-  property_get("persist.storage.type", value, "3");
+  property_get("persist.vendor.storage.type", value, "3");
   type = atoi(value);
   if (type == 0 || type == 1 || type == 2) {
     p = NULL;

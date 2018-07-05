@@ -33,6 +33,8 @@ eng_dev_info_t *g_dev_info = 0;
 int g_ap_cali_flag = 0;
 int g_agdsp_flag = 0;//ag dsp log flag
 pthread_mutex_t g_time_sync_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_thread_vdiag_r_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_thread_vlog_lock = PTHREAD_MUTEX_INITIALIZER;
 int modemlog_to_pc = 1;
 int wcnlog_to_pc = 1;
 char g_run_type[32] = {'t'};
@@ -128,38 +130,6 @@ void eng_check_factorymode(int normal_cali) {
 
     ENG_LOG("%s: normal_cali: %d\n", __FUNCTION__, normal_cali);
 
-    if ((usb_diag_set && (0 == strcmp(build_type, "userdebug"))) ||
-        normal_cali) {
-      do {
-        property_get("sys.usb.config", usb_config_value, "not_find");
-        if (strcmp(usb_config_value, "not_find") == 0) {
-          usleep(200 * 1000);
-          ENG_LOG("%s: can not find sys.usb.config\n", __FUNCTION__);
-          continue;
-        } else {
-          if (normal_cali) {
-            do {
-              usleep(100 * 1000);
-              property_get("sys.usb.config", usb_config_value, "not_find");
-              property_get_count++;
-            } while (0 == strcmp(usb_config_value, "not_find"));
-            ENG_LOG("%s: get sys.usb.config: %s,%d\n", __FUNCTION__,
-                    usb_config_value, property_get_count);
-            USB_DEVICE_SPEED_ENUM usb_device_speed = USB_SPEED_FULL;
-            eng_usb_maximum_speed(usb_device_speed);
-            property_set("sys.usb.config", USB_CONFIG_VSER);
-            property_get("sys.usb.config", usb_config_value, "not_find");
-            ENG_LOG("%s: get sys.usb.config: %s\n", __FUNCTION__,
-                    usb_config_value);
-          } else {
-            property_set("persist.sys.modem.diag", gser_config);
-            ENG_LOG("%s: set usb property mass_storage,adb,vser,gser\n",
-                    __FUNCTION__);
-          }
-          break;
-        }
-      } while (1);
-    }
     ret = write(fd, status_buf, strlen(status_buf) + 1);
     ENG_LOG("%s: write %d bytes to %s", __FUNCTION__, ret,
             ENG_FACOTRYMODE_FILE);
@@ -256,7 +226,7 @@ static int eng_parse_cmdline(struct eng_param* cmdvalue) {
           if (0 == strcmp(modemtype, "not_find")) {
               property_get("persist.vendor.radio.modem.config", ssda_mode, "not_find");
               if(0 == strcmp(ssda_mode, "not_find")) {
-                  property_get("persist.radio.ssda.mode", ssda_mode, "not_find");
+                  property_get("persist.vendor.radio.ssda.mode", ssda_mode, "not_find");
 
                   if (0 == strcmp(ssda_mode, "tdd-csfb")) {
                       strcpy(cmdvalue->cp_type, "tl");
@@ -590,11 +560,11 @@ int main(int argc, char** argv) {
   if (0 != strcmp(run_type, "wcn") && 0 != strcmp(run_type, "ag")) {
     fd = eng_file_lock();
     if (fd >= 0) {
-      property_get("flag.engpc.onemodem.enable", get_propvalue, "not_find");
-      ENG_LOG("flag.engpc.onemodem.enable = %s", get_propvalue);
+      property_get("vendor.flag.engpc.onemodem.enable", get_propvalue, "not_find");
+      ENG_LOG("vendor.flag.engpc.onemodem.enable = %s", get_propvalue);
       if (0 == strcmp(get_propvalue, "not_find") ||
           0 != strcmp(get_propvalue, set_propvalue)) {
-        property_set("flag.engpc.onemodem.enable", set_propvalue);
+        property_set("vendor.flag.engpc.onemodem.enable", set_propvalue);
         eng_file_unlock(fd);
         eng_init_test_file();
         eng_sqlite_create();

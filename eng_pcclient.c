@@ -113,19 +113,10 @@ void eng_check_factorymode(int normal_cali) {
     }
     property_get("ro.build.type", build_type, "not_find");
     ENG_LOG("%s: build_type: %s", __FUNCTION__, build_type);
-    property_get("ro.vendor.modem.diag", modem_diag_value, "not_find");
-    ENG_LOG("%s: modem_diag_value: %s\n", __FUNCTION__, modem_diag_value);
     if ((status == 1) || (status == ENG_SQLSTR2INT_ERR)) {
       sprintf(status_buf, "%s", "1");
-      if (strcmp(modem_diag_value, ",none") == 0) {
-        usb_diag_set = 1;
-      }
     } else {
       sprintf(status_buf, "%s", "0");
-      if (strcmp(modem_diag_value, ",none") != 0) {
-        usb_diag_set = 1;
-        memcpy(gser_config, ",none", 5);
-      }
     }
 
     ENG_LOG("%s: normal_cali: %d\n", __FUNCTION__, normal_cali);

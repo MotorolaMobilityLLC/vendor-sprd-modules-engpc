@@ -1,45 +1,45 @@
-service engpcclientt /vendor/bin/engpc -p t -a /dev/ttyGS0 -d /dev/ttyGS1 -l /dev/ttyGS4
+service vendor.engpcclientt /vendor/bin/engpc -p t -a /dev/ttyGS0 -d /dev/ttyGS1 -l /dev/ttyGS4
     class core
     user root
     group system radio shell
     disabled
     oneshot
 
-service engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyGS6 -l /dev/ttyGS7
+service vendor.engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyGS6 -l /dev/ttyGS7
     class core
     user root
     group system radio shell
     oneshot
 
-service engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
-    class core
-    user root
-    group system radio shell
-    disabled
-    oneshot
-
-service engpcclientw /vendor/bin/engpc -p w -a /dev/ttyGS0 -d /dev/ttyGS1
+service vendor.engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
     class core
     user root
     group system radio shell
     disabled
     oneshot
 
-service engpcclienttl /vendor/bin/engpc -p tl -a /dev/ttyGS5 -d /dev/ttyGS6
+service vendor.engpcclientw /vendor/bin/engpc -p w -a /dev/ttyGS0 -d /dev/ttyGS1
     class core
     user root
     group system radio shell
     disabled
     oneshot
 
-service engpcclientlf /vendor/bin/engpc -p lf -a /dev/ttyGS5 -d /dev/ttyGS6 -l /dev/ttyGS7
+service vendor.engpcclienttl /vendor/bin/engpc -p tl -a /dev/ttyGS5 -d /dev/ttyGS6
     class core
     user root
     group system radio shell
     disabled
     oneshot
 
-service engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
+service vendor.engpcclientlf /vendor/bin/engpc -p lf -a /dev/ttyGS5 -d /dev/ttyGS6 -l /dev/ttyGS7
+    class core
+    user root
+    group system radio shell
+    disabled
+    oneshot
+
+service vendor.engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
     class core
     user root
     group system radio shell
@@ -47,10 +47,10 @@ service engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
     oneshot
 
 on property:persist.vendor.wcn.log_dest=0
-   stop engpcclientwcn
+   stop vendor.engpcclientwcn
 
 on property:persist.vendor.wcn.log_dest=1
-   start engpcclientwcn
+   start vendor.engpcclientwcn
 
 on property:persist.vendor.wcn.log_dest=2
-   stop engpcclientwcn
+   stop vendor.engpcclientwcn

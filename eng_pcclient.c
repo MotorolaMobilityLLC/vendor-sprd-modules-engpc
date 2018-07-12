@@ -120,6 +120,7 @@ void eng_check_factorymode(int normal_cali) {
     }
 
     ENG_LOG("%s: normal_cali: %d\n", __FUNCTION__, normal_cali);
+    property_set("vendor.flag.sys.usb.config", "1");
 
     ret = write(fd, status_buf, strlen(status_buf) + 1);
     ENG_LOG("%s: write %d bytes to %s", __FUNCTION__, ret,

@@ -58,6 +58,7 @@ typedef enum {
   DIAG_AP_CMD_WRITE_MMI = 0x0014, //Write MMI
   DIAG_AP_CMD_TEE_PRODUCTION = 0x001d,
   DIAG_AP_CMD_SET_MAX_CURRENT = 0x0022,  //Set Max Charge Current
+  DIAG_AP_CMD_TSX_RAW_DATA = 0x0024, //tsx raw data
   MAX_DIAG_AP_CMD
 } DIAG_AP_CMD_E;
 

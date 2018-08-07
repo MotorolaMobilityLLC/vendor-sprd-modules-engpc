@@ -1179,6 +1179,7 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
   MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
   unsigned int *data_cmd = NULL;
   TOOLS_DIAG_AP_CMD_T *apcmd = NULL;
+  byte *data = NULL;
 
   if(g_list_ok == 0){
     ENG_LOG("%s:engmode list init!\n",__FUNCTION__);
@@ -1221,6 +1222,15 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
         apcmd = (TOOLS_DIAG_AP_CMD_T *)(buf + 1 + sizeof(MSG_HEAD_T));
         if (apcmd->cmd != modules_list->callback.diag_ap_cmd) {
           ENG_LOG("%s apcmd->cmd is not matched!", __FUNCTION__);
+          continue;
+        }
+      }
+
+      // diag command: type(unsigned char) + sub_type(unsigned char) + byte, for autotest test case which have same type+subtype
+      if (0x38 == msg_head_ptr->type){
+        data = (byte *)(buf + 1 + sizeof(MSG_HEAD_T));
+        if (modules_list->callback.diag_ap_cmd != -1 && (int)(*data) != modules_list->callback.diag_ap_cmd)  {
+          ENG_LOG("%s data is not matched!", __FUNCTION__);
           continue;
         }
       }

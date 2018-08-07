@@ -140,6 +140,7 @@ int eng_modules_load(struct list_head *head )
             eng_register_func = (REGISTER_FUNC)dlsym(handler, "register_this_module");
             if (eng_register_func != NULL) {
               memset(&register_callback, 0, sizeof(struct eng_callback));
+              register_callback.diag_ap_cmd = -1;
               eng_register_func(&register_callback);
               ENG_LOG("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
                         register_callback.type, register_callback.subtype,
@@ -155,6 +156,9 @@ int eng_modules_load(struct list_head *head )
             eng_register_ext_func = (REGISTER_EXT_FUNC)dlsym(handler, "register_this_module_ext");
             if (eng_register_ext_func != NULL) {
               memset(register_arr, 0, sizeof(register_arr));
+              for (i = 0; i < register_num; i++) {
+                  register_arr[i].diag_ap_cmd = -1;
+              }
               eng_register_ext_func(register_arr_ptr, &register_num);
               ENG_LOG("register_num:%d",register_num);
 

@@ -470,10 +470,10 @@ void cplogctrl_init(void) {
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-  property_get("persist.vendor.modem.log_dest", modem_log_dest, "not_find");
-  property_get("persist.vendor.wcn.log_dest", wcn_log_dest, "not_find");
+  property_get(PROP_MODEM_LOG_DEST, modem_log_dest, "not_find");
+  property_get(PROP_WCN_LOG_DEST, wcn_log_dest, "not_find");
 
-  ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest,
+  ENG_LOG("%s %s=%s, %s=%s", __FUNCTION__, PROP_MODEM_LOG_DEST, modem_log_dest,PROP_WCN_LOG_DEST,
           wcn_log_dest);
 
   if (0 == strcmp(modem_log_dest, "1")) {

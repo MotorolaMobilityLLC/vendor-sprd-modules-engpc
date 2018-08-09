@@ -1191,8 +1191,11 @@ static int get_response(int fd, size_t timeout) {
 static int notice_slogmodem(char *cmd)
 {
   int ret = 0;
-  int fd = socket_local_client(SLOG_MODEM_SERVER_SOCK_NAME,
+  int fd = -1;
+  ENG_LOG("notice_slogmodem: client connect...");
+  fd = socket_local_client(SLOG_MODEM_SERVER_SOCK_NAME,
       ANDROID_SOCKET_NAMESPACE_ABSTRACT, SOCK_STREAM);
+  ENG_LOG("notice_slogmodem: client connect succ!! fd = %d", fd);
   if (fd < 0) {
     ENG_LOG("can't connect to slogmodem server, ERROR:%s\n", strerror(errno));
     return -1;
@@ -1744,10 +1747,10 @@ int cplogctrl_setlocation(char log_type, char location) {
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
   char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-  property_get("persist.vendor.modem.log_dest", modem_log_dest, "not_find");
-  property_get("persist.vendor.wcn.log_dest", wcn_log_dest, "not_find");
+  property_get(PROP_MODEM_LOG_DEST, modem_log_dest, "not_find");
+  property_get(PROP_WCN_LOG_DEST, wcn_log_dest, "not_find");
 
-  ENG_LOG("%s modem.log_dest=%s, wcn.log_dest=%s", __FUNCTION__, modem_log_dest, wcn_log_dest);
+  ENG_LOG("%s %s=%s, %s=%s", __FUNCTION__, PROP_MODEM_LOG_DEST, modem_log_dest, PROP_WCN_LOG_DEST, wcn_log_dest);
   ENG_LOG("%s log_type=%d, location=%d", __FUNCTION__, log_type, location);
 
   switch (log_type) {
@@ -1767,7 +1770,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           if (0 != eng_thread_create(&t3, eng_vdiag_rthread, g_dev_info)) {
             ENG_LOG("vdiag rthread start error");
           }          
-          property_set("persist.vendor.modem.log_dest", "1");
+          property_set(PROP_MODEM_LOG_DEST, "1");
         }
       } else {
         ENG_LOG("modem log already to pc!");
@@ -1782,7 +1785,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           modemlog_to_pc = 0;
-          property_set("persist.vendor.modem.log_dest", "2");
+          property_set(PROP_MODEM_LOG_DEST, "2");
         }
       } else {
         ENG_LOG("modem log already to t card!");
@@ -1797,7 +1800,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else { // notice slogomodem success
           modemlog_to_pc = 0;
-          property_set("persist.vendor.modem.log_dest", "0");
+          property_set(PROP_MODEM_LOG_DEST, "0");
         }
       } else {
         ENG_LOG("modem log already to no log!");
@@ -1819,7 +1822,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           wcnlog_to_pc = 1;
-          property_set("persist.vendor.wcn.log_dest", "1");
+          property_set(PROP_WCN_LOG_DEST, "1");
           //system("start engpcclientwcn");
         }
       } else {
@@ -1835,7 +1838,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           wcnlog_to_pc = 0;
-          property_set("persist.vendor.wcn.log_dest", "2");
+          property_set(PROP_WCN_LOG_DEST, "2");
           //system("stop engpcclientwcn");
         }
       } else {
@@ -1851,7 +1854,7 @@ int cplogctrl_setlocation(char log_type, char location) {
           ret = -1;
         } else {
           wcnlog_to_pc = 0;
-          property_set("persist.vendor.sys.log_dest", "0");
+          property_set(PROP_WCN_LOG_DEST, "0");
         }
       } else {
         ENG_LOG("wcn log already no log!");
@@ -1893,8 +1896,8 @@ static int eng_linuxcmd_cplogctl(char *req, char *rsp) {
     char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
     char wcn_log_dest[PROPERTY_VALUE_MAX] = {0};
 
-    property_get("persist.vendor.modem.log_dest", modem_log_dest, "0");
-    property_get("persist.vendor.wcn.log_dest", wcn_log_dest, "0");    
+    property_get(PROP_MODEM_LOG_DEST, modem_log_dest, "0");
+    property_get(PROP_WCN_LOG_DEST, wcn_log_dest, "0");
 
     if (strchr(req, '?') != NULL) {
         if (strstr(req, "=1?")!=NULL) { // modem log_dest req

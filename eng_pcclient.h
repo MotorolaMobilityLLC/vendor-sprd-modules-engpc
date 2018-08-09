@@ -16,6 +16,8 @@
 #define ENG_MODEMRESET_PROPERTY "persist.sys.sprd.modemreset"
 #define ENG_USB_PROPERTY "persist.sys.sprd.usbfactorymode"
 #define RAWDATA_PROPERTY "sys.rawdata.ready"
+#define PROP_MODEM_LOG_DEST    "persist.vendor.modem.log_dest"
+#define PROP_WCN_LOG_DEST      "persist.vendor.wcn.log_dest"
 #define ENG_ATDIAG_AT "AT+SPBTWIFICALI="
 #define ENG_BUFFER_SIZE 2048
 #define ENG_CMDLINE_LEN 1024

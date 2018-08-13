@@ -156,7 +156,7 @@ int eng_modules_load(struct list_head *head )
             eng_register_ext_func = (REGISTER_EXT_FUNC)dlsym(handler, "register_this_module_ext");
             if (eng_register_ext_func != NULL) {
               memset(register_arr, 0, sizeof(register_arr));
-              for (i = 0; i < register_num; i++) {
+              for (i = 0; i < sizeof(register_arr)/sizeof(struct eng_callback); i++) {
                   register_arr[i].diag_ap_cmd = -1;
               }
               eng_register_ext_func(register_arr_ptr, &register_num);

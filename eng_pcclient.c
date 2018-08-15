@@ -28,6 +28,8 @@
 #define DEVICE_SOC_USB_MAXIMUM_SPEED "sys/devices/platform/soc/soc:ap-ahb/20200000.usb/maximum_speed"
 //#define DEVICE_SOC_USB_MAXIMUM_SPEED "/sys/devices/soc/soc:ap-ahb/20500000.usb3/maximum_speed"
 
+#define PROP_USB_CONFIG "vendor.flag.sys.usb.config"
+
 sem_t g_armlog_sem;
 eng_dev_info_t *g_dev_info = 0;
 int g_ap_cali_flag = 0;
@@ -118,9 +120,6 @@ void eng_check_factorymode(int normal_cali) {
     } else {
       sprintf(status_buf, "%s", "0");
     }
-
-    ENG_LOG("%s: normal_cali: %d\n", __FUNCTION__, normal_cali);
-    property_set("vendor.flag.sys.usb.config", "1");
 
     ret = write(fd, status_buf, strlen(status_buf) + 1);
     ENG_LOG("%s: write %d bytes to %s", __FUNCTION__, ret,
@@ -565,7 +564,10 @@ int main(int argc, char** argv) {
             // Change gser port
             memcpy(dev_info.host_int.dev_diag, "/dev/vser",
                    sizeof("/dev/vser"));
+            ENG_LOG("setprop: %s = 1", PROP_USB_CONFIG);
+            property_set(PROP_USB_CONFIG, "1");
           }
+
           // Check factory mode and switch device mode.
           eng_check_factorymode(cmdparam.normal_cali);
           if (cmdparam.normal_cali) {
@@ -574,6 +576,8 @@ int main(int argc, char** argv) {
           }
         } else {
           // Initialize file for ADC
+          ENG_LOG("setprop: %s = 1", PROP_USB_CONFIG);
+          property_set(PROP_USB_CONFIG, "1");
           initialize_ctrl_file();
         }
         if (0 != eng_thread_create(&t4, eng_printlog_thread, NULL)) {

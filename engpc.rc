@@ -1,10 +1,3 @@
-service vendor.engpcclientt /vendor/bin/engpc -p t -a /dev/ttyGS0 -d /dev/ttyGS1 -l /dev/ttyGS4
-    class core
-    user root
-    group system radio shell net_bt_admin
-    disabled
-    oneshot
-
 service vendor.engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyGS6 -l /dev/ttyGS7
     class core
     user root
@@ -12,34 +5,6 @@ service vendor.engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyG
     oneshot
 
 service vendor.engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
-    class core
-    user root
-    group system radio shell net_bt_admin
-    disabled
-    oneshot
-
-service vendor.engpcclientw /vendor/bin/engpc -p w -a /dev/ttyGS0 -d /dev/ttyGS1
-    class core
-    user root
-    group system radio shell net_bt_admin
-    disabled
-    oneshot
-
-service vendor.engpcclienttl /vendor/bin/engpc -p tl -a /dev/ttyGS5 -d /dev/ttyGS6
-    class core
-    user root
-    group system radio shell net_bt_admin
-    disabled
-    oneshot
-
-service vendor.engpcclientlf /vendor/bin/engpc -p lf -a /dev/ttyGS5 -d /dev/ttyGS6 -l /dev/ttyGS7
-    class core
-    user root
-    group system radio shell net_bt_admin
-    disabled
-    oneshot
-
-service vendor.engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
     class core
     user root
     group system radio shell net_bt_admin
@@ -54,3 +19,6 @@ on property:persist.vendor.wcn.log_dest=1
 
 on property:persist.vendor.wcn.log_dest=2
    stop vendor.engpcclientwcn
+
+on property:ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
+   setprop sys.usb.config vser

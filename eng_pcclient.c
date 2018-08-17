@@ -413,15 +413,28 @@ static void eng_get_modem_int(char* type, char* at_chan, char* diag_chan,
                               char* log_chan) {
   char property_name[32] = {0};
 
-  sprintf(property_name, "%s", "ro.vendor.modem.diag");
+  ENG_LOG("%s: type = %s", __FUNCTION__, type);
+  if (strcmp(type, "wcn") == 0){
+    sprintf(property_name, "%s", "ro.vendor.modem.wcn.diag");
+  }else{
+    sprintf(property_name, "%s", "ro.vendor.modem.diag");
+  }
   property_get(property_name, diag_chan, "not_find");
   ENG_LOG("%s %s diag_chan:%s", __FUNCTION__, property_name, diag_chan);
 
-  sprintf(property_name, "%s", "ro.vendor.modem.tty");
+  if (strcmp(type, "wcn") == 0){
+    sprintf(property_name, "%s", "ro.vendor.modem.wcn.tty");
+  }else{
+    sprintf(property_name, "%s", "ro.vendor.modem.tty");
+  }
   property_get(property_name, at_chan, "not_find");
   ENG_LOG("%s %s at_chan:%s", __FUNCTION__, property_name, at_chan);
 
-  sprintf(property_name, "%s", "ro.vendor.modem.log");
+  if (strcmp(type, "wcn") == 0){
+    sprintf(property_name, "%s", "ro.vendor.modem.wcn.log");
+  }else{
+    sprintf(property_name, "%s", "ro.vendor.modem.log");
+  }
   property_get(property_name, log_chan, "not_find");
   ENG_LOG("%s %s log_chan:%s", __FUNCTION__, property_name, log_chan);
 

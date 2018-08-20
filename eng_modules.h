@@ -32,6 +32,11 @@ struct eng_callback{
     int (*eng_set_writeinterface_func)(DYMIC_WRITETOPC_FUNC * write_interface_ptr);
 };
 
+enum
+{
+    ENG_DIAG_RET_UNSUPPORT = -256,
+    ENG_DIAG_RET_ERR = 0,
+};
 
 typedef struct eng_modules_info
 {

@@ -503,6 +503,19 @@ void cplogctrl_init(void) {
   ENG_LOG("%s modemlog_to_pc=%d, wcnlog_to_pc=%d", __FUNCTION__, modemlog_to_pc, wcnlog_to_pc);  
 }
 
+void apcali_init(void)
+{
+  char prop_modem[PROPERTY_VALUE_MAX] = {0};
+
+  property_get(PROP_MODEM_SUPPORT, prop_modem, "not_find");
+  ENG_LOG("%s %s=%s", __FUNCTION__, PROP_MODEM_SUPPORT, prop_modem);
+  if (0 == strcmp(prop_modem, "0")) {
+    g_ap_cali_flag = 1;
+  } else {
+    g_ap_cali_flag = 0;
+  }
+}
+
 int main(int argc, char** argv) {
   char cmdline[ENG_CMDLINE_LEN];
   char run_type[32] = {'t'};
@@ -607,6 +620,8 @@ int main(int argc, char** argv) {
       }
     }
   }
+
+  apcali_init();
 
   /* cplogctrl init :keep before design when cali mode*/
   if (1 != cmdparam.califlag) {

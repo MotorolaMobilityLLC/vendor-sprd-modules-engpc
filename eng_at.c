@@ -23,6 +23,8 @@ static int pc_fd = -1;
 
 #define MAX_OPEN_TIMES 200
 
+extern int g_armlog_enable;
+
 static int start_gser(char* ser_path)
 {
     struct termios ser_settings;
@@ -174,7 +176,7 @@ static void *eng_readmodemat_thread(void *par)
             continue;
         }else{
 write_again:
-            if (pc_fd>=0){
+            if (pc_fd>=0 && g_armlog_enable == 1){
                 ret = write(pc_fd,engbuf,len);
                 if (ret <= 0) {
                     ENG_LOG("%s: write length error %s\n",__FUNCTION__,strerror(errno));

@@ -36,7 +36,7 @@ struct eng_callback_func{
     void(*eng_cb)(struct fw_callback *reg);
 };
 
-typedef int (*QUERYINTERFACE)(char *module_desc, void** ptrFunc);
+typedef int (*QUERYINTERFACE)(char *module_desc,const void** ptrFunc);
 
 struct fw_callback{
     QUERYINTERFACE ptfQueryInterface;

@@ -22,9 +22,9 @@ extern int g_ap_cali_flag;
 extern int modemlog_to_pc;
 extern char g_run_type[32];
 
-#define DATA_BUF_SIZE (4096 * 4)
+#define DATA_BUF_SIZE (4096 * 16)
 #define MAX_OPEN_TIMES 100
-#define DATA_EXT_DIAG_SIZE (4096 * 4)
+#define DATA_EXT_DIAG_SIZE (4096 * 16)
 #define DIAG_BUF_SIZE 20
 
 static unsigned  char log_data[DATA_BUF_SIZE];

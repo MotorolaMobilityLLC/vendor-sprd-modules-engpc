@@ -44,7 +44,8 @@ typedef struct {
 } TOOLS_DIAG_AP_CHARGE_CMD;
 
 typedef struct {
-	unsigned int value;
+	unsigned short value;
+	unsigned short res_cmd;
 } TOOLS_DIAG_AP_AUX_VOLTAGE;
 
 typedef struct {
@@ -248,6 +249,8 @@ static int eng_diag_read_aux_voltage(char *buf, int len, char *rsp, int rsplen)
 			(TOOLS_DIAG_AP_AUX_VOLTAGE *)(buf + 1 + sizeof(MSG_HEAD_T));
 	charge->value = ap_get_aux_voltage();
 	ENG_LOG("aux charge->value=%d\n", charge->value);
+	/* res_cmd=0x100 indicates the voltage display divided by 1000, synchronize with the tool side.*/
+	charge->res_cmd = 0x100;
 	msg_head_ptr->len = sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_AUX_VOLTAGE);
 	memcpy(rsp, buf, 1 + sizeof(MSG_HEAD_T));
 	memcpy(rsp + 1 + sizeof(MSG_HEAD_T), charge, sizeof(TOOLS_DIAG_AP_AUX_VOLTAGE));

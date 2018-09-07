@@ -55,7 +55,7 @@ LOCAL_C_INCLUDES    += hardware/libhardware/include \
                        frameworks/opt/net/wifi/libwifi_hal/include \
                        system/core/include \
                        system/media/audio/include \
-                       $(TOP)/vendor/sprd/proprietories-source/engmode/libtracedump
+                       $(TOP)/vendor/sprd/proprietories-source/engmode/libtracedump \
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_C_INCLUDES    +=  vendor/sprd/modules/audio/voiceband/effect/include \
@@ -95,7 +95,9 @@ LOCAL_SRC_FILES     := eng_pcclient.c  \
 					   emmc.cpp \
 					   ddr.c \
                        eng_socket.c \
-					   eng_modules.c
+					   eng_modules.c \
+			  channl_at.c \
+			  channl_diag.c \
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_SRC_FILES += eng_busmonitor.c

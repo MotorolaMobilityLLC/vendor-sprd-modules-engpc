@@ -60,6 +60,9 @@
 #if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
 #include "tee_production.h"
 #endif
+//Support send at/diag by so to so
+#include "chnmgr.h"
+//Support send at/diag by so to so
 #define ENG_TEE_RSP_LEN (1024*2)
 
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
@@ -288,7 +291,7 @@ static int eng_autotest_gps(char *req, char *rsp);
 
 DYMIC_WRITETOPC_FUNC write_interface[WRITE_TO_MAX] = {
 write_to_host_diag,/*pc lte diag*/
-NULL,/*write_to_host_log*/
+chnl_send_at_interface,/*send cmd so to so*/
 NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
 };
 
@@ -1384,6 +1387,40 @@ at_write:
   }
   return DYMIC_RET_DEAL_SUCCESS;
 }
+
+//Support send at/diag by so to so
+struct list_head* chnl_get_call_list_head(){
+    return &eng_head;
+}
+
+int chnl_send(CHNL_TYPE type, char *buf, int len, char *rsp, int rsp_len)
+{
+    if (type == CHNL_DIAG)
+    {
+        return chnl_diag_send(buf, len, rsp, rsp_len);
+    }
+    else if (type == CHNL_AT)
+    {
+        return chnl_at_send(buf, len, rsp, rsp_len);
+    }
+    else
+    {
+        LOGE("chnl_send failed,unknow type!");
+        return -1;
+    }
+}
+
+int chnl_send_at_interface(char *buf, int len)
+{
+	char rsp[1024] = {0};
+	return chnl_send(CHNL_AT,buf, len, rsp, sizeof(rsp));
+}
+int chnl_send_diag_interface(char *buf, int len)
+{
+	char rsp[1024] = {0};
+	return chnl_send(CHNL_DIAG,buf, len, rsp, sizeof(rsp));
+}
+//Support send at/diag by so to so end.
 
 int eng_diag_iffa_softer_cmds_process(char *buf, int len, char *rsp,
                                       int rsplen) {

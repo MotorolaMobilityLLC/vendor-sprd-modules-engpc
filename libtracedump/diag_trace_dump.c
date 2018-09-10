@@ -43,7 +43,7 @@ typedef struct {
   unsigned char *pData;    // 实际DUMP的数据
 } DIAG_TRACE_DUMP_ACK_T;
 
-#define TRACE_FILE "/productinfo/trace_dump_test.txt"
+#define TRACE_FILE "/vendor/productinfo/trace_dump_test.txt"
 #define YLOG_FILE "/cache/ylog.tar.gz"
 
 #define TRACE_DUMP_UNIT_SIZE (4 * 1024)

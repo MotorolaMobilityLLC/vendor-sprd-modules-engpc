@@ -3490,6 +3490,7 @@ static int eng_diag_btwifiimei(char *buf, int len, char *rsp, int rsplen) {
         ret = eng_btwifimac_write(pBtAddr, pWifiAddr);
       }
 
+      ENG_LOG("%s: WIFIADDR g_ap_cali_flag:%d,s_cp_ap_proc=%d\n", __func__, g_ap_cali_flag,s_cp_ap_proc);
       if (g_ap_cali_flag &&
           ((cmd_mask & DIAG_CMD_IMEI1BIT) || (cmd_mask & DIAG_CMD_IMEI2BIT) ||
            (cmd_mask & DIAG_CMD_IMEI3BIT) || (cmd_mask & DIAG_CMD_IMEI4BIT))) {
@@ -4404,6 +4405,7 @@ static int eng_diag_write_imei(REF_NVWriteDirect_T *direct, int num) {
   }
 
   fd = open(imei_path, O_WRONLY);
+  ENG_LOG("imei_path=%s: fd: %d\n", imei_path, fd);
   if (fd >= 0) {
     ImeiConvNV2Str(imeinv, imeistr);
     ret = write(fd, imeistr, MAX_IMEI_STR_LENGTH);
@@ -6175,7 +6177,7 @@ int eng_init_test_file(void)
       ENG_LOG("%s,creat %s failed.",__FUNCTION__,BBAT_TEST_FILE_PATH);
       return 0;
     }
-    //init /productinfo/BBATtest.txt
+    //init /vendor/productinfo/BBATtest.txt
     for(i = 0;i < 64; i++){
       result[i].type_id = 2;
       result[i].function_id = i;
@@ -6196,7 +6198,7 @@ int eng_init_test_file(void)
       ENG_LOG("%s,creat %s failed.",__FUNCTION__,PCBA_TEST_FILE_PATH);
       return 0;
     }
-    //init /productinfo/PCBAtest.txt
+    //init /vendor/productinfo/PCBAtest.txt
     for(i = 0;i < 64; i++){
       result[i].type_id = 1;
       result[i].function_id = i;
@@ -6218,7 +6220,7 @@ int eng_init_test_file(void)
       ENG_LOG("%s,creat %s failed.",__FUNCTION__,WHOLE_PHONE_TEST_FILE_PATH);
       return 0;
     }
-    //init /productinfo/wholetest.txt
+    //init /vendor/productinfo/wholetest.txt
     for(i = 0;i < 64; i++){
       result[i].type_id = 0;
       result[i].function_id= i;

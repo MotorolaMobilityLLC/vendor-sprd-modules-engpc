@@ -87,7 +87,7 @@ typedef enum {
 #define ENG_TESTMODE "engtestmode"
 #define ENG_SPRD_VERS "ro.build.description"
 #define ENG_SET_BACKLIGHT "/sys/class/backlight/sprd_backlight/brightness"
-#define ENG_TXDATA_FILE "/productinfo/txdata.txt"
+#define ENG_TXDATA_FILE "/vendor/productinfo/txdata.txt"
 typedef enum {
   CMD_COMMON = -1,
   CMD_USER_VER,
@@ -197,9 +197,9 @@ struct eng_autotestcmd_str {
 #define DSPLOG_CMD_DSPASSERT            _IOW(DSPLOG_CMD_MAGIC, 6, int)
 
 /*the add the file result*/
-#define BBAT_TEST_FILE_PATH "/productinfo/BBATtest.txt"
-#define PCBA_TEST_FILE_PATH "/productinfo/PCBAtest.txt"
-#define WHOLE_PHONE_TEST_FILE_PATH "/productinfo/wholephonetest.txt"
+#define BBAT_TEST_FILE_PATH "/vendor/productinfo/BBATtest.txt"
+#define PCBA_TEST_FILE_PATH "/vendor/productinfo/PCBAtest.txt"
+#define WHOLE_PHONE_TEST_FILE_PATH "/vendor/productinfo/wholephonetest.txt"
 
 #define HASH_LEN 40
 

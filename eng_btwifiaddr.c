@@ -21,11 +21,11 @@
 
 #define MAC_ERROR_EX ":::::"
 #define MAC_ERROR "FF:FF:FF:FF:FF:FF"
-#define WIFI_MAC_FILE "/productinfo/wifimac.txt"
+#define WIFI_MAC_FILE "/vendor/productinfo/wifimac.txt"
 #define WIFI_ROOT_MAC_FILE "/data/misc/wifi/wifimac.txt"
-#define BT_MAC_FILE "/productinfo/btmac.txt"
+#define BT_MAC_FILE "/vendor/productinfo/btmac.txt"
 #define BT_ROOT_MAC_FILE "/data/misc/bluedroid/btmac.txt"
-#define MAC_RAND_FILE "/productinfo/rand_mac.txt"
+#define MAC_RAND_FILE "/vendor/productinfo/rand_mac.txt"
 
 typedef enum {
     BT_MAC_ADDR=0,
@@ -167,6 +167,7 @@ static int write_mac2file(char *wifimac, char *btmac) {
     if (-1 == chmod(WIFI_MAC_FILE, 0666))
       ENG_LOG("%s chmod failed", __FUNCTION__);
     ret = write(fd, wifimac, strlen(wifimac));
+    ENG_LOG("%s: write wifimac=%s, ret=%d", __FUNCTION__, wifimac, ret);
     close(fd);
   } else {
     ret = -1;
@@ -181,6 +182,7 @@ static int write_mac2file(char *wifimac, char *btmac) {
     if (-1 == chmod(BT_MAC_FILE, 0666))
       ENG_LOG("%s chmod failed", __FUNCTION__);
     ret = write(fd, btmac, strlen(btmac));
+    ENG_LOG("%s: write btmac=%s, ret=%d", __FUNCTION__, btmac, ret);
     close(fd);
     if (0 == access(BT_ROOT_MAC_FILE, F_OK)) {
       if (-1 == remove(BT_ROOT_MAC_FILE)) {

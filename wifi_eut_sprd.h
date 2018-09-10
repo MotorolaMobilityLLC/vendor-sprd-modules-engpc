@@ -29,7 +29,7 @@
 #define STR_RET_RET ("ret: ")
 #define STR_RET_END (":end")
 
-#define TMP_FILE ("/productinfo/wifi_npi_data.log")
+#define TMP_FILE ("/vendor/productinfo/wifi_npi_data.log")
 #define WIFI_RATE_REQ_RET ("+SPWIFITEST:RATE=")
 #define WIFI_CHANNEL_REQ_RET ("+SPWIFITEST:CH=")
 #define WIFI_TXGAININDEX_REQ_RET ("+SPWIFITEST:TXGAININDEX=")

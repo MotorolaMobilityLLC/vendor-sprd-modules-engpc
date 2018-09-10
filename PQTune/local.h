@@ -21,10 +21,10 @@ typedef unsigned char u8;
 #define DpuCm				"/sys/class/display/dispc0/PQ/cm"
 #define DpuHsv				"/sys/class/display/dispc0/PQ/hsv"
 
-#define bld_xml				"/productinfo/enhance/bld.xml"
-#define abc_xml				"/productinfo/enhance/abc.xml"
-#define gamma_xml			"/productinfo/enhance/gamma.xml"
-#define cms_xml				"/productinfo/enhance/cms.xml"
+#define bld_xml				"/vendor/productinfo/enhance/bld.xml"
+#define abc_xml				"/vendor/productinfo/enhance/abc.xml"
+#define gamma_xml			"/vendor/productinfo/enhance/gamma.xml"
+#define cms_xml				"/vendor/productinfo/enhance/cms.xml"
 
 #define ChipInfo			"/proc/cmdline"
 #define Brightness			"/sys/class/backlight/sprd_backlight/brightness"

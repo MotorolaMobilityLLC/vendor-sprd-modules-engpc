@@ -289,10 +289,12 @@ static int eng_autotest_sensor(char *req, char *rsp);
 //-- ]]
 static int eng_autotest_gps(char *req, char *rsp);
 
+//Fix WRITE_TO_MAX
 DYMIC_WRITETOPC_FUNC write_interface[WRITE_TO_MAX] = {
-write_to_host_diag,/*pc lte diag*/
-chnl_send_at_interface,/*send cmd so to so*/
-NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+write_to_host_diag,/*pc lte diag*/NULL,NULL,
+NULL,NULL,NULL,
+NULL,NULL,chnl_send_at_interface,/*send cmd so to so*/
+NULL,NULL,NULL,NULL,NULL,NULL
 };
 
 static struct eng_autotestcmd_str eng_autotestcmd[] = {
@@ -6078,11 +6080,14 @@ static int eng_diag_read_mmi(char *buf, int len, char *rsp, int rsplen)
   aprsp->length= sizeof(TOOLS_DIAG_MMI_CIT_T);
 
   if( 0 == req_ptr->uType){
-    fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_RDONLY); //00: whole phone test; 01: PCBA test ; 02: BBAT test
+    //fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_RDONLY); //00: whole phone test; 01: PCBA test ; 02: BBAT test
+    fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_CREAT | O_RDWR | O_TRUNC, 0666);
   }else if(1 == req_ptr->uType){
-    fd = open(PCBA_TEST_FILE_PATH,O_RDONLY);
+    //fd = open(PCBA_TEST_FILE_PATH,O_RDONLY);
+    fd = open(PCBA_TEST_FILE_PATH,O_CREAT | O_RDWR | O_TRUNC, 0666);
   }else if(2 == req_ptr->uType){
-    fd = open(BBAT_TEST_FILE_PATH,O_RDONLY);
+    //fd = open(BBAT_TEST_FILE_PATH,O_RDONLY);
+    fd = open(BBAT_TEST_FILE_PATH,O_CREAT | O_RDWR | O_TRUNC, 0666);
   }
   if(fd < 0){
     ENG_LOG("%s open failed,type = %d\n",__FUNCTION__,req_ptr->uType);
@@ -6135,11 +6140,14 @@ static int eng_diag_write_mmi(char *buf, int len, char *rsp, int rsplen)
   aprsp->length= 0;
 
   if( 0 == req_ptr->uType){
-    fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_WRONLY);  //00: whole phone test; 01: PCBA test ; 02: BBAT test
+    //fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_RDONLY); //00: whole phone test; 01: PCBA test ; 02: BBAT test
+    fd = open(WHOLE_PHONE_TEST_FILE_PATH,O_CREAT | O_RDWR | O_TRUNC, 0666);
   }else if(1 == req_ptr->uType){
-    fd = open(PCBA_TEST_FILE_PATH,O_WRONLY);
+    //fd = open(PCBA_TEST_FILE_PATH,O_RDONLY);
+    fd = open(PCBA_TEST_FILE_PATH,O_CREAT | O_RDWR | O_TRUNC, 0666);
   }else if(2 == req_ptr->uType){
-    fd = open(BBAT_TEST_FILE_PATH,O_WRONLY);
+    //fd = open(BBAT_TEST_FILE_PATH,O_RDONLY);
+    fd = open(BBAT_TEST_FILE_PATH,O_CREAT | O_RDWR | O_TRUNC, 0666);
   }
   if(fd < 0){
     ENG_LOG("%s open failed,type = %d\n",__FUNCTION__,req_ptr->uType);

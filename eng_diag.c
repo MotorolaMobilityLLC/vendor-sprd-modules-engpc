@@ -293,7 +293,7 @@ static int eng_autotest_gps(char *req, char *rsp);
 DYMIC_WRITETOPC_FUNC write_interface[WRITE_TO_MAX] = {
 write_to_host_diag,/*pc lte diag*/NULL,NULL,
 NULL,NULL,NULL,
-NULL,NULL,chnl_send_at_interface,/*send cmd so to so*/
+chnl_send_diag_interface,NULL,chnl_send_at_interface,/*send cmd so to so*/
 NULL,NULL,NULL,NULL,NULL,NULL
 };
 

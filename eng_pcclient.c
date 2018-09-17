@@ -590,6 +590,10 @@ int main(int argc, char** argv) {
             // Change gser port
             memcpy(dev_info.host_int.dev_diag, "/dev/vser",
                    sizeof("/dev/vser"));
+
+            USB_DEVICE_SPEED_ENUM usb_device_speed = USB_SPEED_FULL;
+            eng_usb_maximum_speed(usb_device_speed);
+
             ENG_LOG("setprop: %s = 1", PROP_USB_CONFIG);
             property_set(PROP_USB_CONFIG, "1");
           }

@@ -17,6 +17,7 @@
 #define CHARGER_STOP_PATH "/sys/class/power_supply/battery/stop_charge"
 #define BATTERY_VOL_PATH "/sys/class/power_supply/battery/real_time_voltage"
 #define FGU_VOL_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_vol"
+#define BATTERY_TEMP "/sys/class/power_supply/battery/temp"
 
 static int vbus_charger_disconnect = 0;
 
@@ -56,6 +57,14 @@ typedef struct {
 	unsigned int cmd;
 	unsigned int reserved;
 } TOOLS_DIAG_AP_FGU_RESERVED;
+
+typedef struct {
+	unsigned char status;
+} TOOLS_DIAG_AP_NTC_STATUS;
+
+typedef struct {
+	int temperature;
+} TOOLS_DIAG_AP_NTC_TEMPERATURE;
 
 static int connect_vbus_charger(void)
 {
@@ -177,6 +186,42 @@ static int ap_get_fgu_voltage(void)
 	return voltage;
 }
 
+static int get_battery_temperature(void)
+{
+	int fd = -1;
+	int read_len = 0;
+	char buffer[64] = {0};
+	int value = 0;
+
+	fd = open(BATTERY_TEMP, O_RDONLY);
+	ENG_LOG("get_battery_ntc_temperature fd=%d\n", fd);
+
+	if (fd >= 0) {
+		read_len = read(fd, buffer, sizeof(buffer));
+		if (read_len > 0)
+			value = atoi(buffer);
+
+		close(fd);
+	}
+	ENG_LOG("get_battery_ntc_temperature value=%d\n", value);
+
+	return value;
+}
+
+static int ap_read_ntc_temperature(void)
+{
+	int temp = 0;
+	int i;
+
+	for (i = 0; i < 16; i++) {
+		temp += get_battery_temperature();
+	}
+	temp >>= 4;
+
+	ENG_LOG("ap_read_ntc_temperature temp=%d\n", temp);
+	return temp;
+}
+
 static int eng_diag_control_charge(char *buf, int len, char *rsp, int rsplen)
 {
 	int ret = 0;
@@ -295,6 +340,63 @@ static int eng_diag_read_fgu_voltage(char *buf, int len, char *rsp, int rsplen)
 	return msg_head_ptr->len + 2 ;
 }
 
+static int eng_diag_read_ntc_temperature(char *buf, int len, char *rsp, int rsplen)
+{
+	char *rsp_ptr;
+	TOOLS_DIAG_AP_NTC_TEMPERATURE * bat_ntc = NULL;
+	int length;
+
+	if (NULL == buf) {
+		ENG_LOG("%s,null pointer", __FUNCTION__);
+		return 0;
+	}
+
+	MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
+	length =  sizeof(TOOLS_DIAG_AP_NTC_TEMPERATURE) + sizeof(MSG_HEAD_T);
+	rsp_ptr = (char *)malloc(length);
+	if (NULL == rsp_ptr) {
+		ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
+		return 0;
+	}
+
+	memset(rsp_ptr, '\0', length);
+	bat_ntc =  (TOOLS_DIAG_AP_NTC_TEMPERATURE *)(rsp_ptr + sizeof(MSG_HEAD_T));
+	msg_head_ptr->len = length;
+	bat_ntc->temperature = ap_read_ntc_temperature();
+	ENG_LOG("bat_ntc->temperature=%d\n", bat_ntc->temperature);
+	memcpy(rsp, buf, 1 + sizeof(MSG_HEAD_T));
+
+	/* Remove the 0x7e at the beginning and end of the buf */
+	len = len - 2;
+
+	/* Because the npi tool side is use the formula:
+	 * int fTemp=(szRecv[0]+szRecv[1]+szRecv[2]+szRecv[3]-250) / 10
+	 * 7E 00 00 00 00 0C 00 38 00 xx xx xx xx 7E
+	 */
+	bat_ntc->temperature = bat_ntc->temperature + 250;
+	for (int i = 0; i < 4; i++)
+	{
+		if (bat_ntc->temperature < 0) {
+			rsp[len + i] = 0x00;
+			continue;
+		}
+
+		if(bat_ntc->temperature > 255) {
+			rsp[len + i] = 0xff;
+			bat_ntc->temperature = bat_ntc->temperature - 255;
+		} else {
+			rsp[len + i] = bat_ntc->temperature;
+			break;
+		}
+	}
+
+	rsp [sizeof(MSG_HEAD_T)] = 0x00;
+	rsp[msg_head_ptr->len + 2 - 1] = 0x7E;
+	free(rsp_ptr);
+
+	return msg_head_ptr->len + 2;
+}
+
 static int eng_diag_get_battery_capacity(char *buf, int len, char *rsp, int rsplen)
 {
 	TOOLS_DIAG_AP_STATUS *rsp_status = NULL;
@@ -374,6 +476,11 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 	(reg + moudles_num)->type = 0x62;
 	(reg + moudles_num)->subtype = 0x00;
 	(reg + moudles_num)->eng_diag_func = eng_diag_read_fgu_voltage;
+	moudles_num++;
+
+	(reg + moudles_num)->type = 0x38;
+	(reg + moudles_num)->subtype = 0x0c;
+	(reg + moudles_num)->eng_diag_func = eng_diag_read_ntc_temperature;
 	moudles_num++;
 
 	*num = moudles_num;

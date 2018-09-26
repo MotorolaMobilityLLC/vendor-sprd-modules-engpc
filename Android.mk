@@ -18,7 +18,8 @@ LOCAL_CFLAGS += -DCONFIG_MINIENGPC
 LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy
 else
 
-LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libbm 
+LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libbm libutils
+LOCAL_STATIC_LIBRARIES  := libbootloader_message libfs_mgr libbase
 
 ifeq ($(strip $(BOARD_TEE_CONFIG)), watchdata)
 LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
@@ -56,6 +57,8 @@ LOCAL_C_INCLUDES    += hardware/libhardware/include \
                        system/core/include \
                        system/media/audio/include \
                        $(TOP)/vendor/sprd/proprietories-source/engmode/libtracedump \
+                       bootable/recovery \
+                       bootable/recovery/include \
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_C_INCLUDES    +=  vendor/sprd/modules/audio/voiceband/effect/include \
@@ -92,12 +95,13 @@ LOCAL_SRC_FILES     := eng_pcclient.c  \
                        eng_uevent.c \
                        eng_debug.c \
                        eng_ap_modem_time_sync.c \
-					   emmc.cpp \
-					   ddr.c \
+                       emmc.cpp \
+                       ddr.c \
                        eng_socket.c \
-					   eng_modules.c \
-			  channl_at.c \
-			  channl_diag.c \
+                       eng_modules.c \
+                       channl_at.c \
+                       channl_diag.c \
+                       eng_resetft.cpp \
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_SRC_FILES += eng_busmonitor.c

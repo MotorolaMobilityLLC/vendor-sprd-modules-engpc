@@ -31,6 +31,7 @@
 #include "ddr.h"
 #include <semaphore.h>
 
+
 #define NUM_ELEMS(x) (sizeof(x) / sizeof(x[0]))
 
 #ifdef sp6810a
@@ -245,63 +246,19 @@ static int eng_get_device_from_path(const char *path, char *device_name) {
   return 0;
 }
 
+extern int phone_reset_factorytest();
+
 int eng_linuxcmd_factoryreset(char *req, char *rsp) {
   int ret = 1;
-  char cmd[] = "--wipe_data";
-  int fd = -1;
-  char format_cmd[1024];
-  char convert_name[] = "/dev/block/platform/sprd-sdhci.3/by-name/sd";
-  static char MKDOSFS_PATH[] = "/system/bin/newfs_msdos";
-  mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 
   ENG_LOG("Call %s\n", __FUNCTION__);
+  ret = phone_reset_factorytest();
 
-  /*format internal sd card. code from vold*/
-  sprintf(format_cmd, "%s -F 32 -O android %s", MKDOSFS_PATH, convert_name);
-  system(format_cmd);
-  // delete files in ENG_RECOVERYDIR
-  system("rm -r /cache/recovery");
-
-  // mkdir ENG_RECOVERYDIR
-  if (mkdir(ENG_RECOVERYDIR, mode) == -1) {
-    ret = 0;
-    ENG_LOG("%s: mkdir %s fail [%s]\n", __FUNCTION__, ENG_RECOVERYDIR,
-            strerror(errno));
-    goto out;
-  }
-
-  // create ENG_RECOVERYCMD
-  fd = open(ENG_RECOVERYCMD, O_CREAT | O_RDWR, 0666);
-
-  if (fd < 0) {
-    ret = 0;
-    ENG_LOG("%s: open %s fail [%s]\n", __FUNCTION__, ENG_RECOVERYCMD,
-            strerror(errno));
-    goto out;
-  }
-  if (write(fd, cmd, strlen(cmd)) < 0) {
-    ret = 0;
-    ENG_LOG("%s: write %s fail [%s]\n", __FUNCTION__, ENG_RECOVERYCMD,
-            strerror(errno));
-    goto out;
-  }
-  if (eng_sql_string2string_set("factoryrst", "DONE") == -1) {
-    ret = 0;
-    ENG_LOG("%s: set factoryrst fail\n", __FUNCTION__);
-    goto out;
-  }
-
-  g_reset = 2;
-// sync();
-//__reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-//        LINUX_REBOOT_CMD_RESTART2, "recovery");
 out:
-  if (ret == 1)
+  if (ret == 0)
     sprintf(rsp, "%s%s", SPRDENG_OK, ENG_STREND);
   else
     sprintf(rsp, "%s%s", SPRDENG_ERROR, ENG_STREND);
-
-  if (fd >= 0) close(fd);
 
   return 0;
 }

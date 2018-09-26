@@ -19,8 +19,6 @@
 #define FGU_VOL_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_vol"
 #define BATTERY_TEMP "/sys/class/power_supply/battery/temp"
 
-static int vbus_charger_disconnect = 0;
-
 typedef struct {
 	unsigned short status;  //==0:success, != 0:fail
 	unsigned short length;
@@ -71,22 +69,19 @@ static int connect_vbus_charger(void)
 	int fd;
 	int ret = -1;
 
-	if (vbus_charger_disconnect == 1) {
-		fd = open(CHARGER_STOP_PATH, O_WRONLY);
-		if (fd >= 0) {
-			ret = write(fd, "0", 2);
-			if (ret < 0) {
-				ENG_LOG("%s write %s failed! \n", __func__, CHARGER_STOP_PATH);
-				close(fd);
-				return 0;
-			}
+	fd = open(CHARGER_STOP_PATH, O_WRONLY);
+	if (fd >= 0) {
+		ret = write(fd, "0", 2);
+		if (ret < 0) {
+			ENG_LOG("%s write %s failed! \n", __func__, CHARGER_STOP_PATH);
 			close(fd);
-			sleep(1);
-			vbus_charger_disconnect = 0;
-		} else {
-			ENG_LOG("%s open %s failed! \n", __func__, CHARGER_STOP_PATH);
 			return 0;
 		}
+		close(fd);
+		sleep(1);
+	} else {
+		ENG_LOG("%s open %s failed! \n", __func__, CHARGER_STOP_PATH);
+		return 0;
 	}
 
 	return 1;
@@ -97,22 +92,19 @@ static int disconnect_vbus_charger(void)
 	int fd;
 	int ret = -1;
 
-	if (vbus_charger_disconnect == 0) {
-		fd = open(CHARGER_STOP_PATH, O_WRONLY);
-		if (fd >= 0) {
-			ret = write(fd, "1", 2);
-			if (ret < 0) {
-				ENG_LOG("%s write %s failed! \n", __func__, CHARGER_STOP_PATH);
-				close(fd);
-				return 0;
-			}
+	fd = open(CHARGER_STOP_PATH, O_WRONLY);
+	if (fd >= 0) {
+		ret = write(fd, "1", 2);
+		if (ret < 0) {
+			ENG_LOG("%s write %s failed! \n", __func__, CHARGER_STOP_PATH);
 			close(fd);
-			sleep(1);
-			vbus_charger_disconnect = 1;
-		} else {
-			ENG_LOG("%s open %s failed! \n", __func__, CHARGER_STOP_PATH);
 			return 0;
 		}
+		close(fd);
+		sleep(1);
+	} else {
+		ENG_LOG("%s open %s failed! \n", __func__, CHARGER_STOP_PATH);
+		return 0;
 	}
 
 	return 1;
@@ -253,14 +245,14 @@ static int eng_diag_control_charge(char *buf, int len, char *rsp, int rsplen)
 		} else {
 			aprsp->status = 0x01;
 		}
-	} else if (0x02 == charge->cmd) {
+	} else if (0x03 == charge->cmd) {
 		ret = disconnect_vbus_charger();
 		if (ret > 0) {
 			aprsp->status = 0x00;
 		} else {
 			aprsp->status = 0x01;
 		}
-	} else if (0x03 == charge->cmd) {
+	} else if (0x02 == charge->cmd) {
 		aprsp->status = 0x00;
 	}
 	msg_head_ptr->len = 8;

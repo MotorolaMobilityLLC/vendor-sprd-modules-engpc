@@ -503,6 +503,31 @@ void cplogctrl_init(void) {
   ENG_LOG("%s modemlog_to_pc=%d, wcnlog_to_pc=%d", __FUNCTION__, modemlog_to_pc, wcnlog_to_pc);  
 }
 
+int wait_for_modem_alive(char* path, int timeout)
+{
+    int fd = -1;
+    int try_cnt = timeout;
+
+    do {
+        fd = open(path, O_RDWR | O_NONBLOCK);
+        if (fd >= 0) {
+            break;
+        }
+
+        ENG_LOG("%s: times:%d, failed to open tty dev:  %s, fd = %d",__FUNCTION__, try_cnt, path, fd);
+        usleep(1000 * 1000);
+        try_cnt--;
+    } while (try_cnt > 0);
+
+    if (fd >= 0){
+        ENG_LOG("%s: times:%d, succ open tty dev:  %s, fd = %d",__FUNCTION__, try_cnt, path, fd);
+        close(fd);
+        return 0;
+    }else{
+        return -1;
+    }
+}
+
 void apcali_init(void)
 {
   char prop_modem[PROPERTY_VALUE_MAX] = {0};
@@ -568,6 +593,10 @@ int main(int argc, char** argv) {
       "%s\n",
       dev_info.modem_int.at_chan, dev_info.modem_int.diag_chan,
       dev_info.modem_int.log_chan);
+
+  if (0 != wait_for_modem_alive(dev_info.modem_int.diag_chan, 60)){
+    ENG_LOG("wait modem alive fail!!!!!!!!! please check modem status!");
+  }
 
   set_vlog_priority();
 

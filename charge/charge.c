@@ -18,6 +18,7 @@
 #define BATTERY_VOL_PATH "/sys/class/power_supply/battery/real_time_voltage"
 #define FGU_VOL_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_vol"
 #define BATTERY_TEMP "/sys/class/power_supply/battery/temp"
+#define ENG_DIAG_NTC_CMD        0x0a
 
 typedef struct {
 	unsigned short status;  //==0:success, != 0:fail
@@ -336,19 +337,25 @@ static int eng_diag_read_ntc_temperature(char *buf, int len, char *rsp, int rspl
 {
 	char *rsp_ptr;
 	TOOLS_DIAG_AP_NTC_TEMPERATURE * bat_ntc = NULL;
+	int ret = ENG_DIAG_RET_UNSUPPORT;
 	int length;
 
 	if (NULL == buf) {
 		ENG_LOG("%s,null pointer", __FUNCTION__);
-		return 0;
+		return ret;
 	}
+
+	ENG_LOG("buf[9]=0x%x\n", buf[9]);
+	/* 0x0A is ntc test, Other functions will return ENG_DIAG_RET_UNSUPPORT */
+	if(buf[9] != ENG_DIAG_NTC_CMD)
+		return ret;
 
 	MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
 	length =  sizeof(TOOLS_DIAG_AP_NTC_TEMPERATURE) + sizeof(MSG_HEAD_T);
 	rsp_ptr = (char *)malloc(length);
 	if (NULL == rsp_ptr) {
 		ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
-		return 0;
+		return ret;
 	}
 
 	memset(rsp_ptr, '\0', length);
@@ -472,6 +479,7 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
 	(reg + moudles_num)->type = 0x38;
 	(reg + moudles_num)->subtype = 0x0c;
+	(reg + moudles_num)->diag_ap_cmd = 0x0a;
 	(reg + moudles_num)->eng_diag_func = eng_diag_read_ntc_temperature;
 	moudles_num++;
 

@@ -194,6 +194,11 @@ endif
 endif
 endif
 
+#engpc adb cmd support
+LOCAL_C_INCLUDES += \
+    $(LOCAL_PATH)/cmd_server \
+
+LOCAL_SRC_FILES += $(call all-cpp-files-under, cmd_server)
 #FM
 LOCAL_SRC_FILES += fm_eut_new.c
 

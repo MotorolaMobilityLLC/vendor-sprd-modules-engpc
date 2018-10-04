@@ -16,6 +16,27 @@
 #endif
 #define MAX_OPEN_TIMES 100
 
+int parse_text_delims(char* input_text,char *output_text1,char *output_text2,char *delims){
+    char *p;
+    char *buffer;
+    int count = 0;
+    int cmd_len = 0;
+    buffer = strdup(input_text);
+    count = strlen(buffer) + 1;
+    ENG_LOG("%s: buffer=%s",__FUNCTION__, buffer);
+    p = strtok(buffer,delims);
+    if(p != NULL && output_text1 != NULL){
+            cmd_len = strlen(p) + 1;
+            snprintf(output_text1, cmd_len, "%s", p);
+    }
+    if(buffer != NULL && output_text2 != NULL){
+        ENG_LOG("%s: buffer count=%d,cmd_len=%d",__FUNCTION__, count,cmd_len);
+        strncpy(output_text2, buffer + cmd_len, count - cmd_len);
+    }
+    ENG_LOG("%s: output_text1=%s,output_text2=%s",__FUNCTION__, output_text1,output_text2);
+    return 0;
+}
+
 int eng_open_dev(char* dev, int mode) {
   int fd;
   struct termios ser_settings;

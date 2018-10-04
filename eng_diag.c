@@ -1392,6 +1392,11 @@ at_write:
 
 //Support send at/diag by so to so
 struct list_head* chnl_get_call_list_head(){
+    if(g_list_ok == 0){
+      ENG_LOG("%s:engmode list init!\n",__FUNCTION__);
+      g_list_ok = 1;
+      eng_modules_load(&eng_head);
+    }
     return &eng_head;
 }
 
@@ -1407,7 +1412,7 @@ int chnl_send(CHNL_TYPE type, char *buf, int len, char *rsp, int rsp_len)
     }
     else
     {
-        LOGE("chnl_send failed,unknow type!");
+        ENG_LOG("chnl_send failed,unknow type!");
         return -1;
     }
 }

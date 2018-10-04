@@ -20,6 +20,8 @@
 #include "eng_cmd4linuxhdlr.h"
 #include "eng_socket.h"
 
+#include "engpc_cmd_server.h"
+
 #define VLOG_PRI -20
 #define USB_CONFIG_VSER "vser"
 #define SYS_CLASS_ANDUSB_ENABLE "/sys/class/android_usb/android0/enable"
@@ -553,7 +555,7 @@ int main(int argc, char** argv) {
   eng_dev_info_t dev_info = {{"/dev/ttyGS0", "/dev/vser", {0}, 1, 0}, {{0}, {0}, {0}}};
 
   g_dev_info = &dev_info;
-
+  ENG_LOG("engpcclient start!!!!!");
   eng_get_usb_int(argc, argv, dev_info.host_int.dev_at,
                   dev_info.host_int.dev_diag, dev_info.host_int.dev_log,
                   run_type);
@@ -704,6 +706,9 @@ int main(int argc, char** argv) {
       ENG_LOG("eng_thread_create start error");
     }
   }
+
+  //engpc adb cmd support
+  cmd_server_init();
 
 #ifdef HAVE_EUT_BLUETOOTH_SPRD
   if(0 == strcmp(run_type, "wcn")) {

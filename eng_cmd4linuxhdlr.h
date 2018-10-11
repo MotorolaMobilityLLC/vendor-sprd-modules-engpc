@@ -21,8 +21,8 @@
   "/sys/devices/platform/sprd_temprf/temprf_dcxo_temp_adc"
 #define ENG_RECOVERYCMD "/cache/recovery/command"
 #define ENG_RECOVERYDIR "/cache/recovery"
-#define ENG_CHARGERTEST_FILE "/vendor/productinfo/chargertest.file"
-#define IQMODE_FLAG_PATH "/vendor/productinfo/iqmode"
+#define ENG_CHARGERTEST_FILE "/mnt/vendor/chargertest.file"
+#define IQMODE_FLAG_PATH "/mnt/vendor/iqmode"
 
 #define ENG_ANDROID_VER "ro.build.version.release"
 

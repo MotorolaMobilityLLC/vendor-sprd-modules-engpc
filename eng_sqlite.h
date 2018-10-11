@@ -1,7 +1,7 @@
 #ifndef __ENG_SQLITE_H__
 #define __ENG_SQLITE_H__
 
-#define ENG_ENGTEST_DB "/vendor/productinfo/engtest.db"
+#define ENG_ENGTEST_DB "/mnt/vendor/engtest.db"
 #define ENG_STRING2INT_TABLE "str2int"
 #define ENG_STRING2STRING_TABLE "str2str"
 #define SPRDENG_SQL_LEN 128

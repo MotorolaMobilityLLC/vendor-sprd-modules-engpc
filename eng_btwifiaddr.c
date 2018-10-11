@@ -21,11 +21,11 @@
 
 #define MAC_ERROR_EX ":::::"
 #define MAC_ERROR "FF:FF:FF:FF:FF:FF"
-#define WIFI_MAC_FILE "/vendor/productinfo/wifimac.txt"
+#define WIFI_MAC_FILE "/mnt/vendor/wifimac.txt"
 #define WIFI_ROOT_MAC_FILE "/data/misc/wifi/wifimac.txt"
-#define BT_MAC_FILE "/vendor/productinfo/btmac.txt"
+#define BT_MAC_FILE "/mnt/vendor/btmac.txt"
 #define BT_ROOT_MAC_FILE "/data/misc/bluedroid/btmac.txt"
-#define MAC_RAND_FILE "/vendor/productinfo/rand_mac.txt"
+#define MAC_RAND_FILE "/mnt/vendor/rand_mac.txt"
 
 typedef enum {
     BT_MAC_ADDR=0,

@@ -490,6 +490,21 @@ static void eng_check_whether_iqfeed(void) {
   }
 }
 
+#define PROP_MULITVSER_ENABLE "persist.vendor.cali.mulitvser.enable"
+static int s_mulitvser_enable = 0;
+void cali_mulitvser_init(void) {
+  char prop[PROPERTY_VALUE_MAX] = {0};
+
+  property_get(PROP_MULITVSER_ENABLE, prop, "not_find");
+
+  ENG_LOG("%s %s=%s ", __FUNCTION__, PROP_MULITVSER_ENABLE, prop);
+
+  if (0 == strcmp(prop, "1")) {
+    s_mulitvser_enable = 1;
+  } else {
+    s_mulitvser_enable = 0;
+  }
+}
 
 void cplogctrl_init(void) {
   char modem_log_dest[PROPERTY_VALUE_MAX] = {0};
@@ -602,6 +617,7 @@ int main(int argc, char** argv) {
   //engpc service whether ag dsp
   if(!strcmp(run_type, "ag")) g_agdsp_flag = 1;
 
+  cali_mulitvser_init();
   // Get the status of calibration mode & device type.
   eng_parse_cmdline(&cmdparam);
   // Correct diag path and run type by cmdline.
@@ -610,7 +626,9 @@ int main(int argc, char** argv) {
     dev_info.host_int.cali_flag = cmdparam.califlag;
     dev_info.host_int.dev_type = cmdparam.connect_type;
     if (CONNECT_UART == cmdparam.connect_type) {
-      strcpy(dev_info.host_int.dev_diag, "/dev/ttyS1");
+      if (s_mulitvser_enable != 1){
+        strcpy(dev_info.host_int.dev_diag, "/dev/ttyS1");
+      }
       dev_info.host_int.dev_type = CONNECT_UART;
     }
     if (CONNECT_USB == cmdparam.connect_type && g_ap_cali_flag) {
@@ -636,7 +654,6 @@ int main(int argc, char** argv) {
   }
 
   set_vlog_priority();
-
   if (cmdparam.califlag != 1){
       //wait for encrypt end or timeout
       int count = 60;
@@ -647,6 +664,7 @@ int main(int argc, char** argv) {
           ENG_LOG("warning!!!!!!!!!!wait for encrypt fail.");
       }
   }
+
   // Semaphore & log state initialization
   sem_init(&g_armlog_sem, 0, 0);
 

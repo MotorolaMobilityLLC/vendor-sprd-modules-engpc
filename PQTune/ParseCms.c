@@ -146,6 +146,21 @@ static int parse_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 	return 0;
 }
 
+static int parse_cms_version(struct cms_common *cms, xmlNodePtr curNode)
+{
+        xmlNodePtr subNode;
+	xmlChar* szPropity;
+        const char *endptr = NULL;
+
+        ENG_LOG("curNode name %s \n",curNode->name);
+        subNode = curNode; //subNode table
+        if(xmlHasProp(subNode, BAD_CAST "version")) {
+                szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
+                cms->version.version = strtoul((char *)szPropity, (char **)&endptr, 0);
+        }
+        return 0;
+}
+
 static int parse_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 {
 	const char *endptr = NULL;
@@ -187,28 +202,26 @@ static int parse_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
-	while(NULL != subNode) {
-		ENG_LOG("curNode name %s \n",subNode->name);
-		propNode = subNode->children;
-		while (NULL != propNode) {
-			attrPtr = propNode->properties;
-			while (NULL != attrPtr) {
-				if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"rgb")) {
-					szPropity = xmlGetProp(propNode, (const xmlChar*)"rgb");
-					cms->rgbcm[i].rgb = strtoul((char *)szPropity, (char **)&endptr, 0);
-					ENG_LOG("rgb %d \n", cms->rgbcm[i].rgb);
-				} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"index")) {
-					szPropity = xmlGetProp(propNode, (const xmlChar*)"index");
-					cms->rgbcm[i].cmindex = strtoul((char *)szPropity, (char **)&endptr, 0);
-					ENG_LOG("index %d \n", cms->rgbcm[i].cmindex);
-				}
-				attrPtr = attrPtr->next;
-            		}
-			propNode = propNode->next;
-		}
+	subNode = curNode;
+	ENG_LOG("PQ read curNode name %s \n",curNode->name);
+	propNode = subNode->children;
+	while (NULL != propNode) {
+		attrPtr = propNode->properties;
+		while (NULL != attrPtr) {
+			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"rgb")) {
+				szPropity = xmlGetProp(propNode, (const xmlChar*)"rgb");
+				cms->rgbcm[i].rgb = strtoul((char *)szPropity, (char **)&endptr, 0);
+				ENG_LOG("rgb %d \n", cms->rgbcm[i].rgb);
+			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"index")) {
+				szPropity = xmlGetProp(propNode, (const xmlChar*)"index");
+				cms->rgbcm[i].cmindex = strtoul((char *)szPropity, (char **)&endptr, 0);
+				ENG_LOG("index %d \n", cms->rgbcm[i].cmindex);
+			}
+			attrPtr = attrPtr->next;
+        }
+		i++;
+		propNode = propNode->next;
 	}
-
 	return 0;
 }
 
@@ -303,6 +316,22 @@ static int update_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 	return 0;
 }
 
+static int update_cms_version(struct cms_common *cms, xmlNodePtr curNode)
+{
+        int i = 0;
+        xmlNodePtr subNode;
+        char numStr[12];
+
+        ENG_LOG("curNode name %s \n",curNode->name);
+        subNode = curNode; //subNode table
+        if(xmlHasProp(subNode, BAD_CAST "version")) {
+                snprintf(numStr, sizeof(numStr), "%d", cms->version.version);
+                xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
+	}
+
+        return 0;
+}
+
 int update_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 {
 	const char *endptr = NULL;
@@ -346,30 +375,27 @@ static int update_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("curNode name %s \n",curNode->name);
-	while(NULL != subNode) {
-		ENG_LOG("curNode name %s \n",subNode->name);
-		propNode = subNode->children;
-		while (NULL != propNode) {
-			attrPtr = propNode->properties;
-			while (NULL != attrPtr) {
- 				if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"rgb")) {
-					snprintf(numStr, sizeof(numStr), "%d", cms->rgbcm[i].rgb);
-					xmlSetProp(propNode, BAD_CAST "rgb", (const xmlChar*)numStr);
-					ENG_LOG("rgb %d \n", cms->rgbcm[i].rgb);
-				} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"index")) {
-					snprintf(numStr, sizeof(numStr), "%d", cms->rgbcm[i].cmindex);
-					xmlSetProp(propNode, BAD_CAST "index", (const xmlChar*)numStr);
-					ENG_LOG("index %d \n", cms->rgbcm[i].cmindex);
-				}
-				attrPtr = attrPtr->next;
-            }
-			i++;
-			propNode = propNode->next;
-		}
+	subNode = curNode;
+	ENG_LOG("PQ enter updatea rgpmap curNode name %s \n",curNode->name);
+	propNode = subNode->children;
+	while (NULL != propNode) {
+		attrPtr = propNode->properties;
+		while (NULL != attrPtr) {
+			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"rgb")) {
+				snprintf(numStr, sizeof(numStr), "%d", cms->rgbcm[i].rgb);
+				xmlSetProp(propNode, BAD_CAST "rgb", (const xmlChar*)numStr);
+				ENG_LOG("rgb %d \n", cms->rgbcm[i].rgb);
+			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"index")) {
+				snprintf(numStr, sizeof(numStr), "%d", cms->rgbcm[i].cmindex);
+				xmlSetProp(propNode, BAD_CAST "index", (const xmlChar*)numStr);
+				ENG_LOG("index %d \n", cms->rgbcm[i].cmindex);
+			}
+			attrPtr = attrPtr->next;
+        }
+		i++;
+		propNode = propNode->next;
 	}
-
-	return 0; 
+	return 0;
 }
 
 
@@ -454,13 +480,14 @@ int update_cms_xml(struct cms_common *cms)
 	while(NULL != curNode) {
 		if (!xmlStrcmp(curNode->name, (const xmlChar*)"hsv_cm")) {
 			update_cms_hsvcm(cms, curNode);
-		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"rgb_map")) {
-			ENG_LOG("curNode name %s \n",curNode->name);
+		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"rgb_mapping_table")) {
+			ENG_LOG("PQ update curNode name %s \n",curNode->name);
 			update_cms_rgbmap_table(cms, curNode);
 		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"cm_cfg")) {
 			ENG_LOG("curNode name %s \n",curNode->name);
 			update_cm_config_table(cms, curNode);
-		}
+		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"enhance"))
+			update_cms_version(cms, curNode);
 		curNode = curNode->next;
 	}
 	xmlSaveFormatFileEnc(cms_xml, doc, "UTF-8", 1);
@@ -494,13 +521,14 @@ int parse_cms_xml(struct cms_common *cms)
 	while(NULL != curNode) {
 		if (!xmlStrcmp(curNode->name, (const xmlChar*)"hsv_cm")) {
 			parse_cms_hsvcm(cms, curNode);
-		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"rgb_map")) {
+		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"rgb_mapping_table")) {
 			ENG_LOG("curNode name %s \n",curNode->name);
 			parse_cms_rgbmap_table(cms, curNode);
 		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"cm_cfg")) {
 			ENG_LOG("curNode name %s \n",curNode->name);
 			parse_cm_config_table(cms, curNode);
-		}
+		} else if (!xmlStrcmp(curNode->name, (const xmlChar*)"enhance"))
+			parse_cms_version(cms, curNode);
 		curNode = curNode->next;
 	}
 	xmlSaveFormatFileEnc(cms_xml, doc, "UTF-8", 1);

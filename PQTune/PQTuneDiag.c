@@ -115,12 +115,15 @@ int pq_cmd_connect(char *buf, int len, char *rsp, int rsplen)
 	u32 sizes = 0;
 	int fd;
 	int fd1;
+	int fd2;
 	char *pchar;
 	char *ptemp;
+	unsigned long status;
 
 	fd = open(PanelSize, O_RDONLY);
 	fd1 = open(ChipInfo, O_RDONLY);
-	if (fd < 0 || fd1 < 0) {
+	fd2 = open(PQStatus, O_RDONLY);
+	if (fd < 0 || fd1 < 0 || fd2 < 0) {
 		ENG_LOG("%s: open file failed, err: %s\n", __func__,
 			strerror(errno));
 		return errno;
@@ -131,6 +134,19 @@ int pq_cmd_connect(char *buf, int len, char *rsp, int rsplen)
 		ENG_LOG("PQ dut info alloc fail\n");
 		return -1;
 	}
+
+	read(fd2, info, 100);
+	pchar = strstr(info, "0x");
+	status = strtol(pchar, NULL, 16);
+	if (status & GAMMA_EN)
+		PQCtx.PQParam.gamma.version.enable = 1;
+	if (status & SLP_EN)
+		PQCtx.PQParam.abc.version.enable = 1;
+	if (status & CMS_EN)
+		PQCtx.PQParam.cms.version.enable = 1;
+	if (status & HSV_EN)
+		PQCtx.PQParam.bld.version.enable = 1;
+	ENG_LOG("PQ status %x\n", status);
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	memset(dut_info, 0, sizeof(DUT_INFO_T));
 	sizes = read(fd1, info, 1024);
@@ -149,6 +165,8 @@ int pq_cmd_connect(char *buf, int len, char *rsp, int rsplen)
 	rsp[rsp_len - 1] = 0x7e;
 	free(dut_info);
 	close(fd);
+	close(fd1);
+	close(fd2);
 	ENG_LOG("pq_cmd_connect sucess\n");
 	return rsp_len;
 }
@@ -157,35 +175,45 @@ int pq_cmd_connect(char *buf, int len, char *rsp, int rsplen)
 int pq_cmd_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 {
 	int fd;
+	int fd0;
 	int ret = 0;
 	char rgb[10] = {0};
+	char flip[10] = {0};
 	bool exit = false;
+	static bool flip_en = true;
 	u32 *pdata = NULL;
 	u32 *rsp_pdata = NULL;
 	MSG_HEAD_T *rsp_head;
 	u32 rsp_len = 0;
 	u32 extra_len = 0;
 
-	fd= open(DispcBg, O_RDWR);
-	if (fd < 0) {
+	fd = open(DispcBg, O_RDWR);
+	fd0 = open(FlipDisable, O_RDWR);
+	if (fd < 0 || fd0 < 0) {
 		ENG_LOG("%s: open file failed, err: %s\n", __func__, strerror(errno));
 		return errno;
 	}
-
-	system("stop");
+	if(flip_en) {
+		sprintf(flip, "%d", 1);
+		write(fd0, flip, sizeof(flip));
+		flip_en = false;
+	}
 	pdata = (u32 *)(buf + DIAG_HEADER_LENGTH + 5);
 	rsp_pdata = (u32 *)(rsp + DIAG_HEADER_LENGTH + 5);;
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
-	if(*pdata != 0xffffffff){
+	if (*pdata != 0xffffffff) {
 		sprintf(rgb, "%x", *pdata);
 		ret = write(fd, rgb, sizeof(rgb));
 		exit = false;
-	}else {
+	} else {
+		sprintf(flip, "%d", 0);
+		write(fd0, flip, sizeof(flip));
 		ret = 0;
 		exit = true;
+		flip_en = true;
 	}
 	memcpy(rsp, buf, DIAG_HEADER_LENGTH + 5);
-	if(ret == -1)
+	if (ret == -1)
 		*rsp_pdata = 1;
 	else
 		*rsp_pdata = 0;
@@ -193,8 +221,7 @@ int pq_cmd_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 	rsp_head->len = rsp_len - 2;
 	rsp[rsp_len - 1] = 0x7e;
 	close(fd);
-	if(exit)
-		system("start");
+	close(fd0);
 	return rsp_len;
 
 }
@@ -208,7 +235,7 @@ int pq_cmd_read_regs(char *buf, int len, char *rsp, int rsplen)
 	u32 length;
 	u32 sizes = 0;
 	u32 rsp_len = 0;
-	char *cmds[30];
+	char cmds[30];
 	char *bufs;
 	u32 extra_len = 0;
 	int ret = 0;
@@ -224,9 +251,10 @@ int pq_cmd_read_regs(char *buf, int len, char *rsp, int rsplen)
 	pdata = (u32 *)(buf + DIAG_HEADER_LENGTH + 5);
 	offset = pdata[1];
 	length = pdata[0];
+	ENG_LOG("PQ %s: offset = %x len = %x\n", __func__, offset, length);
 	bufs = (char *)(rsp + DIAG_HEADER_LENGTH + 13);
-	sizes = sprintf(cmds, "%x ", offset);
-	sprintf(cmds + sizes, "%x ", length);
+	sizes = sprintf(cmds, "%8x ", offset);
+	sprintf(cmds + sizes, "%8x ", length);
 	ret = write(fd0 ,cmds, sizeof(cmds));
 	ret = read(fd1, bufs, 9 * length);
 	HexStrstoInt(bufs, length);
@@ -247,8 +275,8 @@ int pq_cmd_write_regs(char *buf, int len, char *rsp, int rsplen)
 	int offset;
 	int length;
 	u32 rsp_len = 0;
-	char* cmds;
-	int sizes;
+	char *cmds;
+	int sizes = 0;
 	int data_len;
 	int *pdata;
 	int i = 0;
@@ -268,15 +296,18 @@ int pq_cmd_write_regs(char *buf, int len, char *rsp, int rsplen)
 	pcmd = (u32 *)(buf + DIAG_HEADER_LENGTH + 5);
 	offset = pcmd[1];
 	length = pcmd[0];
-	sizes = sprintf(cmds + sizes, "%8x ", offset);
+	ENG_LOG("PQ %s  offset = %x, length = %x \n", __func__, offset, length);
+	sizes = sprintf(cmds, "%8x ", offset);
 	sizes += sprintf(cmds + sizes, "%8x ", length);
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	send_head = (MSG_HEAD_T *)(buf + 1);
-	data_len = send_head->len - 12 - DIAG_HEADER_LENGTH;
+	data_len = length;//send_head->len - 12 - DIAG_HEADER_LENGTH;
+	ENG_LOG("PQ %s data_len = %x \n", __func__, data_len);
 	pdata = (int*)(buf + DIAG_HEADER_LENGTH + 13);
-	ret = write(fd0 ,cmds, sizeof(cmds));
+	ENG_LOG("PQ %s pdata = %x \n", __func__, *pdata);
+	ret = write(fd0 ,cmds, sizes);
 	sizes = 0;
-	for(i = 0; i < data_len / 4; i++){
+	for(i = 0; i < data_len; i++){
 		sizes += sprintf(cmds + sizes, "%8x ", *pdata);
 		pdata++;
 	}

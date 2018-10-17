@@ -93,6 +93,21 @@ static int parse_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
 	return 0;
 }
 
+static int parse_bld_version(struct bld_common *bld, xmlNodePtr curNode)
+{
+        xmlNodePtr subNode;
+	xmlChar* szPropity;
+	const char *endptr = NULL;
+
+        ENG_LOG("curNode name %s \n",curNode->name);
+        subNode = curNode; //subNode table
+        if(xmlHasProp(subNode, BAD_CAST "version")) {
+		szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
+		bld->version.version = strtoul((char *)szPropity, (char **)&endptr, 0);
+	}
+        return 0;
+}
+
 static int parse_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
 {
 	int i = 0;
@@ -154,6 +169,21 @@ static int update_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
 	return 0;
 }
 
+static int update_bld_version(struct bld_common *bld, xmlNodePtr curNode)
+{
+	int i = 0;
+	xmlNodePtr subNode;
+	char numStr[12];
+
+	ENG_LOG("curNode name %s \n",curNode->name);
+	subNode = curNode; //subNode table
+	if(xmlHasProp(subNode, BAD_CAST "version")) {
+		snprintf(numStr, sizeof(numStr), "%d", bld->version.version);
+		xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
+	}
+	return 0;
+}
+
 static int update_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
 {
 	int i = 0;
@@ -207,9 +237,10 @@ int parse_bld_xml(struct bld_common *bld)
 	ENG_LOG("curNode name %s \n",curNode->name);
 	curNode = curNode->children;
 	while(NULL != curNode) {
-		if (!xmlStrcmp(curNode->name, (const xmlChar*)"hsv_cm")) {
+		if (!xmlStrcmp(curNode->name, (const xmlChar*)"hsv_cm"))
 			parse_bld_hsvcm(bld, curNode);
-		}
+		else if (!xmlStrcmp(curNode->name, (const xmlChar*)"enhance"))
+			 parse_bld_version(bld, curNode);
 		curNode = curNode->next;
 	}
 	xmlSaveFormatFileEnc(bld_xml, doc, "UTF-8", 1);
@@ -243,9 +274,10 @@ int update_bld_xml(struct bld_common *bld)
 	ENG_LOG("curNode name %s \n",curNode->name);
 	curNode = curNode->children;
 	while(NULL != curNode) {
-		if (!xmlStrcmp(curNode->name, (const xmlChar*)"hsv_cm")) {
+		if (!xmlStrcmp(curNode->name, (const xmlChar*)"enhance"))
+			update_bld_version(bld, curNode);
+		else if (!xmlStrcmp(curNode->name, (const xmlChar*)"hsv_cm"))
 			update_bld_hsvcm(bld, curNode);
-		}
 		curNode = curNode->next;
 	}
 	xmlSaveFormatFileEnc(bld_xml, doc, "UTF-8", 1);

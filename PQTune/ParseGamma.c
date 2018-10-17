@@ -6,6 +6,22 @@
 #include <utils/Log.h>
 #include <PQTuningParmDefine.h>
 
+static int parse_gamma_version(struct gamma_common *gamma, xmlNodePtr curNode)
+{
+	xmlNodePtr subNode;
+	xmlChar* szPropity;
+	const char *endptr = NULL;
+
+	ENG_LOG("curNode name %s \n",curNode->name);
+	subNode = curNode; //subNode table
+	if(xmlHasProp(subNode, BAD_CAST "version")) {
+		szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
+		gamma->version.version = strtoul((char *)szPropity, (char **)&endptr, 0);
+		ENG_LOG("aaaaaa gamma verison %d \n", gamma->version.version);
+	}
+	return 0;
+}
+
 static int parse_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode)
 {
 	int i = 0;
@@ -16,7 +32,7 @@ static int parse_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode
 	xmlChar* szPropity;
 
 	ENG_LOG("curNode name %s \n",curNode->name);
-	subNode = curNode->children; //subNode table
+	subNode = curNode; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			ENG_LOG("curNode name %s \n",subNode->name);
@@ -50,6 +66,21 @@ static int parse_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode
 	return 0;
 }
 
+static int update_gamma_version(struct gamma_common *gamma, xmlNodePtr curNode)
+{
+        int i = 0;
+        xmlNodePtr subNode;
+        char numStr[12];
+
+        ENG_LOG("ggaammaa version = %d \n", gamma->version.version);
+        subNode = curNode; //subNode table
+        if(xmlHasProp(subNode, BAD_CAST "version")) {
+                snprintf(numStr, sizeof(numStr), "%d", gamma->version.version);
+                xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
+        }
+        return 0;
+}
+
 static int update_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode)
 {
 	int i = 0;
@@ -62,7 +93,7 @@ static int update_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNod
 	char numStr[10];
 
 	ENG_LOG("curNode name %s \n",curNode->name);
-	subNode = curNode->children; //subNode table
+	subNode = curNode; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			ENG_LOG("curNode name %s \n",subNode->name);
@@ -115,10 +146,15 @@ int update_gamma_xml(struct gamma_common *gamma)
 		xmlFreeDoc(doc);
 		return -1;
 	}
+
+	curNode = curNode->children;
+
 	while(NULL != curNode) {
 		if (!xmlStrcmp(curNode->name, (const xmlChar*)"gamma_config"))
 			update_gamma_regs_table(gamma, curNode);
-			curNode = curNode->next;
+		else if (!xmlStrcmp(curNode->name, (const xmlChar*)"enhance"))
+			update_gamma_version(gamma, curNode);
+		curNode = curNode->next;
 	}
 	xmlSaveFormatFileEnc(gamma_xml, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
@@ -145,10 +181,15 @@ int parse_gamma_xml(struct gamma_common *gamma)
 		xmlFreeDoc(doc);
 		return -1;
 	}
+
+	curNode = curNode->children;
+
 	while(NULL != curNode) {
-		if (!xmlStrcmp(curNode->name, (const xmlChar*)"gamma_config"))
+		if (!xmlStrcmp(curNode->name, (const xmlChar*)"reg_table"))
 			parse_gamma_regs_table(gamma, curNode);
-			curNode = curNode->next;
+		else if (!xmlStrcmp(curNode->name, (const xmlChar*)"enhance"))
+			parse_gamma_version(gamma, curNode);
+		curNode = curNode->next;
 	}
 	xmlSaveFormatFileEnc(gamma_xml, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);

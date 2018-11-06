@@ -44,9 +44,10 @@ void *cmd_server_thread(void *)
 		ENG_LOG("create_socket : fd=%d ,name=%s failed!", SOCKET_SERVER_FD, SOCKET_SERVER_NAME);
     }
     ENG_LOG("create_socket done! fd=%d ,name=%s", SOCKET_SERVER_FD, SOCKET_SERVER_NAME);
+    cmd_server_fd = SOCKET_SERVER_FD;
     if (cmd_server_fd < 0) {
         ENG_LOG("%s: cannot create local socket server\n", __FUNCTION__);
-	 return NULL;
+        return NULL;
     }
 	  
     ENG_LOG("%s: accept client_fd =%d\n", __FUNCTION__, client_fd);

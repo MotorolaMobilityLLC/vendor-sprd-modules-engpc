@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
     char val_buf[1024];
     int buf_size = sizeof buf;
     int ret;
+    int use_hidl_socket = 0;
     //char *p, *pmax;
     struct pollfd pfd[2];
     int forced_exit = 0;
@@ -113,7 +114,14 @@ int main(int argc, char *argv[]) {
     }
 
     fd = connect_socket_local_server("hidl_common_socket");
-    LOGD("connect -> server fd:%d", fd);
+    LOGD("connect -> hidl_common_socket server fd:%d", fd);
+    if(fd < 0){
+	    fd = connect_socket_local_server(SOCKET_SERVER_NAME);
+	    LOGD("connect -> %s server fd:%d", SOCKET_SERVER_NAME, fd);
+	    use_hidl_socket = 0;
+    }else{
+        use_hidl_socket = 1;
+    }
     if (fd < 0){
        LOGD("Error %s: i=%d,cmd=%s",__FUNCTION__, i, argv[i]);
        return -1;
@@ -152,8 +160,12 @@ int main(int argc, char *argv[]) {
     LOGD("cli -> server :%s", buf);
     */
 
-    snprintf(buf, sizeof(buf), "%s %s", SOCKET_SERVER_NAME , ori_buf);
-    LOGD("connect -> server buf:%s", buf);
+    if(use_hidl_socket == 1){
+       snprintf(buf, sizeof(buf), "%s %s", SOCKET_SERVER_NAME , ori_buf);
+    }else{
+       snprintf(buf, sizeof(buf), "%s" , ori_buf);
+    }
+    LOGD("connect -> server buf:%s,use_hidl_socket:%d", buf,use_hidl_socket);
 
     write(fd, buf, strlen(buf));
     cli_trace("%s", buf);
@@ -162,7 +174,7 @@ int main(int argc, char *argv[]) {
     pfd[0].events = POLLIN;
 
     for (;;) {
-        if (poll(pfd, ARRAY_LEN(pfd), -1) <= 0) {
+        if (poll(pfd, 1, -1) <= 0) {
             LOGE("poll");
             continue;
         }
@@ -174,20 +186,26 @@ int main(int argc, char *argv[]) {
                     buf[ret] = 0;
                     forced_exit = 1;
                 }
-                forced_exit = 1;
+                //forced_exit = 1;
                 write(STDOUT_FILENO, buf, ret);
                 if (forced_exit) {
                     LOGD("cli is disconnected by service\n");
-                    exit(0);
+                    //exit(0);
+                    break;
                 }
             } else if (ret == 0) {
                 LOGD("server closed\n");
-                exit(0);
+                //exit(0);
+                break;
             } else {
                 LOGE("cli read failed: %s\n", strerror(errno));
-                exit(0);
+               //exit(0);
+               break;
             }
         }
+    }
+    if(fd > 0){
+	close(fd);
     }
 
     return 0;

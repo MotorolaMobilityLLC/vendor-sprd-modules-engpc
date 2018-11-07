@@ -174,6 +174,11 @@ int testGpio(char *buf, int len, char *rsp, int rsplen)
 
 	FUN_ENTER; //打印函数提名字：testGpio ++
 
+	//print TARGET_BOARD_PLATFORM to verify soc platform
+	property_get("ro.board.platform", cmd, "0");
+	ENG_LOG("%s: TARGET_BOARD_PLATFORM = %s\n", __FUNCTION__, cmd);
+	memset(cmd, 0, sizeof(cmd));
+
 	//打印PC下发的数据。
 	ENG_LOG("pc->engpc:%d number--> ",len); //78 xx xx xx xx _ _38 _ _ 打印返回的10个数据
 	for (i = 0; i < len; i++)

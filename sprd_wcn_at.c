@@ -70,12 +70,6 @@ static int bqb_configure_fd(char* ser_path)
     if(lib_interface !=NULL)
         lib_interface->set_fd(pc_fd);
 
-    tcgetattr(pc_fd, &ser_settings);
-    cfmakeraw(&ser_settings);
-    ser_settings.c_lflag |= (ECHO | ECHONL);
-    ser_settings.c_lflag &= ~ECHOCTL;
-    tcsetattr(pc_fd, TCSANOW, &ser_settings);
-
     return 0;
 }
 

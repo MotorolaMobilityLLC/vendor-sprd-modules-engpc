@@ -17,6 +17,7 @@
 #define CHARGER_STOP_PATH "/sys/class/power_supply/battery/stop_charge"
 #define BATTERY_VOL_PATH "/sys/class/power_supply/battery/real_time_voltage"
 #define FGU_VOL_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_vol"
+#define BATTERY_FUEL_VOL "/sys/class/power_supply/battery/voltage_now"
 #define BATTERY_TEMP "/sys/class/power_supply/battery/temp"
 #define ENG_DIAG_NTC_CMD        0x0a
 
@@ -127,6 +128,15 @@ static int get_aux_battery_voltage(void)
 			value = atoi(buffer);
 		}
 		close(fd);
+	} else {
+		fd = open(BATTERY_FUEL_VOL, O_RDONLY);
+		if (fd >= 0) {
+			read_len = read(fd, buffer, sizeof(buffer));
+			if (read_len > 0) {
+				value = atoi(buffer);
+			}
+			close(fd);
+		}
 	}
 
 	return value;
@@ -148,6 +158,15 @@ static int get_fgu_battery_voltage(void)
 			value = atoi(buffer);
 		}
 		close(fd);
+	} else {
+		fd = open(BATTERY_FUEL_VOL, O_RDONLY);
+		if (fd >= 0) {
+			read_len = read(fd, buffer, sizeof(buffer));
+			if (read_len > 0) {
+				value = atoi(buffer);
+			}
+			close(fd);
+		}
 	}
 
 	return value;

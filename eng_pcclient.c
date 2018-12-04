@@ -28,7 +28,6 @@
 #define SYS_CLASS_ANDUSB_ENABLE_NEW "/config/usb_gadget/g1/UDC"
 #define SYS_CLASS_ANDUSB_STATE "/sys/class/android_usb/android0/state"
 #define DEVICE_SOC_USB_MAXIMUM_SPEED "sys/devices/platform/soc/soc:ap-ahb/20200000.usb/maximum_speed"
-//#define DEVICE_SOC_USB_MAXIMUM_SPEED "/sys/devices/soc/soc:ap-ahb/20500000.usb3/maximum_speed"
 
 #define PROP_USB_CONFIG "vendor.flag.sys.usb.config"
 
@@ -333,17 +332,29 @@ void eng_usb_maximum_speed(USB_DEVICE_SPEED_ENUM speed) {
   int fd = -1;
   int ret = 0;
   char speed_str[10] = {0};
+  char *speed_path[] = {
+    "/sys/devices/platform/soc/soc:aon/5fff0000.usb/maximum_speed"
+  };
 
   fd = open(DEVICE_SOC_USB_MAXIMUM_SPEED, O_WRONLY);
   sprintf(speed_str, "%d", speed);
   if (fd >= 0) {
       ret = write(fd, speed_str, strlen(speed_str));
-      ENG_LOG("%s: Write usb speed=%s success!\n", __FUNCTION__,
-              speed_str);
+      ENG_LOG("%s: Write usb speed=%s success!\n", __FUNCTION__, speed_str);
       close(fd);
   } else {
-      ENG_LOG("%s: Open %s failed! error:%s\n",
-              __FUNCTION__, DEVICE_SOC_USB_MAXIMUM_SPEED, strerror(errno));
+      ENG_LOG("%s: Open %s failed! error:%s\n", __FUNCTION__, DEVICE_SOC_USB_MAXIMUM_SPEED, strerror(errno));
+      for(int i = 0; i < sizeof(speed_path)/sizeof(char *); i++){
+          fd = open(speed_path[i], O_WRONLY);
+          sprintf(speed_str, "%d", speed);
+          if (fd >= 0) {
+              ret = write(fd, speed_str, strlen(speed_str));
+              ENG_LOG("%s: Write usb speed=%s success!\n", __FUNCTION__, speed_str);
+              close(fd);
+          }else{
+              ENG_LOG("%s: Open %s failed! error:%s\n", __FUNCTION__, speed_path[i], strerror(errno));
+          }
+      }
   }
 }
 

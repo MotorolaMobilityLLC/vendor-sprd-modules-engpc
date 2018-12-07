@@ -27,7 +27,7 @@ extern char g_run_type[32];
 #define DATA_EXT_DIAG_SIZE (4096 * 16)
 #define DIAG_BUF_SIZE 20
 
-static unsigned  char log_data[DATA_BUF_SIZE];
+static unsigned  char log_data[DATA_EXT_DIAG_SIZE];
 static char ext_data_buf[DATA_EXT_DIAG_SIZE];
 static char backup_data_buf[DATA_EXT_DIAG_SIZE];
 static char diag_header[DIAG_BUF_SIZE];
@@ -147,6 +147,44 @@ void set_raw_data_speed(int fd, int speed) {
   }
 }
 
+int readframe(int fd, char* data, int size)
+{
+    int r_cnt = 0;
+    char buff[DATA_BUF_SIZE/2] = {0};
+    int offset = 0;
+    if (fd < 0) {
+        return -1;
+    }
+
+    ENG_LOG("%s: readframe size = %d", __FUNCTION__, size);
+
+    while(1){
+        memset(buff, 0, sizeof(buff));
+        r_cnt = read(fd, buff, sizeof(buff));
+        ENG_LOG("%s: r_cnt = %d", __FUNCTION__, r_cnt);
+        if (r_cnt > 0){
+            if (r_cnt + offset <= size){
+                memcpy(data+offset, buff, r_cnt);
+                offset += r_cnt;
+                if (r_cnt != sizeof(buff)){
+                    ENG_LOG("%s: read frame ok size = %d", __FUNCTION__, offset);
+                    break;
+                }
+            }else{
+                memcpy(data+offset, buff, size-offset);
+                ENG_LOG("%s: buff is full, break", __FUNCTION__);
+                break;
+            }
+        }else{
+            ENG_LOG("%s: read error", __FUNCTION__);
+            break;
+        }
+    }
+
+    ENG_LOG("%s: offset = %d", __FUNCTION__, offset);
+    return offset;
+}
+
 void *eng_vdiag_wthread(void *x) {
   int modem_fd = -1;
   int ser_fd = -1;
@@ -198,11 +236,13 @@ void *eng_vdiag_wthread(void *x) {
   init_user_diag_buf();
 
   while (1) {
+    r_cnt = readframe(ser_fd, log_data, sizeof(log_data));
+/*
     r_cnt = read(ser_fd, log_data, DATA_BUF_SIZE / 2);
     if (r_cnt == DATA_BUF_SIZE / 2) {
       r_cnt += read(ser_fd, log_data + r_cnt, DATA_BUF_SIZE / 2);
     }
-
+*/
     if (r_cnt <= 0) {
       ENG_LOG("eng_vdiag read log data error  from serial: %s\n",
               strerror(errno));

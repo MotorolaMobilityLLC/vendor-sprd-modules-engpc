@@ -163,7 +163,7 @@ extern pthread_mutex_t g_time_sync_lock;
 static unsigned char tun_data[376];
 static int diag_pipe_fd = 0;
 static char eng_atdiag_buf[2 * ENG_DIAG_SIZE];
-static char eng_diag_buf[2 * ENG_DIAG_SIZE];
+static char eng_diag_buf[16 * ENG_DIAG_SIZE];
 static char eng_audio_diag_buf[2 * ENG_DIAG_SIZE];
 static char eng_modemdb_diag_buf[2 * ENG_MODEMDB_DIAG_SIZE];
 static int eng_diag_len = 0;

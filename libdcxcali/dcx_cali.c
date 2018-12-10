@@ -77,30 +77,22 @@ static u32 hp_dcxo_amp_init()
 static u32 hp_amp_cali()
 {
     u32 val;
-	ENG_LOG("%s: start",__FUNCTION__);
     ana_write(ANA_REG_GLB_TSX_WR_PROT_VALUE,0x1990);
     hp_dcxo_amp_init();
 
-	ENG_LOG("%s: %d ctrl5:0x%x",__FUNCTION__,__LINE__,ana_read(ANA_REG_GLB_TSX_CTRL5));
-	ENG_LOG("%s: %d",__FUNCTION__,__LINE__);
     while( !(OK_FLAG !=0 ) && !(OK_FLAG == 0 && HP_CAL_CTRL_7_5 == 0)) {
-	ENG_LOG("%s: %d ctrl5:0x%x",__FUNCTION__,__LINE__,ana_read(ANA_REG_GLB_TSX_CTRL5));
         val = HP_CAL_CTRL_7_5 - 1;
-	ENG_LOG("%s: %d val:0x%x",__FUNCTION__,__LINE__,val);
 	val = BIT_DCXO_CORE_AML_CAL_CTRL_HP((ana_read(ANA_REG_GLB_TSX_CTRL5) & 0x1F) | (val << 5));
-	ENG_LOG("%s: %d val:0x%x",__FUNCTION__,__LINE__,val);
         ana_write(ANA_REG_GLB_TSX_CTRL5,val);
 		return 0;
     }
 
-	ENG_LOG("%s: %d",__FUNCTION__,__LINE__);
     if (OK_FLAG !=0 && HP_CAL_CTRL_7_5 != 0) {
         val = HP_CAL_CTRL_7_5 + 1;
         ana_write(ANA_REG_GLB_TSX_CTRL5,
                     BIT_DCXO_CORE_AML_CAL_CTRL_HP((ana_read(ANA_REG_GLB_TSX_CTRL5) & ~0xE0) | val << 5));
     }
 
-	ENG_LOG("%s: %d",__FUNCTION__,__LINE__);
     if (OK_FLAG == 0 && HP_CAL_CTRL_7_5 == 0) {
         ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) && 0x1F);
     }
@@ -109,16 +101,13 @@ static u32 hp_amp_cali()
                 | BIT_DCXO_CORE_AML_CTRL(0x6));
     ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) | 0x1F);
 
-	ENG_LOG("%s: %d",__FUNCTION__,__LINE__);
     while(OK_FLAG != BIT_DCXO_CORE_AML_CAL_OK_FLAG ) {
         val = HP_CAL_CTRL_4_0 - 1;
         ana_write(ANA_REG_GLB_TSX_CTRL5,(ana_read(ANA_REG_GLB_TSX_CTRL5) & ~0x1F) | val);
 	usleep(1000);
     }
 
-	ENG_LOG("%s: %d",__FUNCTION__,__LINE__);
     ana_write(ANA_REG_GLB_TSX_CTRL3, ana_read(ANA_REG_GLB_TSX_CTRL3) & ~BIT_DCXO_CORE_AML_CAL_EN);
-	ENG_LOG("%s: end",__FUNCTION__);
 
     return ana_read(ANA_REG_GLB_TSX_CTRL5);
 }
@@ -128,56 +117,57 @@ static u32 lp_dcxo_amp_init()
     u32 val;
     val = ana_read(ANA_REG_GLB_TSX_CTRL3);
     ana_write(ANA_REG_GLB_TSX_CTRL3, val | BIT_DCXO_CORE_AML_CAL_EN);
-    val = ana_read(ANA_REG_GLB_TSX_CTRL6);
-    ana_write(ANA_REG_GLB_TSX_CTRL6,val|BIT_DCXO_CORE_AML_CAL_CTRL_LP(0xF));
-    val = ana_read(ANA_REG_GLB_TSX_CTRL6);
-    ana_write(ANA_REG_GLB_TSX_CTRL6,val|BIT_DCXO_CORE_AML_CAL_CTRL_LP(0x30));
+    val = ana_read(ANA_REG_GLB_TSX_CTRL5);
+    ana_write(ANA_REG_GLB_TSX_CTRL5,val|BIT_DCXO_CORE_AML_CAL_CTRL_LP(0xF));
+    val = ana_read(ANA_REG_GLB_TSX_CTRL5);
+    ana_write(ANA_REG_GLB_TSX_CTRL5,val|BIT_DCXO_CORE_AML_CAL_CTRL_LP(0x30));
     val = ana_read(ANA_REG_GLB_TSX_CTRL4);
     ana_write(ANA_REG_GLB_TSX_CTRL4,val|BIT_DCXO_CORE_AML_CTRL(0x2));
 
     return 0;
 }
 
-#define LP_CAL_CTRL_7_4 ((ana_read(ANA_REG_GLB_TSX_CTRL6) & BIT_DCXO_CORE_AML_CAL_CTRL_LP(0xF0)) >> 4) //bit[7:4]
-#define LP_CAL_CTRL_3_0 (ana_read(ANA_REG_GLB_TSX_CTRL6) & BIT_DCXO_CORE_AML_CAL_CTRL_LP(0xF)) //bit[3:0]
+#define LP_CAL_CTRL_5_4 ((ana_read(ANA_REG_GLB_TSX_CTRL5) & BIT_DCXO_CORE_AML_CAL_CTRL_LP(0x30)) >> 4) //bit[7:4]
+#define LP_CAL_CTRL_3_0 (ana_read(ANA_REG_GLB_TSX_CTRL5) & BIT_DCXO_CORE_AML_CAL_CTRL_LP(0xF)) //bit[3:0]
 
 static u32 lp_amp_cali()
 {
-    u32 val;
-	ENG_LOG("%s: start",__FUNCTION__);
+    u32 val,cbank_bak;
     ana_write(ANA_REG_GLB_TSX_WR_PROT_VALUE,0x1990);
+    cbank_bak = ana_read(ANA_REG_GLB_TSX_CTRL10);
+    ana_write(ANA_REG_GLB_TSX_CTRL10,0x0);
     lp_dcxo_amp_init();
 
     while( !(OK_FLAG !=0 ) &&
-        !(OK_FLAG == 0 && LP_CAL_CTRL_7_4 == 0)) {
-            val = LP_CAL_CTRL_7_4 - 1;
-            ana_write(ANA_REG_GLB_TSX_CTRL6,
-                        BIT_DCXO_CORE_AML_CAL_CTRL_LP((ana_read(ANA_REG_GLB_TSX_CTRL6) & ~0xF0) | val << 4));
+        !(OK_FLAG == 0 && LP_CAL_CTRL_5_4 == 0)) {
+            val = LP_CAL_CTRL_5_4 - 1;
+            ana_write(ANA_REG_GLB_TSX_CTRL5,
+                        BIT_DCXO_CORE_AML_CAL_CTRL_LP((ana_read(ANA_REG_GLB_TSX_CTRL5) & ~0xF0) | val << 4));
     }
 
-    if (OK_FLAG !=0 && LP_CAL_CTRL_7_4 != 0) {
-        val = LP_CAL_CTRL_7_4 + 1;
-        ana_write(ANA_REG_GLB_TSX_CTRL6,
-                    BIT_DCXO_CORE_AML_CAL_CTRL_LP((ana_read(ANA_REG_GLB_TSX_CTRL6) & ~0xF0) | val << 4));
+    if (OK_FLAG !=0 && LP_CAL_CTRL_5_4 != 0) {
+        val =  + 1;
+        ana_write(ANA_REG_GLB_TSX_CTRL5,
+                    BIT_DCXO_CORE_AML_CAL_CTRL_LP((ana_read(ANA_REG_GLB_TSX_CTRL5) & ~0xF0) | val << 4));
     }
 
-    if (OK_FLAG == 0 && LP_CAL_CTRL_7_4 == 0) {
-        ana_write(ANA_REG_GLB_TSX_CTRL6,ana_read(ANA_REG_GLB_TSX_CTRL6) && 0xF);
+    if (OK_FLAG == 0 && LP_CAL_CTRL_5_4 == 0) {
+        ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) && 0xF);
     }
 
         ana_write(ANA_REG_GLB_TSX_CTRL4,(ana_read(ANA_REG_GLB_TSX_CTRL4)& ~BIT_DCXO_CORE_AML_CTRL(0XF))
                     | BIT_DCXO_CORE_AML_CTRL(0x1));
-        ana_write(ANA_REG_GLB_TSX_CTRL6,ana_read(ANA_REG_GLB_TSX_CTRL6) | 0xF);
+        ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) | 0xF);
 
     while(OK_FLAG != BIT_DCXO_CORE_AML_CAL_OK_FLAG) {
         val = LP_CAL_CTRL_3_0 - 1;
-        ana_write(ANA_REG_GLB_TSX_CTRL6,(ana_read(ANA_REG_GLB_TSX_CTRL6) & ~0xF) | val);
+        ana_write(ANA_REG_GLB_TSX_CTRL5,(ana_read(ANA_REG_GLB_TSX_CTRL5) & ~0xF) | val);
     }
 
     ana_write(ANA_REG_GLB_TSX_CTRL3, ana_read(ANA_REG_GLB_TSX_CTRL3) & ~BIT_DCXO_CORE_AML_CAL_EN);
-	ENG_LOG("%s: end",__FUNCTION__);
 
-    return ana_read(ANA_REG_GLB_TSX_CTRL6);
+    ana_write(ANA_REG_GLB_TSX_CTRL10,cbank_bak);
+    return ana_read(ANA_REG_GLB_TSX_CTRL5);
 }
 
 #define ENG_RAWDATA_FILE "/mnt/vendor/productinfo/dcx_data.dat"
@@ -215,6 +205,7 @@ int write_dcx_data(char *data, int nLen)
         fd = fileno(fp);
         if(fd > 0) {
             fsync(fd);
+            ret = rcount;
         } else {
             ENG_LOG("%s: fileno() error, strerror(errno)=%s", __FUNCTION__, strerror(errno));
             ret = -1;

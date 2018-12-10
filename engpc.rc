@@ -8,6 +8,7 @@ service vendor.engpcclientlte_lite /vendor/bin/engpc -p l -a /dev/ttyGS0
     class core
     user root
     group system radio shell net_bt_admin input audio wifi media
+    disabled
     oneshot
 
 service vendor.engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3

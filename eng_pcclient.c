@@ -554,6 +554,8 @@ void apcali_init(void)
   }
 }
 
+extern int set_dcxdata();
+
 int main(int argc, char** argv) {
   char cmdline[ENG_CMDLINE_LEN];
   char run_type[32] = {'t'};
@@ -636,6 +638,12 @@ int main(int argc, char** argv) {
       }
     }
   }
+
+#ifdef DCXDATA_SUPPORT
+  if (cmdparam.califlag != 1){
+    set_dcxdata();
+  }
+#endif
 
     if (cmdparam.califlag != 1) {
         if (cmdparam.normal_cali) {

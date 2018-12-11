@@ -107,6 +107,11 @@ ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_SRC_FILES += eng_busmonitor.c
 endif
 
+ifeq ($(DCXDATA_SUPPORT),true)
+LOCAL_SRC_FILES += dcxsrv/dcxsrv.c
+LOCAL_CFLAGS += -DDCXDATA_SUPPORT
+endif
+
 ifneq ($(CONFIG_MINIENGPC), true)
 
 #### brcm BT BQB test

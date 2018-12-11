@@ -1,0 +1,5 @@
+service vendor.dcxsrv /vendor/bin/dcxsrv
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
+    oneshot

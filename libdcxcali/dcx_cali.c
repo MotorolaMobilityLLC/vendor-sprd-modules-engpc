@@ -22,7 +22,7 @@ typedef unsigned short u16;
 typedef unsigned char u8;
 #define BIT(x) (1<<x)
 int current_mode = 1;
-static u32 hp_cbank;
+static u32 hp_cbank =0, lp_cbank =0, hp_amp =0, lp_amp =0;
 
 #define PMIC_GLB_VALUE "/sys/bus/platform/drivers/sprd-pmic-glb/sc27xx-syscon/pmic_value"
 #define PMIC_GLB_REG "/sys/bus/platform/drivers/sprd-pmic-glb/sc27xx-syscon/pmic_reg"
@@ -45,12 +45,16 @@ static u32 ana_read(u32 reg_addr)
 
 static u32 ana_write(u32 reg_addr,u32 value)
 {
-    int fd_val,ret;
-    char cmds[30] = {0};
+    int fd_reg, fd_val, ret;
+    char cmds_addr[30] = {0}, cmds_value[30] = {0};
     fd_val = open(PMIC_GLB_VALUE, O_RDWR);
-    ret = sprintf(cmds,"%8x %8x", reg_addr, value);
-    ret = write( fd_val, cmds, sizeof(cmds));
+    fd_reg = open(PMIC_GLB_REG, O_RDWR);
+    sprintf(cmds_addr,"%8x", reg_addr);
+    write( fd_reg, cmds_addr, sizeof(cmds_addr));
+    sprintf(cmds_value,"%8x", value);
+    write( fd_val, cmds_value, sizeof(cmds_value));
     ENG_LOG("%s: %d ctrl5:0x, reg_addr:0x%x val:0x%x",__FUNCTION__,__LINE__,reg_addr,value);
+    close(fd_reg);
     close(fd_val);
     return ret;
 }
@@ -108,6 +112,7 @@ static u32 hp_amp_cali()
     }
 
     ana_write(ANA_REG_GLB_TSX_CTRL3, ana_read(ANA_REG_GLB_TSX_CTRL3) & ~BIT_DCXO_CORE_AML_CAL_EN);
+
 
     return ana_read(ANA_REG_GLB_TSX_CTRL5);
 }
@@ -282,6 +287,7 @@ static int dcx_set_afc_mode(char *buf, int len, char *rsp, int rsplen)
         if (current_mode == 1)
         {
 		hp_cbank = ana_read(ANA_REG_GLB_TSX_CTRL10) & BIT_DCXO_CORE_CBANK_HP(0xFF);
+		hp_amp = ana_read(ANA_REG_GLB_TSX_CTRL5);
 		ana_write(ANA_REG_GLB_TSX_CTRL10,0x0);
 		ana_write(ANA_REG_GLB_TSX_CTRL14,
 			  ana_read(ANA_REG_GLB_TSX_CTRL14) | BIT_DCXO_LP_CAL_EN);
@@ -290,9 +296,12 @@ static int dcx_set_afc_mode(char *buf, int len, char *rsp, int rsplen)
     }else { //1 high power mode
         /*check with asic how to switch to normal mode*/
         if (current_mode == 0) {
+		lp_cbank = ana_read(ANA_REG_GLB_TSX_CTRL10);
+		lp_amp = ana_read(ANA_REG_GLB_TSX_CTRL5);
 		ana_write(ANA_REG_GLB_TSX_CTRL14,
 		ana_read(ANA_REG_GLB_TSX_CTRL14) & ~BIT_DCXO_LP_CAL_EN);
 		ana_write(ANA_REG_GLB_TSX_CTRL10,hp_cbank);
+		ana_write(ANA_REG_GLB_TSX_CTRL5,hp_amp);
 	}
         current_mode = 1;
     }
@@ -392,7 +401,8 @@ static int dcx_amp_cali(char *buf, int len, char *rsp, int rsplen)
 
     reg = find_amp_cal_finish(current_mode);
     ENG_LOG("%s: reg = %x",__FUNCTION__, reg);
-    sprintf(rsp + 1 + sizeof(MSG_HEAD_T)+ sizeof(unsigned int),"0x%x",reg);
+    lpAmpData->Amp_26M = reg;
+    lpAmpData->reserved = 0;
 
     /*----------------------------------------------------------------------------*/
 

@@ -88,7 +88,6 @@ static u32 hp_amp_cali()
         val = HP_CAL_CTRL_7_5 - 1;
 	val = BIT_DCXO_CORE_AML_CAL_CTRL_HP((ana_read(ANA_REG_GLB_TSX_CTRL5) & 0x1F) | (val << 5));
         ana_write(ANA_REG_GLB_TSX_CTRL5,val);
-		return 0;
     }
 
     if (OK_FLAG !=0 && HP_CAL_CTRL_7_5 != 0) {

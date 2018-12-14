@@ -640,9 +640,9 @@ int main(int argc, char** argv) {
   }
 
 #ifdef DCXDATA_SUPPORT
-  if (cmdparam.califlag != 1){
+  //if (cmdparam.califlag != 1){
     set_dcxdata();
-  }
+  //}
 #endif
 
     if (cmdparam.califlag != 1) {

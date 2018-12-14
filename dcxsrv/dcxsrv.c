@@ -16,6 +16,11 @@
 #include <sys/resource.h>
 #include <sys/vfs.h>
 #include <sys/mman.h>
+#include "../eng_util.h"
+#include "../eng_modules.h"
+#include "../engopt.h"
+#include "../eng_diag.h"
+
 
 /* #define DEBUG */
 #ifdef DEBUG
@@ -117,16 +122,18 @@ int read_dcx_data(char *buff, int nLen)
 int set_dcxdata() {
 	int ret = 0;
 	DIAG_AP_PMIC_AFC_CALI_DATA_T pmicCaliData;
-	fprintf(stderr, "dcxsrv start...\n");
+	//fprintf(stderr, "dcxsrv start...\n");
+	ENG_LOG("dcxsrv start............111");
 	ret = read_dcx_data(&pmicCaliData, sizeof(DIAG_AP_PMIC_AFC_CALI_DATA_T));
 	if (ret < 0)
 		DEBUGSEE("%s: fread count %d",__FUNCTION__, ret);
-	ana_write(SC2730_CDAC_REG, pmicCaliData.CDAC);
-	ana_write(SC2730_HP_AMP_26M, pmicCaliData.HP_Mode_Amp_26M);
-	ana_write(SC2730_LP_AMP_26M, pmicCaliData.LP_Mode_Amp_26M);
 
-	fprintf(stderr, "dcxsrv end...\n");
-	sleep(100);
+    ana_write(SC2730_CDAC_REG, pmicCaliData.CDAC);
+    ana_write(SC2730_HP_AMP_26M, pmicCaliData.HP_Mode_Amp_26M);
+    ana_write(SC2730_LP_AMP_26M, pmicCaliData.LP_Mode_Amp_26M);
+
+	//fprintf(stderr, "dcxsrv end...\n");
+	ENG_LOG("dcxsrv end........");
 
   return 0;
 }

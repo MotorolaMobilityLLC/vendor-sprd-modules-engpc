@@ -1279,6 +1279,11 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
 return DYMIC_RET_NO_DEAL;
 
 diag_write:
+    // no need to write rsp to pc
+    if (rlen == ENG_DIAG_NO_RESPONSE){
+        ENG_LOG("%s: no need to write rsp to pc, then return", __FUNCTION__);
+        return DYMIC_RET_DEAL_SUCCESS;
+    }
     //write rsp to pc
     rsp_ptr = (char *)malloc(rlen);
     if (NULL == rsp_ptr) {

@@ -34,6 +34,7 @@ struct eng_callback{
 
 enum
 {
+    ENG_DIAG_NO_RESPONSE = -255,
     ENG_DIAG_RET_UNSUPPORT = -256,
     ENG_DIAG_RET_ERR = 0,
 };

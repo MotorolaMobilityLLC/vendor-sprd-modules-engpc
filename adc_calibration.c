@@ -35,6 +35,9 @@ int disconnect_vbus_charger(void) {
 
   if (vbus_charger_disconnect == 0) {
     fd = open(CHARGER_STOP_PATH, O_WRONLY);
+    if (fd < 0){
+        fd = open(CHARGER_STOP_NEW_PATH, O_WRONLY);
+    }
     if (fd >= 0) {
       ret = write(fd, "1", 2);
       if (ret < 0) {
@@ -58,6 +61,9 @@ int connect_vbus_charger(void) {
 
   if (vbus_charger_disconnect == 1) {
     fd = open(CHARGER_STOP_PATH, O_WRONLY);
+    if (fd < 0){
+        fd = open(CHARGER_STOP_NEW_PATH, O_WRONLY);
+    }
     if (fd >= 0) {
       ret = write(fd, "0", 2);
       if (ret < 0) {

@@ -9,6 +9,7 @@
 #define BATTERY_VOL_PATH "/sys/class/power_supply/battery/real_time_voltage"
 #define BATTERY_ADC_PATH "/sys/class/power_supply/battery/real_time_vbat_adc"
 #define CHARGER_STOP_PATH "/sys/class/power_supply/battery/stop_charge"
+#define CHARGER_STOP_NEW_PATH "/sys/class/power_supply/battery/charger.0/stop_charge"
 #define CHARGER_MAX_CURRENT1_PATH "/sys/class/power_supply/battery/force_chg_cur"
 #define CHARGER_MAX_CURRENT2_PATH "/sys/class/power_supply/battery/force_input_cur"
 

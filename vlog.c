@@ -132,15 +132,15 @@ static void eng_get_agdsp_devpath(char* log_chan, char* pcm_chan, char* mem_chan
 {
     char property_name[32] = {0};
 
-    sprintf(property_name,"%s","ro.vendor.modem.ag.log");
+    sprintf(property_name,"%s","ro.vendor.ag.log");
     property_get(property_name, log_chan, "not_find");
     ENG_LOG("%s %s log_chan:%s", __FUNCTION__,property_name,log_chan);
 
-    sprintf(property_name,"%s","ro.vendor.modem.ag.pcm");
+    sprintf(property_name,"%s","ro.vendor.ag.pcm");
     property_get(property_name, pcm_chan, "not_find");
     ENG_LOG("%s %s pcm_chan:%s", __FUNCTION__,property_name,pcm_chan);
 
-    sprintf(property_name,"%s","ro.vendor.modem.ag.mem");
+    sprintf(property_name,"%s","ro.vendor.ag.mem");
     property_get(property_name, mem_chan, "not_find");
     ENG_LOG("%s %s mem_chan:%s", __FUNCTION__,property_name,mem_chan);
 }

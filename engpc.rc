@@ -7,21 +7,28 @@ service vendor.engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyG
 service vendor.engpcclientlte_lite /vendor/bin/engpc -p l -a /dev/ttyGS0
     class core
     user root
-    group system radio shell net_bt_admin input audio wifi media
+    group system radio shell net_bt_admin input audio wifi media camera
     disabled
     oneshot
 
 service vendor.engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
     class core
     user root
-    group system radio shell net_bt_admin media camera
+    group system radio shell net_bt_admin input audio wifi media camera
     disabled
     oneshot
 
 service vendor.engpcclientwcn_lite /vendor/bin/engpc -p wcn -a /dev/ttyGS2
     class core
     user root
-    group system radio shell net_bt_admin media
+    group system radio shell net_bt_admin input audio wifi media camera
+    disabled
+    oneshot
+
+service vendor.engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
     disabled
     oneshot
 
@@ -52,6 +59,7 @@ on property:persist.vendor.wcn.log_dest=2 && property:persist.vendor.sys.modem.d
 on property:persist.vendor.sys.modem.diag=,gser
    stop vendor.engpcclientlte_lite
    start vendor.engpcclientlte
+   start vendor.engpcclientag
 
 on property:persist.vendor.sys.modem.diag=none
    stop vendor.engpcclientlte

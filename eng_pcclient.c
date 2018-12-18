@@ -553,6 +553,28 @@ void apcali_init(void)
     g_ap_cali_flag = 0;
   }
 }
+/**
+ * whether "encrypted" is on ? :ro.crypto.state == "encrypted" && ro.crypto.type == "block"
+ * whether "encrypted" has been finished ? :vold.decrypt== "trigger_restart_framework"
+**/
+bool is_data_dir_ready(){
+    bool ready = true;
+    char crypto_type[PROPERTY_VALUE_MAX] = { 0 };
+    char crypto_state[PROPERTY_VALUE_MAX] = { 0 };
+    char vold_decrypt[PROPERTY_VALUE_MAX] = { 0 };
+    property_get("ro.crypto.type", crypto_type, "");
+    property_get("ro.crypto.state", crypto_state, "");
+    property_get("vold.decrypt", vold_decrypt, "");
+    if (strcmp(crypto_type, "block") == 0 && strcmp(crypto_state, "encrypted") == 0){
+        if (strcmp(vold_decrypt, "trigger_restart_framework") == 0){
+            ready = true;
+        }else{
+            ready = false;
+            ENG_LOG("fde ,data is not read,vold_decrypt is %s", vold_decrypt);
+        }
+    }
+    return ready;
+}
 
 extern int set_dcxdata();
 
@@ -615,6 +637,16 @@ int main(int argc, char** argv) {
 
   set_vlog_priority();
 
+  if (cmdparam.califlag != 1){
+      //wait for encrypt end or timeout
+      int count = 60;
+      while(!is_data_dir_ready() && count-- > 0){
+          sleep(1);
+      }
+      if (count <= 0){
+          ENG_LOG("warning!!!!!!!!!!wait for encrypt fail.");
+      }
+  }
   // Semaphore & log state initialization
   sem_init(&g_armlog_sem, 0, 0);
 

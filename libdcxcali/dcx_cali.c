@@ -56,6 +56,7 @@ static u32 ana_write(u32 reg_addr,u32 value)
     ENG_LOG("%s: %d ctrl5:0x, reg_addr:0x%x val:0x%x",__FUNCTION__,__LINE__,reg_addr,value);
     close(fd_reg);
     close(fd_val);
+    usleep(10000);
     return ret;
 }
 

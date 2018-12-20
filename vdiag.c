@@ -286,6 +286,7 @@ void *eng_vdiag_wthread(void *x) {
         break;
       case ENG_DIAG_RECV_TO_AP:
         if (get_user_diag_buf(log_data, r_cnt)) {
+          ENG_LOG("%s: recv: total = %d", __FUNCTION__, ext_buf_len);
           g_diag_status = ENG_DIAG_RECV_TO_AP;
           memcpy(backup_data_buf, ext_data_buf, ext_buf_len);
           backup_data_len = ext_buf_len;
@@ -296,7 +297,7 @@ void *eng_vdiag_wthread(void *x) {
           g_diag_status = ENG_DIAG_RECV_TO_AP;
           memcpy(backup_data_buf, log_data, r_cnt);
           backup_data_len = r_cnt;  // not a diag framer, so send data to CP
-        } else if (DATA_EXT_DIAG_SIZE / 2 <= ext_buf_len) {
+        } else if (DATA_EXT_DIAG_SIZE <= ext_buf_len) {
           ENG_LOG(
               "%s: Current data is not a complete diag framer,but buffer is "
               "full\n",
@@ -316,6 +317,7 @@ void *eng_vdiag_wthread(void *x) {
             g_diag_status = ENG_DIAG_RECV_TO_CP;  // send diag framer to CP
           }
         } else {
+          ENG_LOG("%s: recv: ext_buf_len = %d", __FUNCTION__, ext_buf_len);
           g_diag_status = ENG_DIAG_RECV_TO_AP;
           has_processed = 1;  // continue to receive the diag framer
         }

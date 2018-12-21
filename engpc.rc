@@ -59,11 +59,19 @@ on property:persist.vendor.wcn.log_dest=2 && property:persist.vendor.sys.modem.d
 on property:persist.vendor.sys.modem.diag=,gser
    stop vendor.engpcclientlte_lite
    start vendor.engpcclientlte
-   start vendor.engpcclientag
 
 on property:persist.vendor.sys.modem.diag=none
    stop vendor.engpcclientlte
    start vendor.engpcclientlte_lite
+
+on property:persist.vendor.modem.log_dest=0
+    stop vendor.engpcclientag
+
+on property:persist.vendor.modem.log_dest=1
+    start vendor.engpcclientag
+
+on property:persist.vendor.modem.log_dest=2
+    stop vendor.engpcclientag
 
 on property:ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
    setprop sys.usb.config vser

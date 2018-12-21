@@ -767,7 +767,7 @@ int main(int argc, char** argv) {
     ENG_LOG("vdiag rthread start error");
   }
 
-  if (cmdparam.califlag != 1 || cmdparam.nativeflag != 1) {
+  if ((cmdparam.califlag != 1 || cmdparam.nativeflag != 1) && (!g_agdsp_flag)) {
     // eng_at_pcmodem(&dev_info);
     if (0 != eng_thread_create(&t_eng_at, eng_at_pcmodem_thread, &dev_info)) {
       ENG_LOG("eng_thread_create start error");

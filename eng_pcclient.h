@@ -19,6 +19,11 @@
 #define PROP_MODEM_LOG_DEST    "persist.vendor.modem.log_dest"
 #define PROP_WCN_LOG_DEST      "persist.vendor.wcn.log_dest"
 #define PROP_MODEM_SUPPORT     "ro.vendor.modem.support"
+
+#define PROP_AGDSP_LOG "ro.vendor.ag.log"
+#define PROP_AGDSP_PCM "ro.vendor.ag.pcm"
+#define PROP_AGDSP_MEM "ro.vendor.ag.mem"
+
 #define ENG_ATDIAG_AT "AT+SPBTWIFICALI="
 #define ENG_BUFFER_SIZE 2048
 #define ENG_CMDLINE_LEN 1024

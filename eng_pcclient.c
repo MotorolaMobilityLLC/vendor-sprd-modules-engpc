@@ -620,6 +620,13 @@ int main(int argc, char** argv) {
   cali_mulitvser_init();
   // Get the status of calibration mode & device type.
   eng_parse_cmdline(&cmdparam);
+
+  if (1 == cmdparam.califlag || 1 == cmdparam.normal_cali){
+    if (!strcmp(run_type, "ag") || !strcmp(run_type, "wcn")){
+        return 0;
+    }
+  }
+
   // Correct diag path and run type by cmdline.
   if (1 == cmdparam.califlag) {
     strcpy(run_type, cmdparam.cp_type);

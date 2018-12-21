@@ -1511,13 +1511,13 @@ int eng_linuxcmd_audiologctl(char *req, char *rsp) {
   int ret = -1;
   int len = 0;
 
-  property_get("ro.vendor.modem.ag.log", ag_log_chan, "");
+  property_get(PROP_AGDSP_LOG, ag_log_chan, "");
   if (!ag_log_chan[0]) {
     ENG_LOG("%s fail to get agdsp log device file.", __FUNCTION__);
     goto out;
   }
 
-  property_get("ro.vendor.modem.ag.pcm", ag_pcm_chan, "");
+  property_get(PROP_AGDSP_PCM, ag_pcm_chan, "");
   if (!ag_pcm_chan[0]) {
     ENG_LOG("%s fail to get agdsp pcm device file.", __FUNCTION__);
     goto out;

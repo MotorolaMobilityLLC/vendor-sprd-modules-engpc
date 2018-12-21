@@ -687,13 +687,13 @@ int main(int argc, char** argv) {
         eng_file_unlock(fd);
       }
     }
-/*
+
     if (0 == cmdparam.califlag) {
         if (0 != eng_thread_create(&t5, eng_timesync_thread, NULL)) {
           ENG_LOG("time sync thread start error");
         }
     }
-*/
+
   }
 
 #ifdef DCXDATA_SUPPORT

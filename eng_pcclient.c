@@ -490,6 +490,29 @@ static void eng_check_whether_iqfeed(void) {
   }
 }
 
+#define PROP_USB_STATE "sys.usb.state"
+int wait_for_usbenm_succ(int timeout, char *state)
+{
+    int try_cnt = timeout;
+    char prop[PROPERTY_VALUE_MAX] = {0};
+
+    if (state == NULL || timeout <= 0) return -1;
+
+    ENG_LOG("%s: timeout = %d, state = %s", __FUNCTION__, timeout, state);
+    do {
+        property_get(PROP_USB_STATE, prop, "not_find");
+        ENG_LOG("%s %s=%s ", __FUNCTION__, PROP_USB_STATE, prop);
+
+        if (!strcmp(prop, state)){
+            ENG_LOG("%s: succ", __FUNCTION__);
+            return 0;
+        }
+        usleep(1000 * 1000);
+    } while (try_cnt-- > 0);
+
+    return -1;
+}
+
 #define PROP_MULITVSER_ENABLE "persist.vendor.cali.mulitvser.enable"
 static int s_mulitvser_enable = 0;
 void cali_mulitvser_init(void) {
@@ -720,6 +743,8 @@ int main(int argc, char** argv) {
 
             ENG_LOG("setprop: %s = 1", PROP_USB_CONFIG);
             property_set(PROP_USB_CONFIG, "1");
+
+            wait_for_usbenm_succ(60, "vser");
           }
 
           // Check factory mode and switch device mode.

@@ -15,6 +15,7 @@
 
 #define BATTERY_CAPACITY_PATH "/sys/class/power_supply/battery/capacity"
 #define CHARGER_STOP_PATH "/sys/class/power_supply/battery/stop_charge"
+#define CHARGER_STOP_KERNEL414_PATH "/sys/class/power_supply/battery/charger.0/stop_charge"
 #define BATTERY_VOL_PATH "/sys/class/power_supply/battery/real_time_voltage"
 #define FGU_VOL_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_vol"
 #define BATTERY_FUEL_VOL "/sys/class/power_supply/battery/voltage_now"
@@ -54,7 +55,8 @@ typedef struct {
 } TOOLS_DIAG_AP_FGU_VOLTAGE;
 
 typedef struct {
-	unsigned int cmd;
+	unsigned short stu;
+	unsigned short cmd;
 	unsigned int reserved;
 } TOOLS_DIAG_AP_FGU_RESERVED;
 
@@ -82,8 +84,17 @@ static int connect_vbus_charger(void)
 		close(fd);
 		sleep(1);
 	} else {
-		ENG_LOG("%s open %s failed! \n", __func__, CHARGER_STOP_PATH);
-		return 0;
+		fd = open(CHARGER_STOP_KERNEL414_PATH, O_WRONLY);
+		if (fd >= 0) {
+			ret = write(fd, "0", 2);
+			if (ret < 0) {
+				ENG_LOG("%s write %s failed! \n", __func__, CHARGER_STOP_KERNEL414_PATH);
+				close(fd);
+				return 0;
+			}
+			close(fd);
+			sleep(1);
+		}
 	}
 
 	return 1;
@@ -105,10 +116,19 @@ static int disconnect_vbus_charger(void)
 		close(fd);
 		sleep(1);
 	} else {
-		ENG_LOG("%s open %s failed! \n", __func__, CHARGER_STOP_PATH);
-		return 0;
+		fd = open(CHARGER_STOP_KERNEL414_PATH, O_WRONLY);
+		ENG_LOG("%s %d fd=%d\n", __func__, __LINE__, fd);
+		if (fd >= 0) {
+			ret = write(fd, "1", 2);
+			if (ret < 0) {
+				ENG_LOG("%s write %s failed! \n", __func__, CHARGER_STOP_KERNEL414_PATH);
+				close(fd);
+				return 0;
+			}
+			close(fd);
+			sleep(1);
+		}
 	}
-
 	return 1;
 }
 
@@ -134,6 +154,7 @@ static int get_aux_battery_voltage(void)
 			read_len = read(fd, buffer, sizeof(buffer));
 			if (read_len > 0) {
 				value = atoi(buffer);
+				value = value / 1000;
 			}
 			close(fd);
 		}
@@ -164,6 +185,7 @@ static int get_fgu_battery_voltage(void)
 			read_len = read(fd, buffer, sizeof(buffer));
 			if (read_len > 0) {
 				value = atoi(buffer);
+				value = value / 1000;
 			}
 			close(fd);
 		}
@@ -319,37 +341,20 @@ static int eng_diag_read_aux_voltage(char *buf, int len, char *rsp, int rsplen)
 
 static int eng_diag_read_fgu_voltage(char *buf, int len, char *rsp, int rsplen)
 {
-	int length;
-	char *rsp_ptr;
-	int ret = 0;
-
 	if (NULL == buf) {
 		ENG_LOG("%s,null pointer", __FUNCTION__);
 		return 0;
 	}
-	MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
-	length = sizeof(TOOLS_DIAG_AP_FGU_VOLTAGE) + sizeof(TOOLS_DIAG_AP_FGU_RESERVED) + sizeof(MSG_HEAD_T);
-	rsp_ptr = (char *)malloc(length);
-	if (NULL == rsp_ptr) {
-		ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
-		return 0;
-	}
 
-	memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
-	TOOLS_DIAG_AP_FGU_RESERVED *status =
-			(TOOLS_DIAG_AP_FGU_RESERVED *)(buf + 1 + sizeof(MSG_HEAD_T));
-	TOOLS_DIAG_AP_FGU_VOLTAGE *charge =
-			(TOOLS_DIAG_AP_FGU_VOLTAGE *)(buf + 1 + sizeof(TOOLS_DIAG_AP_FGU_RESERVED) + sizeof(MSG_HEAD_T));
-	charge->value = ap_get_fgu_voltage();
-	ENG_LOG("fgu charge->value=%d\n", charge->value);
-	msg_head_ptr->len = len;
 	memcpy(rsp, buf, 1 + len);
-	memcpy(rsp + 1 + sizeof(MSG_HEAD_T), status, sizeof(TOOLS_DIAG_AP_FGU_RESERVED));
-	memcpy(rsp + 1 + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_FGU_VOLTAGE), charge, sizeof(TOOLS_DIAG_AP_FGU_VOLTAGE));
-	rsp[msg_head_ptr->len + 2 - 1] = 0x7E;
-	free(rsp_ptr);
+	TOOLS_DIAG_AP_FGU_RESERVED *cmd =
+			(TOOLS_DIAG_AP_FGU_RESERVED *)(rsp + 1 + sizeof(MSG_HEAD_T));
+	TOOLS_DIAG_AP_FGU_VOLTAGE *charge =
+			(TOOLS_DIAG_AP_FGU_VOLTAGE *)(rsp + 1 + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_FGU_RESERVED));
+	charge->value = ap_get_fgu_voltage();
+	cmd->stu = 0x0;
 
-	return msg_head_ptr->len + 2 ;
+	return len ;
 }
 
 static int eng_diag_read_ntc_temperature(char *buf, int len, char *rsp, int rsplen)
@@ -493,6 +498,7 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
 	(reg + moudles_num)->type = 0x62;
 	(reg + moudles_num)->subtype = 0x00;
+	(reg + moudles_num)->diag_ap_cmd = 0x01;
 	(reg + moudles_num)->eng_diag_func = eng_diag_read_fgu_voltage;
 	moudles_num++;
 

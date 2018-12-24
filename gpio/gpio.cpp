@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include "eng_diag.h"
 #include "eng_modules.h"
 #include "engopt.h"
@@ -133,6 +134,7 @@ int Getgpio_value(int gpio_num, char *value)
 //----------------------------------------------------------------------------
 void  cam_sd_tcard_addvoltage(void)
 {
+#ifdef KERNEL_OLD
 	system("echo 1 > /sys/kernel/debug/sprd-regulator/vddcamio/enable");
 	usleep(50);
 	system("echo 1 > /sys/kernel/debug/sprd-regulator/vddsdcore/enable");
@@ -145,6 +147,60 @@ void  cam_sd_tcard_addvoltage(void)
 	usleep(50);
 	system("echo 1 > /sys/kernel/debug/sprd-regulator/vddsim1/enable");
 	usleep(50);
+#endif
+}
+
+static int get_ap_gpio_base(void)
+{
+	int fd, ret;
+	DIR *dir;
+	struct dirent *de;
+	char filename[256] = {0};
+	char buf[128] = {0};
+
+	dir = opendir("/sys/class/gpio");
+	if (!dir) {
+		ENG_LOG("open /sys/class/gpio failed, errno=%d(%s)\n", errno, strerror(errno));
+		return -1;
+	}
+
+	while ((de = readdir(dir))) {
+		if (strncmp(de->d_name, "gpiochip", strlen("gpiochip")))
+			continue;
+		memset(filename, 0, sizeof(filename));
+		sprintf(filename, "/sys/class/gpio/%s/%s", de->d_name, "ngpio");
+		fd = open(filename, O_RDONLY);
+		if (fd < 0) {
+			ENG_LOG("open %s failed, errno=%d(%s)\n", filename, errno, strerror(errno));
+			continue;
+		}
+		memset(buf, 0, sizeof(buf));
+		read(fd, buf, sizeof(buf) - 1);
+		close(fd);
+		fd = -1;
+		ret = atoi(buf);
+		if (ret == 256) {
+			memset(filename, 0, sizeof(filename));
+			sprintf(filename, "/sys/class/gpio/%s/%s", de->d_name, "base");
+			fd = open(filename, O_RDONLY);
+			if (fd < 0) {
+				ENG_LOG("open %s failed, errno=%d(%s)\n", filename, errno, strerror(errno));
+				continue;
+			}
+			memset(buf, 0, sizeof(buf));
+			read(fd, buf, sizeof(buf) - 1);
+			close(fd);
+			fd = -1;
+			ret = atoi(buf);
+			closedir(dir);
+			dir = NULL;
+			return ret;
+		}
+	}
+
+	closedir(dir);
+	dir = NULL;
+	return -1;
 }
 
 /*
@@ -163,7 +219,7 @@ int testGpio(char *buf, int len, char *rsp, int rsplen)
 	ret =0,表示测试OK，无需返回数据。
 	ret >0,表示测试OK，获取ret个数据，此时，ret的大小表示data中保存的数据的个数。
 	***********************************************************************/
-	int i;
+	int i, base;
 	char cmd[255] = {0};
 	char export_cmd[255] = {0};
 	char pin_addr[15] = {0};
@@ -196,6 +252,7 @@ int testGpio(char *buf, int len, char *rsp, int rsplen)
 	ENG_LOG("testGpio  value  pin_addr = %s!!!gpio_num= %d, maxnum=%d\n",
 			pin_addr,gpio_num, maxnum);
 
+#ifdef KERNEL_OLD
 	if(0 == access(DEV_PIN_CONFIG_PATH1, F_OK)) {
 		sprintf(cmd, "echo %s > %s", pin_addr,DEV_PIN_CONFIG_PATH1);
 	} else if(0 == access(DEV_PIN_CONFIG_PATH2, F_OK)) {
@@ -218,15 +275,34 @@ int testGpio(char *buf, int len, char *rsp, int rsplen)
 	sprintf(export_cmd, "echo %d > /sys/class/gpio/export", gpio_num);
 	//modify the gpio function set export function
 	system(export_cmd);
+#else
+	base = get_ap_gpio_base();
+	if (base < 0) {
+		ret = -1;
+		goto exit;
+	}
+	sprintf(cmd, "insmod /vendor/lib/modules/gpio_test.ko");
+	system(cmd);
+	sprintf(export_cmd, "echo %d > /sys/class/gpio_test/export", base + gpio_num);
+	system(export_cmd);
+#endif
 	usleep(200);
 
 	switch(dir)
 	{
 		case 1:
+#ifdef KERNEL_OLD
 		   ret = Setgpio_value(gpio_num, value);
+#else
+		   ret = Setgpio_value(base + gpio_num, value);
+#endif
 		   break;
 		case 0:
+#ifdef KERNEL_OLD
 		   ret = Getgpio_value(gpio_num, &value);
+#else
+		   ret = Getgpio_value(base + gpio_num, &value);
+#endif
 		  break;
 		default:
 		    break;

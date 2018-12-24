@@ -1244,7 +1244,7 @@ int eng_diag_dymic_hdlr(unsigned char *buf, int len, char *rsp, int rsp_len) {
         if (NULL != modules_list->callback.eng_set_writeinterface_func) {
           modules_list->callback.eng_set_writeinterface_func(write_interface);
         }
-        rlen = modules_list->callback.eng_diag_func(buf, len, rsp, rsp_len/2);
+        rlen = modules_list->callback.eng_diag_func(buf, len, rsp, rsp_len);
         if (rlen == ENG_DIAG_RET_UNSUPPORT){
             ENG_LOG("%s eng_diag_func return %d, continue find next callback func", __FUNCTION__, ENG_DIAG_RET_UNSUPPORT);
             continue;

@@ -744,7 +744,7 @@ int main(int argc, char** argv) {
             ENG_LOG("setprop: %s = 1", PROP_USB_CONFIG);
             property_set(PROP_USB_CONFIG, "1");
 
-            wait_for_usbenm_succ(60, "vser");
+            //wait_for_usbenm_succ(60, "vser");
           }
 
           // Check factory mode and switch device mode.

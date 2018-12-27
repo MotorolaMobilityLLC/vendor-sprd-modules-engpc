@@ -490,8 +490,8 @@ static void eng_check_whether_iqfeed(void) {
   }
 }
 
-#define PROP_USB_STATE "sys.usb.state"
-int wait_for_usbenm_succ(int timeout, char *state)
+#define PROP_USB_STATE "vendor.sys.usb.state"
+int wait_for_usbenum_succ(int timeout, char *state)
 {
     int try_cnt = timeout;
     char prop[PROPERTY_VALUE_MAX] = {0};
@@ -744,7 +744,7 @@ int main(int argc, char** argv) {
             ENG_LOG("setprop: %s = 1", PROP_USB_CONFIG);
             property_set(PROP_USB_CONFIG, "1");
 
-            //wait_for_usbenm_succ(60, "vser");
+            wait_for_usbenum_succ(60, "vser");
           }
 
           // Check factory mode and switch device mode.

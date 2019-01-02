@@ -20,6 +20,8 @@
 #define FGU_VOL_FILE_PATH "/sys/class/power_supply/sprdfgu/fgu_vol"
 #define BATTERY_FUEL_VOL "/sys/class/power_supply/battery/voltage_now"
 #define BATTERY_TEMP "/sys/class/power_supply/battery/temp"
+#define FGU_CURRENT_PATH "/sys/class/power_supply/battery/current_now"
+
 #define ENG_DIAG_NTC_CMD        0x0a
 
 typedef struct {
@@ -67,6 +69,13 @@ typedef struct {
 typedef struct {
 	int temperature;
 } TOOLS_DIAG_AP_NTC_TEMPERATURE;
+
+typedef struct {
+	unsigned short status;
+	unsigned short length;
+	unsigned int reserved;
+	unsigned int current;
+} TOOLS_DIAG_AP_CHG_CURRENT;
 
 static int connect_vbus_charger(void)
 {
@@ -256,6 +265,42 @@ static int ap_read_ntc_temperature(void)
 	return temp;
 }
 
+static int get_charge_current(void)
+{
+	int fd = -1;
+	int read_len = 0;
+	char buffer[64] = {0};
+	int value = 0;
+
+	fd = open(FGU_CURRENT_PATH, O_RDONLY);
+	ENG_LOG("get_charge_current fd=%d\n", fd);
+
+	if (fd >= 0) {
+		read_len = read(fd, buffer, sizeof(buffer));
+		if (read_len > 0) {
+			value = atoi(buffer) / 1000;
+			ENG_LOG("get_charge_current value=%d\n", value);
+		}
+	}
+	close(fd);
+
+	return value;
+}
+
+static int ap_get_charge_current(void)
+{
+	int temp = 0;
+	int i;
+
+	for (i = 0; i < 16; i++) {
+		temp += get_charge_current();
+	}
+	temp >>= 4;
+
+	ENG_LOG("ap_get_charge_current temp=%d\n", temp);
+	return temp;
+}
+
 static int eng_diag_control_charge(char *buf, int len, char *rsp, int rsplen)
 {
 	int ret = 0;
@@ -355,6 +400,34 @@ static int eng_diag_read_fgu_voltage(char *buf, int len, char *rsp, int rsplen)
 	cmd->stu = 0x0;
 
 	return len ;
+}
+
+/*
+ * send: 0x7e 0x04 00 00 00 0c 00 62 00 11 00 00 00 7e
+ * ack:  0x7e 0x04 00 00 00 0c 00 62 00 00 00 08 00 00 00 00 00 5d ff ff ff 7e
+ */
+static int eng_diag_read_charge_current(char *buf, int len, char *rsp, int rsplen)
+{
+	if (NULL == buf) {
+		ENG_LOG("%s,null pointer", __FUNCTION__);
+		return 0;
+	}
+
+	MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
+	memcpy(rsp, buf, 1 + len);
+
+	TOOLS_DIAG_AP_CHG_CURRENT *charge =
+		(TOOLS_DIAG_AP_CHG_CURRENT *)(rsp + 1 + sizeof(MSG_HEAD_T));
+	charge->status = 0x00;
+	/* the length is charge->reserved + charge->current.*/
+	charge->length = 0x08;
+	charge->reserved = 0x00;
+	charge->current = ap_get_charge_current();
+	msg_head_ptr->len = len + sizeof(unsigned int) + sizeof(unsigned int) - 2;
+	rsp[5] = msg_head_ptr->len;
+	rsp[msg_head_ptr->len + 2 - 1] = 0x7E;
+
+	return msg_head_ptr->len + 2;
 }
 
 static int eng_diag_read_ntc_temperature(char *buf, int len, char *rsp, int rsplen)
@@ -506,6 +579,12 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 	(reg + moudles_num)->subtype = 0x0c;
 	(reg + moudles_num)->diag_ap_cmd = 0x0a;
 	(reg + moudles_num)->eng_diag_func = eng_diag_read_ntc_temperature;
+	moudles_num++;
+
+	(reg + moudles_num)->type = 0x62;
+	(reg + moudles_num)->subtype = 0x00;
+	(reg + moudles_num)->diag_ap_cmd = 0x11;
+	(reg + moudles_num)->eng_diag_func = eng_diag_read_charge_current;
 	moudles_num++;
 
 	*num = moudles_num;

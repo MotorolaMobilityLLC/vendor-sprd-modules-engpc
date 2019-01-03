@@ -176,7 +176,7 @@ int readframe(int fd, char* data, int size)
                 break;
             }
         }else{
-            ENG_LOG("%s: read error", __FUNCTION__);
+            ENG_LOG("%s: read error: r_cnt = %d, err = %s", __FUNCTION__, r_cnt, strerror(errno));
             break;
         }
     }
@@ -236,6 +236,8 @@ void *eng_vdiag_wthread(void *x) {
   init_user_diag_buf();
 
   while (1) {
+    ser_fd = get_ser_diag_fd();
+    ENG_LOG("%s: ser_fd = %d", __FUNCTION__, ser_fd);
     r_cnt = readframe(ser_fd, log_data, sizeof(log_data));
 /*
     r_cnt = read(ser_fd, log_data, DATA_BUF_SIZE / 2);
@@ -250,7 +252,7 @@ void *eng_vdiag_wthread(void *x) {
 
       wait_cnt = 0;  // reset wait count
       do {
-        ser_fd = eng_open_dev(dev_info->host_int.dev_diag, O_RDONLY);
+        ser_fd = eng_open_dev(dev_info->host_int.dev_diag, O_RDWR);
         if (ser_fd < 0) {
           ENG_LOG("eng_vdiag cannot open vendor serial: %s, error: %s\n",
                   dev_info->host_int.dev_diag, strerror(errno));
@@ -269,6 +271,8 @@ void *eng_vdiag_wthread(void *x) {
         }
       } while (ser_fd < 0);
 
+      ENG_LOG("%s: update_ser_diag_fd====ser_fd = %d", __FUNCTION__, ser_fd);
+      update_ser_diag_fd(ser_fd);
       continue;  // nothing has been read
     }
 

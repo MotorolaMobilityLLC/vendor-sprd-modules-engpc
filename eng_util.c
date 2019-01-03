@@ -69,6 +69,7 @@ int write_to_host_diag(char* nmea, int length) {
   ENG_LOG("%s: length=%d \n", __FUNCTION__, length);
 
   ser_fd = get_ser_diag_fd();
+  ENG_LOG("%s: ser_fd = %d", __FUNCTION__, ser_fd);
 
   if (length >= 2) {
     diag_data = (char *)malloc(length * 2);
@@ -83,7 +84,7 @@ int write_to_host_diag(char* nmea, int length) {
     w_cnt = 0;
     do {
       w_cnt = write(ser_fd, diag_data + offset, r_cnt);
-      ENG_LOG("%s: w_cnt = %d\n r_cnt = %d offset = %d", __FUNCTION__, w_cnt, r_cnt, offset);
+      ENG_LOG("%s: w_cnt = %d, r_cnt = %d, offset = %d, err = %s", __FUNCTION__, w_cnt, r_cnt, offset, strerror(errno));
       if (w_cnt < 0) {
         if (errno == EBUSY) {
           usleep(59000);

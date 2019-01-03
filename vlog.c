@@ -118,7 +118,7 @@ int restart_gser(int* fd, char* dev_path) {
     close(*fd);
   }
 
-  *fd = eng_open_dev(dev_path, O_WRONLY);
+  *fd = eng_open_dev(dev_path, O_RDWR);
   if (*fd < 0) {
     ENG_LOG("%s: eng_vlog cannot open general serial, ERROR:%s\n", __FUNCTION__, strerror(errno));
     return -1;
@@ -603,6 +603,8 @@ void* eng_vdiag_rthread(void* x) {
     return NULL;
   }
 
+  ENG_LOG("eng_vdiag_r:  ser_fd = %d\n", ser_fd);
+
   if (s_dev_info->host_int.dev_type == CONNECT_UART) {
     set_raw_data_speed(ser_fd, 115200);
   }
@@ -919,6 +921,8 @@ int eng_diag_write2pc_ptr(char* diag_data, int r_cnt, int *fd_ptr) {
   int retry_num = 0;
   int i = 0;
 
+  ENG_LOG("eng_diag_write2pc_ptr: *fd_ptr = %d \n", *fd_ptr);
+
   if (((r_cnt % 64) == 0) &&
       (s_dev_info->host_int.cali_flag || g_autotest_flag) &&
       (s_dev_info->host_int.dev_type == CONNECT_USB))
@@ -932,8 +936,7 @@ int eng_diag_write2pc_ptr(char* diag_data, int r_cnt, int *fd_ptr) {
       if (errno == EBUSY) {
         usleep(59000);
       } else {
-        ENG_LOG("eng_vdiag_r no log data write:%d ,%s\n", w_cnt,
-                strerror(errno));
+        ENG_LOG("eng_vdiag_r no log data write:%d ,%s\n", w_cnt, strerror(errno));
 
         // FIX ME: retry to open
         retry_num = 0;  // reset the try number.
@@ -946,7 +949,9 @@ int eng_diag_write2pc_ptr(char* diag_data, int r_cnt, int *fd_ptr) {
             return 0;
           }
         }
-        s_ser_diag_fd = *fd_ptr;
+
+        ENG_LOG("eng_diag_write2pc_ptr:  restart_gser *fd_ptr = %d \n", *fd_ptr);
+        //s_ser_diag_fd = *fd_ptr;
       }
     } else {
       r_cnt -= w_cnt;

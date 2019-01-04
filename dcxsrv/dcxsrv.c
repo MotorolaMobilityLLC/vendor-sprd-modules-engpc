@@ -42,6 +42,7 @@ typedef unsigned char u8;
 #define SC2730_CDAC_REG	0X1b14
 #define SC2730_HP_AMP_26M	0x1b00
 #define SC2730_LP_AMP_26M	0x1b04
+#define SC2730_LP_Drift_32K	0x1b20
 
 typedef struct
 {
@@ -131,6 +132,7 @@ int set_dcxdata() {
     ana_write(SC2730_CDAC_REG, pmicCaliData.CDAC);
     ana_write(SC2730_HP_AMP_26M, pmicCaliData.HP_Mode_Amp_26M);
     ana_write(SC2730_LP_AMP_26M, pmicCaliData.LP_Mode_Amp_26M);
+    ana_write(SC2730_LP_Drift_32K, pmicCaliData.LP_Mode_Freq_Drift_32K);
 
 	//fprintf(stderr, "dcxsrv end...\n");
 	ENG_LOG("dcxsrv end........");

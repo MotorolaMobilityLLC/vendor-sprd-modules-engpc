@@ -21,6 +21,10 @@ else
 LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libefuse libbm libutils
 LOCAL_STATIC_LIBRARIES  := libbootloader_message libfs_mgr libbase
 
+ifeq ($(strip $(BOARD_AP_SIMLOCK_EFUSE_CONFIG)), true)
+LOCAL_CFLAGS += -DAP_SIMLOCK_EFUSE
+endif
+
 ifeq ($(strip $(BOARD_TEE_CONFIG)), watchdata)
 LOCAL_CFLAGS += -DTEE_PRODUCTION_CONFIG
 LOCAL_SHARED_LIBRARIES  += libteeproduction

@@ -652,7 +652,7 @@ void* eng_vdiag_rthread(void* x) {
     }
     property_get("vendor.sys.config.engcplog.enable", get_propvalue, "not_find");
 
-    #if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC)
+    #if (defined TEE_PRODUCTION_CONFIG) && (!defined CONFIG_MINIENGPC) && (defined AP_SIMLOCK_EFUSE)
     if (1 == s_dev_info->host_int.cali_flag) {
       // eng_simlock_efuse_req_check(diag_data, r_cnt, modem_fd);
       offset = 0;

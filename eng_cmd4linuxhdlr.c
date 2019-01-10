@@ -52,6 +52,8 @@
 #define DISABLE_GNSS_LOG_CMD  "DISABLE_LOG GNSS\n"
 #define ENABLE_5MODE_LOG_CMD  "ENABLE_LOG 5MODE\n"
 #define DISABLE_5MODE_LOG_CMD  "DISABLE_LOG 5MODE\n"
+#define ENABLE_AGDSP_LOG_CMD  "ENABLE_LOG AG-DSP\n"
+#define DISABLE_AGDSP_LOG_CMD  "DISABLE_LOG AG-DSP\n"
 
 //AGDSP LOG, PCM DUMP status
 static int g_agdsp_log_status = 0; // 0: Log Disabled, 1: To UART, 2: To AP
@@ -1742,6 +1744,9 @@ int cplogctrl_setlocation(char log_type, char location, int socket) {
             ENG_LOG("vdiag rthread start error");
           }          
           property_set(PROP_MODEM_LOG_DEST, "1");
+          if (notice_slogmodem(DISABLE_AGDSP_LOG_CMD) < 0) {
+            ENG_LOG("notify slogmodem to disable agdsp log fail!");
+          }
           if (socket == 1)
             diagOpen();
         }
@@ -1759,6 +1764,9 @@ int cplogctrl_setlocation(char log_type, char location, int socket) {
         } else {
           modemlog_to_pc = 0;
           property_set(PROP_MODEM_LOG_DEST, "2");
+          if (notice_slogmodem(ENABLE_AGDSP_LOG_CMD) < 0) {
+            ENG_LOG("notify slogmodem to enable agdsp log fail!");
+          }
         }
       } else {
         ENG_LOG("modem log already to t card!");
@@ -1774,6 +1782,9 @@ int cplogctrl_setlocation(char log_type, char location, int socket) {
         } else { // notice slogomodem success
           modemlog_to_pc = 0;
           property_set(PROP_MODEM_LOG_DEST, "0");
+          if (notice_slogmodem(DISABLE_AGDSP_LOG_CMD) < 0) {
+            ENG_LOG("notify slogmodem to disable agdsp log fail!");
+          }
         }
       } else {
         ENG_LOG("modem log already to no log!");

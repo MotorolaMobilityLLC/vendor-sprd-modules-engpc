@@ -10,7 +10,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_RELATIVE_PATH := npidevice
 
 LOCAL_C_INCLUDES:= \
-    $(TOP)/vendor/sprd/proprietories-source/engmode \
+    $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc \
     $(TOP)/vendor/sprd/modules/libatci
 
 LOCAL_SHARED_LIBRARIES := libcutils libutils liblog libhidlbase libhidltransport libhwbinder vendor.sprd.hardware.radio@1.0

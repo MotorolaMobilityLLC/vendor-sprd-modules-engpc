@@ -12,6 +12,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
@@ -24,10 +25,8 @@
 #include <sys/types.h>
 #include <utils/Log.h>
 #include <cutils/properties.h>
-#include "eng_diag.h"
-#include "eng_modules.h"
-#include <stdlib.h>
-//#include "eng_attok.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 #include "eng_attok_test.h"
 
 #define AT_GET_PROP_FLAG "at+getprop"

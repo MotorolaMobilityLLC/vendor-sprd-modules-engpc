@@ -9,7 +9,7 @@ LOCAL_MODULE := libnpipropsrv
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_C_INCLUDES:= \
-    $(TOP)/vendor/sprd/proprietories-source/engmode \
+    $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc \
 
 LOCAL_SHARED_LIBRARIES:= \
     libcutils \

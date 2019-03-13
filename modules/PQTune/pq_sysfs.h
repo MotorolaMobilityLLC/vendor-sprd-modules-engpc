@@ -1,7 +1,9 @@
 #ifndef __PQ_LOCAL_H__
 #define __PQ_LOCAL_H__
 
-#include "engopt.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
+
 
 #define HSV_EN         (1 << 2)
 #define CMS_EN         (1 << 3)

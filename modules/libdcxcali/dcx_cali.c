@@ -11,11 +11,11 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
-#include "eng_modules.h"
-#include "engopt.h"
-#include "eng_diag.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
+#include "sprd_fts_diag.h"
+
 #include "dcx_cali.h"
-#include "calibration.h"
 #include "sc2730_glb.h"
 
 typedef unsigned int u32;

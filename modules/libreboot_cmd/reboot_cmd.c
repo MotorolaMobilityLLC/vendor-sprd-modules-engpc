@@ -12,9 +12,8 @@
 #include <sys/reboot.h>
 #include <cutils/android_reboot.h>
 
-#include "eng_modules.h"
-#include "engopt.h"
-#include "eng_diag.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 
 //reboot to autodloader
 #define AT_AUTODLOADER "AT+SPREF=\"AUTODLOADER\""

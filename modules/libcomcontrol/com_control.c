@@ -9,10 +9,8 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
-#include "eng_diag.h"
-#include "eng_modules.h"
-#include "engopt.h"
-#include "vlog.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 
 // return : rsp true length
 int open_diag_port (char *req, char *rsp){

@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <utils/Log.h>
 #include "pq_xml.h"
-#include "engopt.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
+
 
 xmlNodePtr FindNode(xmlNodePtr curNode, const char *name)
 {

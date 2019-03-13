@@ -8,9 +8,8 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-
-#include "eng_modules.h"
-#include "engopt.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 
 #define SYS_CLASS_ANDUSB_STATE "/sys/class/android_usb/android0/state"
 

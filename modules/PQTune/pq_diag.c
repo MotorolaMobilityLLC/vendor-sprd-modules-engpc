@@ -11,9 +11,9 @@
 #include <ctype.h>
 #include <sys/reboot.h>
 #include <utils/Log.h>
-#include "eng_diag.h"
-#include "engopt.h"
-#include "eng_modules.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
+#include "sprd_fts_list.h"
 #include "pq_diag.h"
 #include "pq_sysfs.h"
 

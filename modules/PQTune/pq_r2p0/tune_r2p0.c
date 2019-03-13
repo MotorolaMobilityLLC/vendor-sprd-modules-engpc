@@ -12,8 +12,8 @@
 #include <sys/sysinfo.h>
 #include <ctype.h>
 #include <utils/Log.h>
-#include "vlog.h"
-#include "eng_diag.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 #include "tune_r2p0.h"
 
 struct ops_entry tune_r2p0_entry;

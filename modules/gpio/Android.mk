@@ -46,8 +46,7 @@ endif
 
 $(warning TOP:$(TOP) LOCAL_PATH:$(LOCAL_PATH) TARGET_BOARD_PLATFORM:$(TARGET_BOARD_PLATFORM)  platform:$(PLATFORM))
 LOCAL_C_INCLUDES:= \
-    $(TOP)/vendor/sprd/proprietories-source/engmode \
-    $(TOP)/vendor/sprd/proprietories-source/engmode/gpio \
+    $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc \
     $(LOCAL_PATH)/$(PLATFORM) \
     $(TARGET_OUT_INTERMEDIATES)/KERNEL/source/include/uapi
 

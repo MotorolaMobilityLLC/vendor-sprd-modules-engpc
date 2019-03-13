@@ -10,12 +10,10 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include "eng_diag.h"
-#include "eng_modules.h"
-#include "engopt.h"
-#include "vlog.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 #include "pinconfig.h"
-#include "autotest.h"
+
 #include <cutils/properties.h>
 #include <linux/version.h>
 

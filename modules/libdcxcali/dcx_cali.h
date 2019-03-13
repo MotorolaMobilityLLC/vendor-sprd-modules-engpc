@@ -4,36 +4,6 @@
 typedef unsigned short uint16;
 typedef unsigned int uint32;
 
-/*
-Type = 98;
-subtype = 0;
-
-typedef enum
-{
-    ¡­
-    DIAG_AP_CMD_SET_PMIC_AFC_CDAC   = 0x0025,
-    DIAG_AP_CMD_PMIC_AFC_AMP_CALI   = 0x0026
-    DIAG_AP_CMD_LOAD_PMIC_AFC_DATA  = 0x0027,
-    DIAG_AP_CMD_SAVE_PMIC_AFC_DATA  = 0x0028,
-    DIAG_AP_CMD_SET_PMIC_AFC_MODE	  = 0x0029,
-} DIAG_AP_CMD_E;
-
-typedef struct 
-{
-    uint16  cmd;        // DIAG_AP_CMD_E
-    uint16  length;     // Length of request data
-} TOOLS_DIAG_AP_REQ_T;
-
-typedef struct 
-{
-    uint16 status;      //status of cmd 0:succ, != 0: fail
-    uint16 length;      //length of confirm data
-} TOOLS_DIAG_AP_CNF_T;
-
-Req: TOOLS_DIAG_AP_REQ_T + data
-Conf: TOOLS_DIAG_AP_CNF_T + data
-*/
-
 
 //cmd = DIAG_AP_CMD_SET_PMIC_AFC_MODE;
 //Req£ºTOOLS_DIAG_AP_REQ_T + DIAG_AP_PMIC_AFC_MODE

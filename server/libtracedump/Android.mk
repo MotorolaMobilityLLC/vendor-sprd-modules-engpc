@@ -9,8 +9,8 @@ LOCAL_MODULE := libtracedump
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_C_INCLUDES:= \
-	$(TOP)/vendor/sprd/proprietories-source/engmode \
-	$(TOP)/vendor/sprd/proprietories-source/engmode/libtracedump
+	$(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc \
+	$(TOP)/vendor/sprd/proprietories-source/engpc/server \
 
 LOCAL_SHARED_LIBRARIES:= liblog libc libcutils
 

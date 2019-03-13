@@ -8,10 +8,8 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include "eng_diag.h"
-#include "eng_modules.h"
-#include "engopt.h"
-#include "vlog.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 
 #define BATTERY_CAPACITY_PATH "/sys/class/power_supply/battery/capacity"
 #define CHARGER_STOP_PATH "/sys/class/power_supply/battery/stop_charge"
@@ -37,11 +35,6 @@ typedef struct {
 	int capacity;
 	int reserved;
 } TOOLS_DIAG_AP_CAPACITY;
-
-typedef struct {
-	unsigned short cmd;
-	unsigned short length;
-} TOOLS_DIAG_AP_CMD_T;
 
 typedef struct {
 	unsigned char status;

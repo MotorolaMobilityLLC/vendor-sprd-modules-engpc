@@ -26,7 +26,8 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <time.h>
-#include "engopt.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 #include "minui.h"
 #include "graphics.h"
 

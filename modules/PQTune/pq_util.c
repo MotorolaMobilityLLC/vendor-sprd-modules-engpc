@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pq_util.h"
-#include "engopt.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
+
 
 void HexStrstoInt(char *buf, int size)
 {

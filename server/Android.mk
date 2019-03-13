@@ -39,7 +39,7 @@ LOCAL_C_INCLUDES    += hardware/libhardware/include \
                        $(TOP)/vendor/sprd/proprietories-source/engmode/libtracedump \
                        bootable/recovery \
                        bootable/recovery/include \
-                       $(TOP)/vendor/sprd/proprietories-source/engmode \
+                       $(TOP)/vendor/sprd/proprietories-source/engpc \
 
 ifneq ($(CONFIG_MINIENGPC), true)
 LOCAL_C_INCLUDES    +=  vendor/sprd/modules/audio/voiceband/effect/include \

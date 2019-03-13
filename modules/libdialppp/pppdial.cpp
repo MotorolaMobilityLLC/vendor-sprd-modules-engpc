@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include<string.h>
 
-#include "eng_modules.h"
+#include "sprd_fts_type.h"
+
 extern "C" {
 #include "atci.h"
 }

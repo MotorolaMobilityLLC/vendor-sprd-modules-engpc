@@ -11,8 +11,7 @@ LOCAL_MODULE_RELATIVE_PATH := npidevice
 LOCAL_PROPRIETARY_MODULE := true
 
 LOCAL_C_INCLUDES:= \
-	$(TOP)/vendor/sprd/proprietories-source/engmode \
-	$(TOP)/vendor/sprd/proprietories-source/engmode/libcomcontrol
+	$(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc \
 
 LOCAL_SHARED_LIBRARIES:= liblog libc libcutils
 

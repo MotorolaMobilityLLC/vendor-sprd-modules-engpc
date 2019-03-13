@@ -11,9 +11,8 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
-#include "eng_modules.h"
-#include "engopt.h"
-#include "eng_diag.h"
+#include "sprd_fts_type.h"
+#include "sprd_fts_log.h"
 #include "tsx_rawdata.h"
 
 #define ENG_RAWDATA_FILE "/mnt/vendor/productinfo/wcn/tsx_bt_data.txt"

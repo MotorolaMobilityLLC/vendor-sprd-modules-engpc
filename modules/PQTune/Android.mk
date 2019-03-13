@@ -8,7 +8,7 @@ LOCAL_PROPRIETARY_MODULE := true
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)
 LOCAL_C_INCLUDES += external/libxml2/include \
-                    $(TOP)/vendor/sprd/proprietories-source/engmode
+                    $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc
 
 LOCAL_SRC_FILES := pq_diag.c \
 				   pq_util.c \

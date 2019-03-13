@@ -1,0 +1,89 @@
+service vendor.engpcclientlte /vendor/bin/engpc -p l -a /dev/ttyGS5 -d /dev/ttyGS6 -l /dev/ttyGS7
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
+    disabled
+    oneshot
+
+service vendor.engpcclientlte_lite /vendor/bin/engpc -p l -a /dev/ttyGS1
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
+    oneshot
+
+service vendor.engpcclientwcn /vendor/bin/engpc -p wcn -a /dev/ttyGS2 -d /dev/ttyGS3
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
+    disabled
+    oneshot
+
+service vendor.engpcclientwcn_lite /vendor/bin/engpc -p wcn -a /dev/ttyGS2
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
+    disabled
+    oneshot
+
+service vendor.engpcclientag /vendor/bin/engpc -p ag -l /dev/ttyGS4
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
+    disabled
+    oneshot
+
+service vendor.engpcclientpppd /vendor/bin/engpc -p pppd -a /dev/ttyGS0
+    class core
+    user root
+    group system radio shell net_bt_admin input audio wifi media camera
+    oneshot
+
+on property:persist.vendor.wcn.log_dest=0 && property:persist.vendor.sys.modem.diag=,gser
+   stop vendor.engpcclientwcn_lite
+   stop vendor.engpcclientwcn
+
+on property:persist.vendor.wcn.log_dest=1 && property:persist.vendor.sys.modem.diag=,gser
+   start vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
+
+on property:persist.vendor.wcn.log_dest=2 && property:persist.vendor.sys.modem.diag=,gser
+   stop vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
+
+on property:persist.vendor.wcn.log_dest=0 && property:persist.vendor.sys.modem.diag=none
+   stop vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
+
+on property:persist.vendor.wcn.log_dest=1 && property:persist.vendor.sys.modem.diag=none
+   start vendor.engpcclientwcn_lite
+   stop vendor.engpcclientwcn
+
+on property:persist.vendor.wcn.log_dest=2 && property:persist.vendor.sys.modem.diag=none
+   stop vendor.engpcclientwcn
+   stop vendor.engpcclientwcn_lite
+
+on property:persist.vendor.sys.modem.diag=,gser
+   stop vendor.engpcclientlte_lite
+   start vendor.engpcclientlte
+
+on property:persist.vendor.sys.modem.diag=none
+   stop vendor.engpcclientlte
+   start vendor.engpcclientlte_lite
+
+on property:persist.vendor.modem.log_dest=0
+    stop vendor.engpcclientag
+
+on property:persist.vendor.modem.log_dest=1
+    start vendor.engpcclientag
+
+on property:persist.vendor.modem.log_dest=2
+    stop vendor.engpcclientag
+
+on property:vendor.flag.engpc.pppd.enable=0 && property:ro.vendor.engpc.pppd.support=1
+    stop vendor.engpcclientpppd
+
+on property:vendor.flag.engpc.pppd.enable=1 && property:ro.vendor.engpc.pppd.support=1
+    start vendor.engpcclientpppd
+
+on property:ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
+   setprop sys.usb.config vser

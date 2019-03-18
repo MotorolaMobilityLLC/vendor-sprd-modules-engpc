@@ -1,5 +1,4 @@
-#
-# Copyright (C) 2009 The Android Open Source Project
+# Copyright (C) 2012 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +11,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-common_engpc_modules_dirs := charge fm gpio libapdeepsleep libcomcontrol libdcxcali libnpipropsrv libreboot_cmd libtsxdata PQTune libFactoryRadioTest
-include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))
+
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+
+LOCAL_CFLAGS := -D_POSIX_SOURCE -Wno-multichar -g
+
+LOCAL_SRC_FILES := factorytest_radio.c \
+                   at_tok.c
+
+LOCAL_SHARED_LIBRARIES := libutils libc liblog libcutils
+
+LOCAL_MODULE := libFactoryRadioTest
+
+LOCAL_MODULE_TAGS := optional
+
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_MODULE_RELATIVE_PATH := npidevice
+
+LOCAL_C_INCLUDES += \
+    $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc
+
+include $(BUILD_SHARED_LIBRARY)

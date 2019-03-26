@@ -12,7 +12,7 @@ LOCAL_CFLAGS += -DSECURE_BOOT_ENABLE
 endif
 
 LOCAL_SHARED_LIBRARIES  := libcutils libsqlite libhardware libhardware_legacy libatci libutils
-LOCAL_STATIC_LIBRARIES  := libbootloader_message libfs_mgr libbase
+LOCAL_STATIC_LIBRARIES  := libbootloader_message libfstab libbase
 
 ifeq ($(strip $(BOARD_AP_SIMLOCK_EFUSE_CONFIG)), true)
 LOCAL_CFLAGS += -DAP_SIMLOCK_EFUSE

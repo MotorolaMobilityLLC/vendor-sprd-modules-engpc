@@ -1,6 +1,7 @@
 #ifndef __SPRD_FTS_TYPE_H__
 #define __SPRD_FTS_TYPE_H__
 
+#include <linux/ioctl.h>
 #include <linux/types.h>
 #include "sprd_fts_diag.h"
 

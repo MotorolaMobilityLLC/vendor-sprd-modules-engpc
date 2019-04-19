@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 
 #include "CPort.h"
+#include "frame.h"
 
 #define Info(fmt, args...) {\
         if (m_port.dataType != DATA_LOG) { \
@@ -57,8 +58,8 @@ void CPort::init(char* devname, char* name, PORT_TYPE porttype, char* path, DATA
 
     m_nClient = 0;;
     m_bEnableRD = true;
-    m_bEnableWR = true;
     ZEROMEM(m_buff_RD);
+    m_bEnableWR = true;
     ZEROMEM(m_buff_WR);
     m_fd = -1;
     m_mtx_rd = PTHREAD_MUTEX_INITIALIZER;
@@ -78,12 +79,30 @@ const char* CPort::TAG(){
     return m_tag;
 }
 
+bool CPort::enable(bool bEnableRD, bool bEnableWR){
+    info("enable: RD = %d, WR = %d", bEnableRD, bEnableWR);
+
+    m_bEnableRD = bEnableRD;
+    m_bEnableWR = bEnableWR;
+
+    return true;
+}
+
+void CPort::getEnable(bool& bEnableRD, bool& bEnableWR){
+    info("getEnable: RD = %d, WR = %d", m_bEnableRD, m_bEnableWR);
+
+    bEnableRD = m_bEnableRD;
+    bEnableWR = m_bEnableWR;
+}
+
 int CPort::read(char *buff, int nLen){
     int ret = 0;
     if (m_bEnableRD){
         pthread_mutex_lock(&m_mtx_rd);
         ret = internal_read(buff, nLen);
         pthread_mutex_unlock(&m_mtx_rd);
+    }else{
+        info("enable is false");
     }
 
     return ret;
@@ -91,10 +110,12 @@ int CPort::read(char *buff, int nLen){
 
 int CPort::write(char *buff, int nLen){
     int ret = 0;
-    if (m_bEnableWR){
+    if(m_bEnableWR){
         pthread_mutex_lock(&m_mtx_wr);
         ret = internal_write(buff, nLen);
         pthread_mutex_unlock(&m_mtx_wr);
+    }else{
+        info("enable is false");
     }
 
     return ret;
@@ -115,12 +136,12 @@ int CPort::open(){
     }
 
     if(m_port.portType == PORT_LOOP){
-        error(" portType is PORT_LOOP");
+        info(" portType is PORT_LOOP");
         return 0;
     }
 
     if(m_port.portType == PORT_INTERFACE){
-        error(" portType is PORT_INTERFACE");
+        info(" portType is PORT_INTERFACE");
         return 0;
     }
 
@@ -137,8 +158,14 @@ int CPort::open(){
     if(m_port.portType == PORT_SOCK){
         
     }else {
+        int second = MAX_PORT_OPEN_TIMEOUT;
         info("open: %s", m_port.portPath);
-        m_fd = ::open(m_port.portPath, O_RDWR);
+        do {
+            m_fd = ::open(m_port.portPath, O_RDWR);
+            if (m_fd >= 0){
+                break;
+            }
+        }while(second-->0);
         if (m_fd < 0){
             error("open %s fail,  error = %s", m_port.portPath, strerror(errno));
             return -1;
@@ -200,6 +227,9 @@ int CPort::reopen(int second){
     return second>0?0:-1;
 }
 
+void CPort::notify(){
+}
+
 int CPort::internal_read(char* buff, int nLen){
     int rdSize = -1;
     int r_cnt = 0;
@@ -226,6 +256,7 @@ int CPort::internal_read(char* buff, int nLen){
     //to do
     do{
         int ret = 0;
+        int max_fd =0;
         memset(buff, 0, nLen);
         FD_ZERO(&readfd);
         FD_SET(m_fd,&readfd);
@@ -244,6 +275,7 @@ int CPort::internal_read(char* buff, int nLen){
                 Info("read...");
                 r_cnt = ::read(m_fd, buff+offset, rdSize);
                 Info("===> recv size = %d", r_cnt);
+                printData(buff, r_cnt, 20, 1);
 
                 if (r_cnt <= 0){
                     error("read fail: %s", strerror(errno));
@@ -263,7 +295,8 @@ int CPort::internal_read(char* buff, int nLen){
                 offset += r_cnt;
 
                 // complete frame
-                if (m_lpTrans->checkframe(buff, offset) == 0){
+                FRAME_TYPE type = m_lpTrans->checkframe(buff, offset);
+                if (type == FRAME_COMPLETE || type == FRAME_INVALID){
                     break;
                 }else{
                     warn("non't complete frame");
@@ -283,8 +316,6 @@ int CPort::internal_read(char* buff, int nLen){
             }
         }
     }while(1);
-
-    printData(buff, offset, 20, 1);
 
     return offset;
 }
@@ -311,6 +342,7 @@ int CPort::internal_write(char* buff, int nLen){
 
     do {
         int ret = 0;
+        int max_fd = 0;
         FD_ZERO(&writefd);
         FD_SET(m_fd,&writefd);
 
@@ -325,13 +357,15 @@ int CPort::internal_write(char* buff, int nLen){
             error("select time out");
         }else{
             if(FD_ISSET(m_fd,&writefd)){// read
-                Info("write nLen = %d", nLen);
+
+                Info("<=== send size = %d", nLen);
+                printData(buff, nLen, 20, 1);
                 if (bsplite)
                     w_cnt = ::write(m_fd, buff+offset, nLen - 32);
                 else
                     w_cnt = ::write(m_fd, buff+offset, nLen);
+                Info("write w_cnt = %d", w_cnt);
         
-                Info("<=== send size = %d", w_cnt);
                 if (w_cnt < 0) {
                     error("write fail: %s", strerror(errno));
                     if (errno == EBUSY) {
@@ -353,8 +387,6 @@ int CPort::internal_write(char* buff, int nLen){
             }
         }
     }while(nLen > 0);
-
-    printData(buff, offset, 20, 1);
 
     return offset;
 }

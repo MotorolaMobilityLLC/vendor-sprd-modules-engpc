@@ -20,8 +20,3 @@ int CProtol::encode(char* buff, int nlen){
     //info("encode");
     return nlen;
 }
-
-int CProtol::checkframe(char* buff, int nlen){
-    //info("checkframe");
-    return 0;
-}

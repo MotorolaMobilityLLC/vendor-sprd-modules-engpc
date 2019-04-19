@@ -13,6 +13,12 @@
 
 #define DEF_BOOT_MODE "normal"
 
+#define DEV_HOST_NAME "pc"
+#define DEV_HOST_DIAG_NAME "COM_CP_DIAG"
+
+#define DEV_MODEM_NAME "cp"
+#define DEV_MODEM_DIAG_NAME "COM_DIAG"
+
 typedef enum {
     DATA_AT,
     DATA_LOG,

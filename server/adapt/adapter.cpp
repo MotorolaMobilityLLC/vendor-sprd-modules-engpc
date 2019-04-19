@@ -35,3 +35,11 @@ int is_data_dir_ready(){
     return OS_is_data_dir_ready();
 }
 
+void sys_getlogdest(char* log_type, char* location){
+    OS_sys_getlogdest(log_type, location);
+}
+
+void sys_setlogdest(char* log_type, char* location){
+    OS_sys_setlogdest(log_type, location);
+}
+

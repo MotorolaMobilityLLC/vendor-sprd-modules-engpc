@@ -10,7 +10,7 @@ class CProtolDiag:public CProtol{
 
         virtual int decode(char* buff, int nlen);
         virtual int encode(char* buff, int nlen);
-        virtual int checkframe(char* buff, int nlen);
+        virtual FRAME_TYPE checkframe(char* buff, int nlen);
         virtual int findframe(char* buff, int nlen);
 
     private:

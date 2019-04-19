@@ -145,3 +145,29 @@ int wait_for_usbenum_succ(int timeout, char *state)
 
     return -1;
 }
+
+void OS_sys_getlogdest(char* log_type, char* location){
+    char log_dest[PROPERTY_VALUE_MAX] = {0};
+
+    if (*log_type == '1'){
+        property_get(PROP_MODEM_LOG_DEST, log_dest, "not_find");
+        *location = log_dest[0];
+    }else if (*log_type == '2'){
+        property_get(PROP_WCN_LOG_DEST, log_dest, "not_find");
+        *location = log_dest[0];
+    }else{
+    }
+}
+
+void OS_sys_setlogdest(char* log_type, char* location){
+    char log_dest[PROPERTY_VALUE_MAX] = {0};
+
+    if (*log_type == '1'){
+        log_dest[0] = *location;
+        property_set(PROP_MODEM_LOG_DEST, location);
+    }else if (*log_type == '2'){
+        log_dest[0] = *location;
+        property_set(PROP_WCN_LOG_DEST, location);
+    }else{
+    }
+}

@@ -5,6 +5,7 @@
 
 #include "CPort.h"
 #include "channel.h"
+#include "frame.h"
 
 #define MAX_CHNL_BUFF  (64*1024)
 
@@ -14,6 +15,7 @@ class  CTrans{
     public:
         int m_dataType;
         int m_retType;
+        FRAME_TYPE m_frameType;
 
         CTrans();
         virtual ~CTrans();
@@ -32,7 +34,7 @@ class  CTrans{
         virtual int decode(char* buff, int nlen);
         virtual int encode(char* buff, int nlen);
 
-        virtual int checkframe(char* buff, int nlen);
+        virtual FRAME_TYPE checkframe(char* buff, int nlen);
         virtual int findframe(char* buff, int nlen);
 
         void init(char* name, CPort* lpSrc, CPort* lpDst, int dataType, int apProces);

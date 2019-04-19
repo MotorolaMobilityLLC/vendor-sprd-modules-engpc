@@ -29,6 +29,7 @@ void CTrans::init(char* name, CPort* lpSrc, CPort* lpDst, int dataType, int apPr
     m_dataType = dataType;
     m_apProcess = apProcess;
     m_retType = DYMIC_RET_NO_DEAL;
+    m_frameType = FRAME_COMPLETE;
     lpSrc->attach(this);
     lpDst->attach(this);
 }
@@ -55,8 +56,8 @@ int CTrans::pre_write(char* buff, int nlen){
 }
 
 int CTrans::write(char* buff, int nlen){
-    if (m_lpPortSrc != NULL){
-        return m_lpPortSrc->read(buff, nlen);
+    if (m_lpPortDst != NULL){
+        return m_lpPortDst->write(buff, nlen);
     }
 
     return 0;
@@ -77,8 +78,8 @@ int CTrans::trans(){
 
     if (0 != m_lpPortDst->open()){
         error("open dst fail: %s, error = %s", m_lpPortDst->getname(), strerror(errno));
-        m_lpPortSrc->close();
-        return -1;
+        //m_lpPortSrc->close();
+        //return -1;
     }
 
     int r_cnt = 0, w_cnt = 0;;
@@ -118,16 +119,17 @@ int CTrans::trans(){
         //bankup req
         memcpy(m_chnl_buff_req_bk, m_chnl_buff_req, r_cnt);
 
-        // decode
-        Info("decode...");
-        m_nLenReq = decode(m_chnl_buff_req, r_cnt);
-        Info("m_nLenReq = %d", m_nLenReq);
-
-        // ap process
         Info("process: need ap process: %d", m_apProcess);
-        if(m_apProcess == 1){
+        if (m_frameType == FRAME_COMPLETE && m_apProcess == 1){
+            // decode
+            Info("decode...");
+            m_nLenReq = decode(m_chnl_buff_req, r_cnt);
+            Info("m_nLenReq = %d", m_nLenReq);
+
+            // ap process
             ret = process(m_chnl_buff_req, m_nLenReq, m_chnl_buff_rsp, sizeof(m_chnl_buff_rsp), retlen);
         }
+
         m_retType = ret;
         Info("ret = %d", ret);
 
@@ -171,7 +173,7 @@ int CTrans::trans(){
             Info("write...: portType = %s", m_lpPortDst->getPortTypeStr());
             if(m_lpPortDst->getPortType() != PORT_LOOP){
 
-                if ( 0 != pre_write(m_chnl_buff_rsp, m_nLenRsp) ){
+                if ( 0 != pre_write(m_chnl_buff_req_bk, r_cnt) ){
                     error("pre write return !0, continue");
                     continue;
                 }
@@ -179,7 +181,7 @@ int CTrans::trans(){
                 w_cnt = m_lpPortDst->write(m_chnl_buff_req_bk, r_cnt);
                 Info("w_cnt = %d", w_cnt);
 
-                if ( 0 != post_write(m_chnl_buff_rsp, m_nLenRsp, w_cnt)){
+                if ( 0 != post_write(m_chnl_buff_req_bk, r_cnt, w_cnt)){
                     error("post write return !0, continue");
                     continue;
                 }
@@ -205,8 +207,8 @@ int CTrans::encode(char* buff, int nlen){
     return nlen;
 }
 
-int CTrans::checkframe(char* buff, int nlen){
-    return 0;
+FRAME_TYPE CTrans::checkframe(char* buff, int nlen){
+    return FRAME_COMPLETE;
 }
 
 int CTrans::findframe(char* buff, int nlen){

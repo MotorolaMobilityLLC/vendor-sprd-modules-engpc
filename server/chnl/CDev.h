@@ -36,6 +36,8 @@ class CDev:public CBase {
 
         bool enable(bool enable);
         bool enablePort(char *name, bool enableRD, bool enableWR);
+        bool enablePortRD(bool enableRD);
+        bool enablePortWR(bool enableWR);
 
         int open(char* name);
         int close(char* name);

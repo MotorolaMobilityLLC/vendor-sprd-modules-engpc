@@ -23,7 +23,6 @@ int CProtolDiag::decode(char* buff, int len){
     for (i = 1; i < len-2; i++) {
         if ((buff[i] == 0x7d) || (buff[i] == 0x7e)) {
             tmp = buff[i + 1] ^ 0x20;
-            info("%s: tmp=%x, buf[%d]=%x", __FUNCTION__, tmp, i + 1, buff[i + 1]);
             buff[i] = tmp;
             for(j = i + 1; j < len; j ++){
                 buff[j] = buff[j+1];
@@ -81,10 +80,10 @@ int CProtolDiag::encode(char* buff, int len){
     return retlen;
 }
 
-int CProtolDiag::checkframe(char* buff, int nlen){
-    int ret = -1;
+FRAME_TYPE CProtolDiag::checkframe(char* buff, int nlen){
+    FRAME_TYPE ret = FRAME_INVALID;
     if (buff[0] == 0x7E && buff[nlen-1] == 0x7E){
-        ret = 0;
+        ret = FRAME_COMPLETE;
     }
 
     return ret;

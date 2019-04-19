@@ -116,6 +116,38 @@ bool CDev::enablePort(char *name, bool enableRD, bool enableWR){
     return lpPort->enable(enableRD, enableWR);
 }
 
+bool CDev::enablePortRD(bool enableRD){
+    for(int i = 0; i < m_BMDevList.size(); i++){
+        if (stricmp(m_BMDevList[i]->bootmode, m_curMode) == 0){
+            for(int j = 0; j < m_BMDevList[i]->portList.size(); j++){
+                bool enRD = false;
+                bool enWR = false;
+                CPort* lpPort = m_BMDevList[i]->portList[j];
+                lpPort->getEnable(enRD, enWR);
+                lpPort->enable(enableRD, enWR);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool CDev::enablePortWR(bool enableWR){
+    for(int i = 0; i < m_BMDevList.size(); i++){
+        if (stricmp(m_BMDevList[i]->bootmode, m_curMode) == 0){
+            for(int j = 0; j < m_BMDevList[i]->portList.size(); j++){
+                bool enRD = false;
+                bool enWR = false;
+                CPort* lpPort = m_BMDevList[i]->portList[j];
+                lpPort->getEnable(enRD, enWR);
+                lpPort->enable(enRD, enableWR);
+            }
+        }
+    }
+
+    return true;
+}
+
 int CDev::open(char* name){
     CPort* lpPort = find(name);
     if (lpPort == NULL){

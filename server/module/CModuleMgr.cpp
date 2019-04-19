@@ -15,16 +15,15 @@
 
 #define ENG_LOG EngLog::info
 
-extern CModuleMgr* lpModMgr;
+extern CModuleMgr* g_lpModMgr;
 
 #define MAX_CHNL_BUFF  (64*1024)
 
-
 int write_to_host_diag(char* buff, int len){
-    if (lpModMgr != NULL && lpModMgr->m_lpHostDiagPort != NULL){
-        return lpModMgr->m_lpHostDiagPort->write(buff, len);
+    if (g_lpModMgr != NULL && g_lpModMgr->m_lpHostDiagPort != NULL){
+        return g_lpModMgr->m_lpHostDiagPort->write(buff, len);
     }else{
-        ENG_LOG("write_to_host_diag fail: lpModMgr = NULL or lpModMgr->m_lpHostDiagPort = NULL");
+        ENG_LOG("write_to_host_diag fail: g_lpModMgr = NULL or s_lpModMgr->m_lpHostDiagPort = NULL");
     }
 
     return 0;
@@ -33,8 +32,8 @@ int write_to_host_diag(char* buff, int len){
 int chnl_send_diag_interface(char* buff, int len){
     char rsp[MAX_CHNL_BUFF] = {0};
     int cp_process = 0;
-    if (lpModMgr != NULL){
-        return lpModMgr->processDiag(DATA_DIAG, buff, len, rsp, sizeof(rsp), cp_process);
+    if (g_lpModMgr != NULL){
+        return g_lpModMgr->processDiag(DATA_DIAG, buff, len, rsp, sizeof(rsp), cp_process);
     }
 
     return 0;
@@ -43,8 +42,8 @@ int chnl_send_diag_interface(char* buff, int len){
 int chnl_send_at_interface(char* buff, int len){
     char rsp[MAX_CHNL_BUFF] = {0};
     int cp_process = 0;
-    if (lpModMgr != NULL){
-        return lpModMgr->processAT(DATA_AT, buff, len, rsp, sizeof(rsp), cp_process);
+    if (g_lpModMgr != NULL){
+        return g_lpModMgr->processAT(DATA_AT, buff, len, rsp, sizeof(rsp), cp_process);
     }
 
     return 0;

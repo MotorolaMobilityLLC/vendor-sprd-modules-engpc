@@ -43,6 +43,13 @@ int OS_is_data_dir_ready();
 
 int wait_for_usbenum_succ(int timeout, char *state);
 
+#define PROP_MODEM_LOG_DEST    "persist.vendor.modem.log_dest"
+#define PROP_WCN_LOG_DEST      "persist.vendor.wcn.log_dest"
+
+void OS_sys_getlogdest(char* log_type, char* location);
+void OS_sys_setlogdest(char* log_type, char* location);
+
+
 #ifdef __cplusplus
 }
 #endif

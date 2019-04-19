@@ -11,8 +11,6 @@ class CProtol:public CTrans{
         virtual int decode(char* buff, int nlen);
         virtual int encode(char* buff, int nlen);
 
-        virtual int checkframe(char* buff, int nlen);
-
 };
 
 #endif

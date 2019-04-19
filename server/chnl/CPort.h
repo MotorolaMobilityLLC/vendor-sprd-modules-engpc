@@ -59,6 +59,7 @@ class CPort:public CBase{
         int reset();
 
         bool enable(bool bEnableRD, bool bEnableWR);
+        void getEnable(bool& bEnableRD, bool& bEnableWR);
 
         CPort* find(char* name);
         const char* getname() { return m_port.portName;}
@@ -94,6 +95,8 @@ class CPort:public CBase{
         int internal_write(char* buff, int nLen);
         PORT_TYPE StrToPortType(char* str);
         DATA_TYPE StrToDataType(char* str);
+
+        void notify();
 };
 
 #endif

@@ -8,6 +8,7 @@
 #include "eng_vector.h"
 
 #include "CDev.h"
+#include "usb.h"
 
 
 class CDevMgr:public CBase {
@@ -25,6 +26,8 @@ class CDevMgr:public CBase {
 
         bool enable(char *name, bool enable);
         void activeMode(char* bootmode);
+
+        static int notify(UEVENT_MSG msg, void* param);
 
         void print();
 

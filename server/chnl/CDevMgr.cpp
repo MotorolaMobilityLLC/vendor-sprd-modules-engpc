@@ -8,6 +8,7 @@
 #include "eng_vector.h"
 #include "CDevMgr.h"
 #include "config.h"
+#include "englog.h"
 
 #define MAX_LEN 1024
 
@@ -17,6 +18,29 @@ CDevMgr::CDevMgr(){
 }
 
 CDevMgr::~CDevMgr(){
+}
+
+int CDevMgr::notify(UEVENT_MSG msg, void* param){
+    CDevMgr* lpDevMgr = (CDevMgr*)param;
+    if (lpDevMgr == NULL){
+        EngLog::error("dev mgr is NULL.");
+        return -1;
+    }
+
+    if (msg == USB_CONNECT){
+        CDev* lpDev = lpDevMgr->find(DEV_HOST_NAME);
+        if (lpDev != NULL){
+            lpDev->enablePortWR(true);
+        }
+    }else if (msg == USB_DISCONNECT){
+        CDev* lpDev = lpDevMgr->find(DEV_HOST_NAME);
+        if (lpDev != NULL){
+            lpDev->enablePortWR(false);
+        }
+    }else{
+    }
+
+    return 0;
 }
 
 int CDevMgr::load(char* dirpath){

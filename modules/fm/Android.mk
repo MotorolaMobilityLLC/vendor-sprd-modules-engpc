@@ -18,7 +18,7 @@ LOCAL_SHARED_LIBRARIES += libcutils   \
                           libfmjni
 
 LOCAL_MODULE := libengfm
-LOCAL_MODULE_TAGS := debug
+LOCAL_MODULE_TAGS := optional
 LOCAL_PROPRIETARY_MODULE:= true
 
 include $(BUILD_SHARED_LIBRARY)

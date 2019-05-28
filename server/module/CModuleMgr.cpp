@@ -307,7 +307,7 @@ int CModuleMgr::eng_modules_load(){
     REGISTER_FUNC eng_register_func = NULL;
     REGISTER_EXT_FUNC eng_register_ext_func = NULL;
     struct eng_callback register_callback;
-    struct eng_callback register_arr[32];
+    struct eng_callback register_arr[64];
     struct eng_callback *register_arr_ptr = register_arr;
     int register_num = 0;
     int i = 0;

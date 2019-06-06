@@ -36,6 +36,7 @@ struct eng_callback{
     int (*eng_diag_func)(char *buf, int len, char *rsp, int rsplen);
     int (*eng_linuxcmd_func)(char *req, char *rsp);
     int (*eng_set_writeinterface_func)(DYMIC_WRITETOPC_FUNC * write_interface_ptr);
+    int (*eng_cmd_match)(char* buf, int len);
 };
 
 enum

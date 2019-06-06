@@ -116,7 +116,8 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
                 ENG_LOG("%s: Dymic eng_linuxcmd_func == NULL\n",__FUNCTION__);
                 break;
             }
-        } else if (msg_head_ptr->type == modules_list->callback.type && msg_head_ptr->subtype == modules_list->callback.subtype) {
+        } else if ( (msg_head_ptr->type == modules_list->callback.type && msg_head_ptr->subtype == modules_list->callback.subtype) ||
+                    (modules_list->callback.eng_cmd_match != NULL && modules_list->callback.eng_cmd_match(buf, len) == 0) )  {
             // diag command: type(unsigned char) + sub_type(unsigned char) + data_cmd(unsigned int)
             if (0x5D == msg_head_ptr->type){
                 data_cmd = (unsigned int *)(buf + 1 + sizeof(MSG_HEAD_T));
@@ -276,6 +277,7 @@ eng_modules* CModuleMgr::get_eng_modules(struct eng_callback p){
     modules->callback.eng_diag_func = p.eng_diag_func;
     modules->callback.eng_linuxcmd_func = p.eng_linuxcmd_func;
     modules->callback.eng_set_writeinterface_func = p.eng_set_writeinterface_func;
+    modules->callback.eng_cmd_match = p.eng_cmd_match;
 
     return modules;
 }

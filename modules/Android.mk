@@ -14,5 +14,5 @@
 # limitations under the License.
 #
 
-common_engpc_modules_dirs := charge fm gpio libapdeepsleep libcomcontrol libdcxcali libnpipropsrv libreboot_cmd libtsxdata PQTune libFactoryRadioTest libtracedump
+common_engpc_modules_dirs := charge fm gpio libapdeepsleep libcomcontrol libdcxcali libnpipropsrv libreboot_cmd libtsxdata PQTune libFactoryRadioTest libtracedump libmiscdata
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

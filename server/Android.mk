@@ -33,11 +33,6 @@ LOCAL_SHARED_LIBRARIES := libc \
                           libcutils \
                           libdl \
                           libengpc_adapt \
-#copy config
-$(shell mkdir -p $(PRODUCT_OUT)/vendor/etc/engpc/dev/)
-$(shell cp -rf $(LOCAL_PATH)/config/dev/ $(PRODUCT_OUT)/vendor/etc/engpc/dev/)
-$(shell mkdir -p $(PRODUCT_OUT)/vendor/etc/engpc/chnl/)
-$(shell cp -rf $(LOCAL_PATH)/config/chnl/ $(PRODUCT_OUT)/vendor/etc/engpc/chnl/)
 
 LOCAL_MODULE := engpc
 LOCAL_INIT_RC := engpc.rc

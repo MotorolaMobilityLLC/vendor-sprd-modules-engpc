@@ -138,7 +138,7 @@ int usb_mode(const char* bootmode){
     ENG_LOG("usb_mode: %s", bootmode);
     if (strcasecmp(bootmode, BOOTMODE_CALI) == 0){
         eng_usb_maximum_speed(USB_SPEED_FULL);
-        usb_vser_enable(1);
+        usb_vser_enable(0);
     }else if (strcasecmp(bootmode, BOOTMODE_AUTOTEST) == 0){
         eng_usb_maximum_speed(USB_SPEED_FULL);
         usb_vser_enable(0);

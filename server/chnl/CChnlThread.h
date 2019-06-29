@@ -22,6 +22,8 @@ class CChnlThread{
         CModuleMgr* getModMgr() {return m_lpModMgr;}
 
         bool run();
+        bool stop();
+        bool isRunning();
 
     private:
         char m_name[CHNL_NAME_LEN];
@@ -31,6 +33,7 @@ class CChnlThread{
         int m_dataType;
         int m_apProcess;
         pthread_t m_idThread;
+        bool m_isRunning;
 
         static void* threadMain(void *);
 };

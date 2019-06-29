@@ -52,10 +52,18 @@ char* CChnlThread::getName(){
     return m_name;
 }
 
+bool CChnlThread::isRunning(){
+    return m_isRunning;
+}
+
+bool CChnlThread::stop(){
+    return true;
+}
+
 bool CChnlThread::run(){
   pthread_attr_t attr;
   pthread_attr_init(&attr);
-  
+
   return pthread_create(&m_idThread, &attr, threadMain, (void*)this);
 }
 
@@ -75,10 +83,12 @@ void* CChnlThread::threadMain(void *arg){
         return NULL;
     }
 
+    lpThread->m_isRunning = true;
     lpTrans->init(lpThread->m_name, lpThread->m_lpPortSrc, lpThread->m_lpPortDst, lpThread->m_dataType, lpThread->m_apProcess);
     while(-1 == lpTrans->trans()){
         break;
     }
 
+    lpThread->m_isRunning = false;
     return NULL;
 }

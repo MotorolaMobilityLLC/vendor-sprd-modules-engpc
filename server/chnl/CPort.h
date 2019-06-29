@@ -62,8 +62,9 @@ class CPort:public CBase{
         void getEnable(bool& bEnableRD, bool& bEnableWR);
 
         CPort* find(char* name);
-        const char* getname() { return m_port.portName;}
-        const char* getpath() { return m_port.portPath;}
+        const char* getname() { return m_port.portName; }
+        const char* getpath() { return m_port.portPath; }
+        const char* getDevName() { return m_devName; }
         int getFD() {return m_fd;}
         int getPortType() {return m_port.portType;}
         char* getPortTypeStr() {return PortType2str(m_port.portType);}

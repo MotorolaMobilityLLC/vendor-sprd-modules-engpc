@@ -101,7 +101,7 @@ class CCPCtl {
         static int logLocation(char log_type, char location, int diagportswitch);
 
     private:
-        CChnlMgr* m_lpChnlMgr;
+        static CChnlMgr* m_lpChnlMgr;
 
         static int get_response(int fd, size_t timeout);
         static int notice_slogmodem(char *cmd);

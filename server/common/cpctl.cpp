@@ -42,6 +42,8 @@ int translate_packet(char *dest, char *src, int size) {
     return translated_size;
 }
 
+CChnlMgr* CCPCtl::m_lpChnlMgr = NULL;
+
 CCPCtl::CCPCtl(){
     m_lpChnlMgr = NULL;
     m_fdSockSrv = -1;
@@ -55,13 +57,13 @@ CCPCtl::~CCPCtl(){
 }
 
 void CCPCtl::attach(CChnlMgr* lpChnlMgr){
-    
+    m_lpChnlMgr = lpChnlMgr;
 }
 
 void CCPCtl::run(){
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    
+
     if (0 != pthread_create(&m_idTdLogCtl, &attr, cplogctl, (void*)this)){
         EngLog::error("cp log ctrl fail.");
     }
@@ -73,6 +75,7 @@ void CCPCtl::run(){
 int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
     int ret = -1;
     char bufLoc[8] = {0};
+    char usb_conf[128] = {0};
 
     sys_getlogdest(&log_type, bufLoc);
 
@@ -86,6 +89,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                 if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0) {
                     ret = -1;
                 } else { // notice slogomodem success
+                    m_lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, true);
                     memset(bufLoc, 0, sizeof(bufLoc));
                     *bufLoc = LOG_LOCATION_PC;
                     sys_setlogdest(&log_type, bufLoc);
@@ -105,6 +109,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                 if (notice_slogmodem(ENABLE_5MODE_LOG_CMD) < 0) {
                     ret = -1;
                 } else {
+                    m_lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, false);
                     memset(bufLoc, 0, sizeof(bufLoc));
                     *bufLoc = LOG_LOCATION_TCARD;
                     sys_setlogdest(&log_type, bufLoc);
@@ -207,9 +212,15 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
     }
 
     if (diagportswitch == 1){
-        chnl_send_at_interface(AT_DIAG_OPEN, strlen(AT_DIAG_OPEN));
+        eng_usb_config(usb_conf, sizeof(usb_conf));
+        if (strcasecmp(usb_conf, ",gser") != 0){
+            chnl_send_at_interface(AT_DIAG_OPEN, strlen(AT_DIAG_OPEN));
+        }
     }else if (diagportswitch == 2){
-        chnl_send_at_interface(AT_DIAG_CLOSE, strlen(AT_DIAG_CLOSE));
+        eng_usb_config(usb_conf, sizeof(usb_conf));
+        if (strcasecmp(usb_conf, ",gser") == 0){
+            chnl_send_at_interface(AT_DIAG_CLOSE, strlen(AT_DIAG_CLOSE));
+        }
     }else{
     }
 

@@ -160,7 +160,14 @@ void CChnlMgr::run(const char* bootmode){
 void CChnlMgr::resetWithChnlName(const char* chnlname){
 }
 
-void CChnlMgr::resetWithDevName(const char* devname){
+void CChnlMgr::resetWithDevName(const char* devname, bool enable){
+    CDev* lpDev = m_lpChnlDevMgr->find((char*)devname);
+    if (lpDev != NULL){
+        lpDev->enablePortRD(enable);
+        lpDev->enablePortWR(enable);
+    }
+
+    m_lpChnlThreadMgr->restartWithDev(devname);
 }
 
 void CChnlMgr::resetWithPortName(const char* devname, const char* portname){

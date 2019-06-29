@@ -21,7 +21,7 @@ class CChnlMgr:public CBase{
 
         void run(const char* bootmode);
         void resetWithChnlName(const char* chnlname);
-        void resetWithDevName(const char* devname);
+        void resetWithDevName(const char* devname, bool enable);
         void resetWithPortName(const char* devname, const char* portname);
 
         bool enable(const char *bootmode, bool enable);

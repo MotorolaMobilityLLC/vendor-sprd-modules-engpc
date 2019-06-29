@@ -2,14 +2,7 @@ service vendor.engpcclientlte /vendor/bin/engpc
     class core
     user root
     group system radio shell net_bt_admin input audio wifi media camera
-    disabled
     oneshot
-
-on property:persist.vendor.sys.modem.diag=,gser
-   restart vendor.engpcclientlte
-
-on property:persist.vendor.sys.modem.diag=none
-   restart vendor.engpcclientlte
 
 on property:vendor.ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
    setprop sys.usb.config vser

@@ -14,6 +14,7 @@ class CChnlThreadMgr{
         }
 
         void add(CChnlThread* lpThread);
+        void restartWithDev(const char* name);
     private:
         EngVector<CChnlThread* > m_threadList;
         CChnlThreadMgr();

@@ -32,7 +32,7 @@ char okRsp[] = {0x7E, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x00, 0x9C, 0x00, 0x0D, 0x0A
 
 int CDataDiag::pre_write(char* buff, int nlen){
     info("pre_write");
-    if ((m_retType == DYMIC_RET_DEAL_SUCCESS || m_retType == DYMIC_RET_ALSO_NEED_TO_CP) && buff[7] == 0x68){
+    if ((m_retType == DYMIC_RET_DEAL_SUCCESS || m_retType == DYMIC_RET_ALSO_NEED_TO_CP) && m_nDiagAT){
         write(emptyDiag, sizeof(emptyDiag));
     }
 
@@ -41,7 +41,7 @@ int CDataDiag::pre_write(char* buff, int nlen){
 
 int CDataDiag::post_write(char* buff, int nlen, int nsend){
     info("post_write");
-    if ((m_retType == DYMIC_RET_DEAL_SUCCESS || m_retType == DYMIC_RET_ALSO_NEED_TO_CP) && buff[7] == 0x68){
+    if ((m_retType == DYMIC_RET_DEAL_SUCCESS || m_retType == DYMIC_RET_ALSO_NEED_TO_CP) && m_nDiagAT){
         write(okRsp, sizeof(okRsp));
     }
 

@@ -56,8 +56,8 @@ int CTrans::pre_write(char* buff, int nlen){
 }
 
 int CTrans::write(char* buff, int nlen){
-    if (m_lpPortDst != NULL){
-        return m_lpPortDst->write(buff, nlen);
+    if (m_lpPortSrc != NULL){
+        return m_lpPortSrc->write(buff, nlen);
     }
 
     return 0;

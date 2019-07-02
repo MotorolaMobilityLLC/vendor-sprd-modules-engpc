@@ -13,7 +13,7 @@ class CProtolDiag:public CProtol{
         virtual FRAME_TYPE checkframe(char* buff, int nlen);
         virtual int findframe(char* buff, int nlen);
 
-    private:
+    public:
         int m_nDiagAT;
 };
 

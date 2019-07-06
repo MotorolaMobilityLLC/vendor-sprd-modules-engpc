@@ -349,6 +349,8 @@ int CModuleMgr::eng_modules_load(){
                     if (eng_register_func != NULL) {
                         memset(&register_callback, 0, sizeof(struct eng_callback));
                         register_callback.diag_ap_cmd = -1;
+                        register_callback.type = 0xFF;
+                        register_callback.subtype = 0xFF;
                         eng_register_func(&register_callback);
                         ENG_LOG("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
                         register_callback.type, register_callback.subtype,
@@ -366,6 +368,8 @@ int CModuleMgr::eng_modules_load(){
                         memset(register_arr, 0, sizeof(register_arr));
                         for (i = 0; i < sizeof(register_arr)/sizeof(struct eng_callback); i++) {
                             register_arr[i].diag_ap_cmd = -1;
+                            register_arr[i].type = 0xFF;
+                            register_arr[i].subtype = 0xFF;
                         }
                         eng_register_ext_func(register_arr_ptr, &register_num);
                         ENG_LOG("register_num:%d",register_num);

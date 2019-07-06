@@ -73,7 +73,7 @@ void CCPCtl::run(){
 }
 
 int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
-    int ret = -1;
+    int ret = 0;
     char bufLoc[8] = {0};
     char usb_conf[128] = {0};
 

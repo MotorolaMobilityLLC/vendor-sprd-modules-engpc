@@ -171,3 +171,8 @@ void OS_sys_setlogdest(char* log_type, char* location){
     }else{
     }
 }
+
+void OS_sys_restart_self(){
+    property_set(PROP_RESTART_SELF, "1");
+    property_set(PROP_RESTART_SELF, "0");
+}

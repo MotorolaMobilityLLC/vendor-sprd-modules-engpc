@@ -43,3 +43,7 @@ void sys_setlogdest(char* log_type, char* location){
     OS_sys_setlogdest(log_type, location);
 }
 
+void sys_restart_self(){
+    OS_sys_restart_self();
+}
+

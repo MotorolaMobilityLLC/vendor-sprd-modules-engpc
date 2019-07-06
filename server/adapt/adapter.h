@@ -22,6 +22,8 @@ int is_data_dir_ready();
 void sys_getlogdest(char* log_type, char* location);
 void sys_setlogdest(char* log_type, char* location);
 
+void sys_restart_self();
+
 #ifdef __cplusplus
 }
 #endif

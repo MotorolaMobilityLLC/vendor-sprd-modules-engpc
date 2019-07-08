@@ -67,23 +67,30 @@ void* CModuleMgr::m_libInterface = NULL;
 CModuleMgr::CModuleMgr(char* dir){
     memcpy(m_path, dir, strlen(dir));
     m_lpHostDiagPort = NULL;
+    m_isLoaded = false;
 }
 
 CModuleMgr::~CModuleMgr(){
 }
 
 int CModuleMgr::load(){
-    return eng_modules_load();
+    int ret = eng_modules_load();
+    m_isLoaded = (ret==0)?true:false;
+    return ret;
 }
 
 int CModuleMgr::process(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_len, int& cp_process){
-    if (type == DATA_AT) 
+    if (!m_isLoaded){
+        load();
+    }
+
+    if (type == DATA_AT)
         return processAT(type, buf, len, rsp, rsp_len, cp_process);
-    if (type == DATA_WCN_AT) 
+    if (type == DATA_WCN_AT)
         return processWcnAT(type, buf, len, rsp, rsp_len, cp_process);
-    if (type == DATA_DIAG) 
+    if (type == DATA_DIAG)
         return processDiag(type, buf, len, rsp, rsp_len, cp_process);
-    if (type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG) 
+    if (type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG)
         return processSmp(type, buf, len, rsp, rsp_len, cp_process);
 
     return 0;

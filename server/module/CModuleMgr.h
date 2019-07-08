@@ -26,6 +26,8 @@ class CModuleMgr{
         const char* TAG(){return "CModuleMgr";}
 
         int load();
+        bool isLoaded() {return m_isLoaded;}
+
         int process(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_len, int& cp_process);
 
         int processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_len, int& cp_process);
@@ -39,7 +41,8 @@ class CModuleMgr{
     private:
         char m_path[MAX_MOUDLUE_PATH];
         struct list_head m_listHead;
-        
+        bool m_isLoaded;
+
         CModuleMgr(char* dir);
         eng_modules* get_eng_modules(struct eng_callback p);
         int eng_modules_load();

@@ -45,7 +45,7 @@ int main(){
     //init module manager
     EngLog::info("load dynamic so");
     g_lpModMgr = CModuleMgr::getInstance(DYNAMIC_SO_DIR_PATH);
-    if (NULL == g_lpModMgr || 0 != g_lpModMgr->load()){
+    if (NULL == g_lpModMgr /*|| 0 != g_lpModMgr->load()*/){ // load so when pc send diag cmd first
         EngLog::error("load dynamic so fail");
     }
 

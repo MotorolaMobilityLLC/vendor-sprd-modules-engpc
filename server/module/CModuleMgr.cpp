@@ -33,7 +33,7 @@ int chnl_send_diag_interface(char* buff, int len){
     char rsp[MAX_CHNL_BUFF] = {0};
     int cp_process = 0;
     if (g_lpModMgr != NULL){
-        return g_lpModMgr->processDiag(DATA_DIAG, buff, len, rsp, sizeof(rsp), cp_process);
+        return g_lpModMgr->process(DATA_DIAG, buff, len, rsp, sizeof(rsp), cp_process);
     }
 
     return 0;
@@ -43,7 +43,7 @@ int chnl_send_at_interface(char* buff, int len){
     char rsp[MAX_CHNL_BUFF] = {0};
     int cp_process = 0;
     if (g_lpModMgr != NULL){
-        return g_lpModMgr->processAT(DATA_AT, buff, len, rsp, sizeof(rsp), cp_process);
+        return g_lpModMgr->process(DATA_AT, buff, len, rsp, sizeof(rsp), cp_process);
     }
 
     return 0;

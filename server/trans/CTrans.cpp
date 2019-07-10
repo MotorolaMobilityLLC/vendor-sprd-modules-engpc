@@ -103,7 +103,7 @@ int CTrans::trans(){
         // read from src
         //Info("read...");
         r_cnt = m_lpPortSrc->read(m_chnl_buff_req, sizeof(m_chnl_buff_req));
-        Info("r_cnt = %d");
+        Info("r_cnt = %d", r_cnt);
         
         //info("post read");
         if (0 != post_read(m_chnl_buff_req, sizeof(m_chnl_buff_req), r_cnt)){

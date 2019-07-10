@@ -90,5 +90,6 @@ void* CChnlThread::threadMain(void *arg){
     }
 
     lpThread->m_isRunning = false;
+
     return NULL;
 }

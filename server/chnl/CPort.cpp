@@ -64,6 +64,19 @@ void CPort::init(char* devname, char* name, PORT_TYPE porttype, char* path, DATA
     m_fd = -1;
     m_mtx_rd = PTHREAD_MUTEX_INITIALIZER;
     m_mtx_wr = PTHREAD_MUTEX_INITIALIZER;
+
+    m_bSuspend = false;
+
+    int fds[2] = {0};
+    if(pipe(fds) == 0)
+    {
+        m_pipeMonitor = fds[0];
+        m_pipeNotify = fds[1];
+    }else{
+        m_pipeMonitor = 0;
+        m_pipeNotify = 0;
+        info("create pipe fail");
+    }
 }
 
 const char* CPort::TAG(){
@@ -151,12 +164,13 @@ int CPort::open(){
     }
 
     if (m_fd >= 0){
-        info("%s alread opened, return m_fd = %d", m_port.portPath, m_fd);
+        info("%s alread opened, return m_fd = %d, m_nClient = %d", m_port.portPath, m_fd, m_nClient);
+        m_nClient++;
         return 0;
     }
 
     if(m_port.portType == PORT_SOCK){
-        
+
     }else {
         int second = MAX_PORT_OPEN_TIMEOUT;
         info("open: %s", m_port.portPath);
@@ -179,15 +193,20 @@ int CPort::open(){
                 tcsetattr(m_fd, TCSANOW, &ser_settings);
             }
         }
+        m_nClient=1;
     }
 
     return 0;
 }
 int CPort::close(){
-
+    Info("%s: m_nClient = %d, m_fd = %d", __FUNCTION__, m_nClient, m_fd);
     if (m_fd >= 0){
-        ::close(m_fd);
-        m_fd = -1;
+        m_nClient--;
+        if (m_nClient <= 0){
+            ::close(m_fd);
+            m_fd = -1;
+            m_nClient=0;
+        }
     }
 
     return 0;
@@ -219,15 +238,30 @@ int CPort::reset(){
 }
 
 int CPort::reopen(int second){
+    Info("%s: m_nClient = %d", __FUNCTION__, m_nClient);
+    int nCount = m_nClient;
+    m_nClient = 1;
     close();
     while(second-- > 0 && 0 != open()){
         sleep(1);
     }
 
+    if (second > 0){
+        notify(MSG_NOTIFY_UPDATE_FD, strlen(MSG_NOTIFY_UPDATE_FD));
+    }
+    m_nClient = nCount;
+
     return second>0?0:-1;
 }
 
-void CPort::notify(){
+void CPort::notify(char* msg, int len){
+    Info("%s: msg = %s", __FUNCTION__, msg);
+    if (m_pipeNotify >= 0){
+        int ret = ::write(m_pipeNotify, msg, len);
+        if (ret != len){
+            Info("notify fail: ret = %d", ret);
+        }
+    }
 }
 
 int CPort::internal_read(char* buff, int nLen){
@@ -260,9 +294,14 @@ int CPort::internal_read(char* buff, int nLen){
         memset(buff, 0, nLen);
         FD_ZERO(&readfd);
         FD_SET(m_fd,&readfd);
+        if (m_pipeMonitor >= 0){
+            FD_SET(m_pipeMonitor, &readfd);
+        }
 
-        //Info("select...");
-        ret = select(m_fd+1,&readfd,NULL,NULL,NULL);
+        m_bSuspend = true;
+        Info("read select...m_fd = %d, m_pipeMonitor = %d", m_fd, m_pipeMonitor);
+        max_fd = m_fd>m_pipeMonitor?m_fd:m_pipeMonitor;
+        ret = select(max_fd+1,&readfd,NULL,NULL,NULL);
         //Info("select return = %d", ret);
         if(ret == -1){
             error("select error");
@@ -271,7 +310,12 @@ int CPort::internal_read(char* buff, int nLen){
         }else if(ret == 0){
             error("select time out");
         }else{
-            if(FD_ISSET(m_fd,&readfd)){// read
+            if (FD_ISSET(m_pipeMonitor, &readfd)){
+                Info("read notify...");
+                r_cnt = ::read(m_pipeMonitor, buff, rdSize);
+                Info("msg = %s", buff);
+                continue;
+            }else if(FD_ISSET(m_fd,&readfd)){// read
                 Info("read...");
                 r_cnt = ::read(m_fd, buff+offset, rdSize);
                 Info("===> recv size = %d", r_cnt);
@@ -317,6 +361,7 @@ int CPort::internal_read(char* buff, int nLen){
         }
     }while(1);
 
+    m_bSuspend = false;
     return offset;
 }
 
@@ -346,7 +391,7 @@ int CPort::internal_write(char* buff, int nLen){
         FD_ZERO(&writefd);
         FD_SET(m_fd,&writefd);
 
-        Info("select...");
+        Info("write select...m_fd = %d", m_fd);
         ret = select(m_fd+1,NULL,&writefd,NULL,NULL);
         Info("select return = %d", ret);
         if(ret == -1){
@@ -356,7 +401,7 @@ int CPort::internal_write(char* buff, int nLen){
         }else if(ret == 0){
             error("select time out");
         }else{
-            if(FD_ISSET(m_fd,&writefd)){// read
+            if(FD_ISSET(m_fd,&writefd)){// write
 
                 Info("<=== send size = %d", nLen);
                 printData(buff, nLen, 20, 1);

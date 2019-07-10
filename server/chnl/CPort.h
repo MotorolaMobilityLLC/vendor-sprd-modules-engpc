@@ -79,12 +79,13 @@ class CPort:public CBase{
         char m_tag[CHNL_NAME_LEN+PORT_NAME_LEN];
         int  m_nClient;
         int  m_fd;
+        bool m_bSuspend;
         CTrans *m_lpTrans;
-        
+
         bool m_bEnableRD;
         char m_buff_RD[MAX_PORT_BUFF_RD];
         pthread_mutex_t m_mtx_rd;
-        
+
         bool m_bEnableWR;
         char m_buff_WR[MAX_PORT_BUFF_WR];
         pthread_mutex_t m_mtx_wr;
@@ -97,7 +98,11 @@ class CPort:public CBase{
         PORT_TYPE StrToPortType(char* str);
         DATA_TYPE StrToDataType(char* str);
 
-        void notify();
+#define MSG_NOTIFY_UPDATE_FD "MSG_UPDATE_FD"
+#define MSG_NOTIFY_EXIT "MSG_EXIT"
+        void notify(char* msg, int len);
+        int m_pipeMonitor;
+        int m_pipeNotify;
 };
 
 #endif

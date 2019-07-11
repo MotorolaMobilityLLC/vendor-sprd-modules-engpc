@@ -24,6 +24,14 @@ int CDataDiag::process(char* req, int reqlen, char* rsp, int rsplen, int& retlen
         ret = DYMIC_RET_ALSO_NEED_TO_CP;
     }
 
+    if (checkPending(rsp, rsplen)){
+        m_lpModMgr->setPendingMark();
+        setPendingMark(true);
+    }else{
+        m_lpModMgr->clearPendingMark();
+        setPendingMark(false);
+    }
+
     return ret;
 }
 
@@ -42,7 +50,9 @@ int CDataDiag::pre_write(char* buff, int nlen){
 int CDataDiag::post_write(char* buff, int nlen, int nsend){
     info("post_write");
     if ((m_retType == DYMIC_RET_DEAL_SUCCESS || m_retType == DYMIC_RET_ALSO_NEED_TO_CP) && m_nDiagAT){
-        write(okRsp, sizeof(okRsp));
+        if (strcasecmp(buff, "\r\nOK")){
+            write(okRsp, sizeof(okRsp));
+        }
     }
 
     return 0;

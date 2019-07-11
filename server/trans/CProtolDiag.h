@@ -2,6 +2,9 @@
 #define __CPROTOL_DIAG_H__
 
 #include "CProtol.h"
+#include <stdbool.h>
+
+#define PENDING_MARK "\r\nPENDING\r\n"
 
 class CProtolDiag:public CProtol{
     public:
@@ -13,8 +16,11 @@ class CProtolDiag:public CProtol{
         virtual FRAME_TYPE checkframe(char* buff, int nlen);
         virtual int findframe(char* buff, int nlen);
 
+        bool checkPending(char*rsp, int nlen);
+        void setPendingMark(bool bPending){m_bPending = bPending;}
     public:
         int m_nDiagAT;
+        bool m_bPending;
 };
 
 #endif

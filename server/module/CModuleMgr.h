@@ -36,16 +36,20 @@ class CModuleMgr{
         int processWcnAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_len, int& cp_process);
 
         void regDiagHost(CPort *lpPort){m_lpHostDiagPort = lpPort;}
+        void setPendingMark(){m_lpPendingCB = m_lpCurCB;}
+        void clearPendingMark(){m_lpPendingCB = NULL;}
         void print();
 
     private:
         char m_path[MAX_MOUDLUE_PATH];
         struct list_head m_listHead;
         bool m_isLoaded;
+        eng_modules *m_lpCurCB;
 
         CModuleMgr(char* dir);
         eng_modules* get_eng_modules(struct eng_callback p);
         int eng_modules_load();
+        eng_modules* m_lpPendingCB;
 
         static void* m_libHdl;
         static void* m_libInterface;

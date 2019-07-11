@@ -68,6 +68,8 @@ CModuleMgr::CModuleMgr(char* dir){
     memcpy(m_path, dir, strlen(dir));
     m_lpHostDiagPort = NULL;
     m_isLoaded = false;
+    m_lpPendingCB = NULL;
+    m_lpCurCB = NULL;
 }
 
 CModuleMgr::~CModuleMgr(){
@@ -104,9 +106,11 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
     unsigned int *data_cmd = NULL;
     byte *data = NULL;
     unsigned short *apcmd = NULL;
+    int bProcess= 0;
 
     list_for_each(list_find,&m_listHead){
         modules_list = list_entry(list_find, eng_modules, node);
+        m_lpCurCB = modules_list;
 
         if ((buf[7] == 0x68) && (0 != strlen(modules_list->callback.at_cmd)) && (strcasestr(buf+9, modules_list->callback.at_cmd)) != NULL) { // at command
             ENG_LOG("%s: Dymic CMD=%s finded\n",__FUNCTION__,modules_list->callback.at_cmd);
@@ -118,6 +122,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
                     cp_process = 1;
                 }
 
+                bProcess = 1;
                 break;
             } else {
                 ENG_LOG("%s: Dymic eng_linuxcmd_func == NULL\n",__FUNCTION__);
@@ -167,6 +172,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
                     cp_process = 1;
                 }
 
+                bProcess =1;
                 break;
             } else {
                 ENG_LOG("%s: Dymic eng_diag_func == NULL\n",__FUNCTION__);
@@ -175,6 +181,14 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
         } else {
             continue;
         }
+    }
+
+    //process pending at cmd
+    if (bProcess == 0 && m_lpPendingCB != NULL && 0x68 == msg_head_ptr->type && strcasestr(buf + 9, "AT") == NULL){
+        ENG_LOG("%s: Dymic next_data_callback", __FUNCTION__);
+        rlen = m_lpPendingCB->callback.eng_linuxcmd_func(buf, rsp);
+    }else{
+        m_lpPendingCB = NULL;
     }
 
     return rlen;

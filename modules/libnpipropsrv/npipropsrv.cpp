@@ -29,6 +29,8 @@
 #include "sprd_fts_log.h"
 #include "eng_attok_test.h"
 
+#define AT_PROP_OP "AT+PROP"
+
 #define AT_GET_PROP_FLAG "at+getprop"
 #define AT_SET_PROP_FLAG "at+setprop"
 
@@ -119,17 +121,88 @@ static int set_prop(char *req, char *rsp)
     return ret;
 }
 
+#define ENG_STREND "\r\n"
+
+static int prop_handler(char *req, char *rsp){
+    int ret;
+    char *ptr = NULL;
+    char *in_cmd_buf = NULL;
+    bool is_diag_cmd = false;
+
+    if (NULL == req)
+    {
+        ALOGE("%s,null pointer", __FUNCTION__);
+        sprintf(rsp, "\r\nERROR\r\n");
+        return rsp != NULL ? strlen(rsp) : 0;
+    }
+    ALOGD("get_prop req:%s", req);
+    if(req[0] == 0x7e)
+    {
+        ptr = req + 1 + sizeof(MSG_HEAD_T);
+        is_diag_cmd = true;
+        ALOGD("get_prop strlen(ptr)=%d", strlen(ptr));
+    }
+    else
+    {
+        ptr = strdup(req) ;
+    }
+    ALOGD("get_prop:%s \nis_diag_cmd=%d", ptr,is_diag_cmd);
+
+    char ptr_cmd[1];
+    char *ptr_key, *ptr_val;
+    char buf[PROPERTY_VALUE_MAX] = {0};
+
+    req = strchr(ptr, '=');
+    req++;
+    ptr_cmd[0] = *req;
+    req = strchr(req, ',');
+    req++;
+    if (*req != '[') {
+        return -1;
+    }
+    req++;
+    ptr_key = req;
+    req = strchr(req, ']');
+    *req = '\0';
+
+    if (ptr_cmd[0] == '0') {
+        property_get(ptr_key, buf, "NOT FOUND");
+        if (!strncmp(buf, "NOT FOUND", sizeof("NOT FOUND") - 1)) {
+            sprintf(rsp, "%s%s%s", ENG_STREND, buf, ENG_STREND);
+        } else {
+            sprintf(rsp, "%s%s%s%s%s", ENG_STREND, "[", buf, "]", ENG_STREND);
+        }
+    } else if (ptr_cmd[0] == '1') {
+        req++;
+        if (*req != '[') {
+            return -1;
+        }
+        req++;
+        ptr_val = req;
+        req = strchr(req, ']');
+        *req = '\0';
+        property_set(ptr_key, ptr_val);
+        sprintf(rsp, "%s%s%s%s%s%s%s", ENG_STREND, "[", ptr_key, "][", ptr_val, "]",
+        ENG_STREND);
+    }
+    return 0;
+}
+
 extern "C" {
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {
     unsigned int moudles_num = 0;
 
-    (reg + moudles_num)->type = 0x38;
-    ALOGD("file:%s, func:%s\n", __FILE__, __func__);
-    sprintf(reg->at_cmd, "%s", AT_GET_PROP_FLAG);
-    reg->eng_linuxcmd_func = get_prop;
-    ALOGD("module cmd:%s\n", reg->at_cmd);
+    sprintf((reg+moudles_num)->at_cmd, "%s", AT_GET_PROP_FLAG);
+    (reg+moudles_num)->eng_linuxcmd_func = get_prop;
+    ALOGD("module cmd:%s\n", (reg+moudles_num)->at_cmd);
     moudles_num ++;
+
+    sprintf((reg+moudles_num)->at_cmd, "%s", AT_PROP_OP);
+    (reg+moudles_num)->eng_linuxcmd_func = prop_handler;
+    ALOGD("module cmd:%s\n", (reg+moudles_num)->at_cmd);
+    moudles_num ++;
+
 
     *num = moudles_num;
 }

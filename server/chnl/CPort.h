@@ -82,6 +82,8 @@ class CPort:public CBase{
         bool m_bSuspend;
         CTrans *m_lpTrans;
 
+        pthread_mutex_t m_mtx;
+
         bool m_bEnableRD;
         char m_buff_RD[MAX_PORT_BUFF_RD];
         pthread_mutex_t m_mtx_rd;

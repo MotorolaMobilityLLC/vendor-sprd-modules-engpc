@@ -64,6 +64,7 @@ void CPort::init(char* devname, char* name, PORT_TYPE porttype, char* path, DATA
     m_fd = -1;
     m_mtx_rd = PTHREAD_MUTEX_INITIALIZER;
     m_mtx_wr = PTHREAD_MUTEX_INITIALIZER;
+    m_mtx = PTHREAD_MUTEX_INITIALIZER;
 
     m_bSuspend = false;
 
@@ -163,9 +164,13 @@ int CPort::open(){
         return -1;
     }
 
+    pthread_mutex_lock(&m_mtx);
+
     if (m_fd >= 0){
         info("%s alread opened, return m_fd = %d, m_nClient = %d", m_port.portPath, m_fd, m_nClient);
         m_nClient++;
+
+        pthread_mutex_unlock(&m_mtx);
         return 0;
     }
 
@@ -182,6 +187,8 @@ int CPort::open(){
         }while(second-->0);
         if (m_fd < 0){
             error("open %s fail,  error = %s", m_port.portPath, strerror(errno));
+
+            pthread_mutex_unlock(&m_mtx);
             return -1;
         }
         info("open succ: m_fd = %d, portType = %s", m_fd, PortType2str(m_port.portType));
@@ -196,10 +203,14 @@ int CPort::open(){
         m_nClient=1;
     }
 
+    pthread_mutex_unlock(&m_mtx);
     return 0;
 }
 int CPort::close(){
     Info("%s: m_nClient = %d, m_fd = %d", __FUNCTION__, m_nClient, m_fd);
+
+    pthread_mutex_lock(&m_mtx);
+
     if (m_fd >= 0){
         m_nClient--;
         if (m_nClient <= 0){
@@ -209,6 +220,7 @@ int CPort::close(){
         }
     }
 
+    pthread_mutex_unlock(&m_mtx);
     return 0;
 }
 

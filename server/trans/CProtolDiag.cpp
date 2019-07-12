@@ -117,3 +117,11 @@ bool CProtolDiag::checkPending(char*rsp, int nlen){
 
     return 0;
 }
+
+int CProtolDiag::process(char* req, int reqlen, char* rsp, int rsplen, int& retlen){
+    if (m_nDiagAT && retlen == 0 && strlen(rsp) > 0){
+        retlen = strlen(rsp);
+    }
+
+    return 0;
+}

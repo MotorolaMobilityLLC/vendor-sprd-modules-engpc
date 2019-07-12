@@ -19,6 +19,9 @@ int CDataDiag::process(char* req, int reqlen, char* rsp, int rsplen, int& retlen
         retlen = m_lpModMgr->process((DATA_TYPE)m_dataType, req, reqlen, rsp, rsplen, cp_process);
     }
 
+    //some so process diag with at successfully  but return 0, so we must recheck.
+    CProtolDiag::process(req, reqlen, rsp, rsplen, retlen);
+
     ret = CTrans::process(req, reqlen, rsp, rsplen, retlen);
     if (DYMIC_RET_DEAL_SUCCESS == ret && cp_process == 1){
         ret = DYMIC_RET_ALSO_NEED_TO_CP;

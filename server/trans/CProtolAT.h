@@ -11,6 +11,8 @@ class CProtolAT:public CProtol{
         virtual int decode(char* buff, int nlen);
         virtual int encode(char* buff, int nlen);
 
+        virtual int process(char* req, int reqlen, char* rsp, int rsplen, int& retlen);
+
 };
 
 #endif

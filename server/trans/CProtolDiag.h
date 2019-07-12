@@ -15,6 +15,7 @@ class CProtolDiag:public CProtol{
         virtual int encode(char* buff, int nlen);
         virtual FRAME_TYPE checkframe(char* buff, int nlen);
         virtual int findframe(char* buff, int nlen);
+        virtual int process(char* req, int reqlen, char* rsp, int rsplen, int& retlen);
 
         bool checkPending(char*rsp, int nlen);
         void setPendingMark(bool bPending){m_bPending = bPending;}

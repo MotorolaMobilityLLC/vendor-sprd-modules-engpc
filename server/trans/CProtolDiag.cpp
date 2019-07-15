@@ -69,7 +69,7 @@ int CProtolDiag::encode(char* buff, int len){
     }
 
     retlen = len;
-    for (i = 1; i < len-2; i++) {
+    for (i = 1; i < len-1; i++) {
         if ((buff[i] == 0x7d) || (buff[i] == 0x7e)) {
             tmp = buff[i] ^ 0x20;
             info("%s: tmp=%x, buf[%d]=%x", __FUNCTION__, tmp, i, buff[i]);

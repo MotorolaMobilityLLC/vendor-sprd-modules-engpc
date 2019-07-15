@@ -54,7 +54,7 @@ int direct_phschk(char *buf, int len, char *rsp, int rsplen) {
                 
                 ENG_LOG("%s: data_len: %d\n", __FUNCTION__, data_len);
                 
-                nverr = eng_write_miscdata(nvdata, data_len);
+                nverr = eng_write_miscdata_with_offset(0, nvdata, data_len);
                 if (NVERR_NONE != nverr) {
                     ENG_LOG("%s:Write ERROR: %d\n", __FUNCTION__, nverr);
                     error = IMEI_SAVE_ERR;
@@ -89,7 +89,7 @@ int direct_phschk(char *buf, int len, char *rsp, int rsplen) {
                                            sizeof(unsigned short));
             memcpy(nvdata, msg_head, sizeof(MSG_HEAD_T));
             
-            nverr = eng_read_miscdata(nvdata + sizeof(MSG_HEAD_T), rsplen);
+            nverr = eng_read_miscdata_with_offset(0, nvdata + sizeof(MSG_HEAD_T), rsplen);
             if (NVERR_NONE != nverr) {
                 ENG_LOG("%s:Read ERROR: %d\n", __FUNCTION__, nverr);
                 msg_head->len = sizeof(MSG_HEAD_T) + sizeof(unsigned short);

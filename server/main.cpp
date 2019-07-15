@@ -116,10 +116,6 @@ int main(){
     //monitor usb plug-in or plug-out
     usb_monitor(CDevMgr::notify);
 
-    //init: usb is plug-in?
-    int usb_plugin = eng_usb_state();
-    CDevMgr::notify(usb_plugin?USB_CONNECT:USB_DISCONNECT, (void*)g_lpDevMgr);
-
     //cp log ctrl monitor && cp ap time sync
     EngLog::info("cp log ctrl, cp ap time sync");
     CCPCtl* lpCpCtl = new CCPCtl();

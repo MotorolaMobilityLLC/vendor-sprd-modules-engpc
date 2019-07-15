@@ -147,7 +147,7 @@ int btwifiimei(char *buf, int len, char *rsp, int rsplen, int cp_ap_proc, int ap
             memcpy(tmprsp, (unsigned char *)head_ptr, headlen);
             head_ptr = (MSG_HEAD_T *)tmprsp;
             head_ptr->len = headlen + 2;
-            rlen = translate_packet(rsp, tmprsp, head_ptr->len);
+            rlen = translate_packet_encode(rsp, tmprsp, head_ptr->len);
         }
     } else {  // read command
         direct = (REF_NVWriteDirect_T *)(tmprsp + headlen);
@@ -206,7 +206,7 @@ int btwifiimei(char *buf, int len, char *rsp, int rsplen, int cp_ap_proc, int ap
                 *(tmprsp + headlen + rlen), *(tmprsp + headlen + rlen + 1));
         rlen += 2;
         head_ptr->len = headlen + rlen;
-        rlen = translate_packet(rsp, tmprsp, headlen + rlen);
+        rlen = translate_packet_encode(rsp, tmprsp, headlen + rlen);
     }
 
     // clear BT/WIFI bit in this diag framer

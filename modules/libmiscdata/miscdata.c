@@ -283,7 +283,7 @@ int eng_diag_product_ctrl(char *buf, int len, char *rsp, int rsplen) {
       nvdata = (unsigned char *)malloc(data_len + head_len);
       memcpy(nvdata, msg_head, head_len);
 
-      nverr = eng_read_miscdata(nvdata + head_len, data_len);
+      nverr = eng_read_miscdata_with_offset(0, nvdata + head_len, data_len);
       if (NVERR_NONE != nverr) {
         ENG_LOG("%s: Read ERROR: %d\n", __FUNCTION__, nverr);
         data_len = 0;
@@ -299,12 +299,12 @@ int eng_diag_product_ctrl(char *buf, int len, char *rsp, int rsplen) {
     case 3: {
       nvdata = (unsigned char *)malloc(rsplen);
 
-      nverr = eng_read_miscdata(nvdata, data_len);
+      nverr = eng_read_miscdata_with_offset(0, nvdata, data_len);
       if (NVERR_NONE != nverr) {
         ENG_LOG("%s: Read before writing ERROR: %d\n", __FUNCTION__, nverr);
       } else {
         memcpy(nvdata + offset, (char *)msg_head + head_len, data_len);
-        nverr = eng_write_miscdata(nvdata, data_len);
+        nverr = eng_write_miscdata_with_offset(0, nvdata, data_len);
         if (NVERR_NONE != nverr) {
           ENG_LOG("%s:Write ERROR: %d\n", __FUNCTION__, nverr);
         }

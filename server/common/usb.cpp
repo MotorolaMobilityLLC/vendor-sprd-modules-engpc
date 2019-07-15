@@ -114,7 +114,8 @@ int eng_usb_state(void) {
     if (fd >= 0) {
         ret = read(fd, usb_state, 32);
         if (ret > 0) {
-            if (0 == strncmp(usb_state, "CONFIGURED", 10)) {
+            if (0 == strncmp(usb_state, "CONFIGURED", 10)
+                || 0 == strncmp(usb_state, "CONNECTED", 9)) {
                 ret = 1;
             } else {
                 ENG_LOG("%s: usb state: %s\n", __FUNCTION__, usb_state);
@@ -237,6 +238,11 @@ void *eng_uevt_thread(void *x) {
     if (-1 == sock) {
         ENG_LOG("%s: socket init failed !\n", __FUNCTION__);
         return 0;
+    }
+
+    int usb_plugin = eng_usb_state();
+    if (s_ptrNotify != NULL){
+        s_ptrNotify(usb_plugin?USB_CONNECT:USB_DISCONNECT, (void*)g_lpDevMgr);
     }
 
     ufd.events = POLLIN;

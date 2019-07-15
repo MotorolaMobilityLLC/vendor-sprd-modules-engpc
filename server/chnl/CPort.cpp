@@ -184,6 +184,8 @@ int CPort::open(){
             if (m_fd >= 0){
                 break;
             }
+            error("open fail! error = %s, sleep 1s, then retry!", strerror(errno));
+            usleep(1000*1000);
         }while(second-->0);
         if (m_fd < 0){
             error("open %s fail,  error = %s", m_port.portPath, strerror(errno));

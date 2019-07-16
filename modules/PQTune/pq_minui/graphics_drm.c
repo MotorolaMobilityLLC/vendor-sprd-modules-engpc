@@ -110,7 +110,7 @@ static void DrmDestroySurface(int drm_fd, gr_surface_drm surface) {
       printf("DRM_IOCTL_GEM_CLOSE failed ret=%d\n", ret);
     }
   }
-
+  free(surface);
   surface = NULL;
 }
 
@@ -132,7 +132,7 @@ static int drm_format_to_bpp(uint32_t format) {
 }
 
 static gr_surface_drm DrmCreateSurface(int drm_fd, int width, int height) {
-  gr_surface_drm surface = calloc(1, sizeof(*surface));;
+  gr_surface_drm surface = calloc(1, sizeof(*surface));
 
   uint32_t format;
 #if defined(RECOVERY_ABGR)
@@ -222,10 +222,15 @@ static drmModeCrtc* find_crtc_for_connector(int fd, drmModeRes* resources,
   }
 
   int32_t crtc;
-  if (encoder && encoder->crtc_id) {
-    crtc = encoder->crtc_id;
-    drmModeFreeEncoder(encoder);
-    return drmModeGetCrtc(fd, crtc);
+  if (encoder) {
+    if (encoder->crtc_id) {
+      crtc = encoder->crtc_id;
+      drmModeFreeEncoder(encoder);
+      return drmModeGetCrtc(fd, crtc);
+    } else {
+      drmModeFreeEncoder(encoder);
+      encoder = NULL;
+    }
   }
 
   // Didn't find anything, try to find a crtc and encoder combo.
@@ -242,6 +247,9 @@ static drmModeCrtc* find_crtc_for_connector(int fd, drmModeRes* resources,
       if (crtc >= 0) {
         drmModeFreeEncoder(encoder);
         return drmModeGetCrtc(fd, crtc);
+      } else {
+        drmModeFreeEncoder(encoder);
+        encoder = NULL;
       }
     }
   }
@@ -332,7 +340,10 @@ static gr_surface drm_init(struct minui_backend *backend) {
   for (int i = 0; i < DRM_MAX_MINOR; i++) {
     char* dev_name;
     int ret = asprintf(&dev_name, DRM_DEV_NAME, DRM_DIR_NAME, i);
-    if (ret < 0) continue;
+    if (ret < 0) {
+      free(dev_name);
+      continue;
+    }
 
     pdata->drm_fd = open(dev_name, O_RDWR, 0);
     free(dev_name);
@@ -465,7 +476,7 @@ static void drm_exit(struct minui_backend *backend) {
     unsigned int i;
 
     for (i = 0; i < 2; i++)
-        DrmDestroySurface(pdata->drm_fd, &pdata->GRSurfaceDrms[i]);
+        DrmDestroySurface(pdata->drm_fd, pdata->GRSurfaceDrms[i]);
     if (pdata->drm_fd >= 0)
         close(pdata->drm_fd);
     free(pdata);

@@ -68,7 +68,7 @@ class CPort:public CBase{
         int getFD() {return m_fd;}
         int getPortType() {return m_port.portType;}
         char* getPortTypeStr() {return PortType2str(m_port.portType);}
-        void attach(CTrans* lpTrans){m_lpTrans = lpTrans;}
+        CTrans* attach(CTrans* lpTrans);
 
         void print();
         void printData(char* buff, int len, int col, int brk);

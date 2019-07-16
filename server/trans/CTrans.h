@@ -34,7 +34,7 @@ class  CTrans{
         virtual int decode(char* buff, int nlen);
         virtual int encode(char* buff, int nlen);
 
-        virtual FRAME_TYPE checkframe(char* buff, int nlen);
+        virtual FRAME_TYPE checkframe(char* buff, int& nlen);
         virtual int findframe(char* buff, int nlen);
 
         void init(char* name, CPort* lpSrc, CPort* lpDst, int dataType, int apProces);
@@ -42,6 +42,7 @@ class  CTrans{
         char* getname(){return m_name;}
         CPort* getPortSrc(){return m_lpPortSrc;}
         CPort* getPortDst(){return m_lpPortDst;}
+        int getApProcess() {return m_apProcess;}
         int error(const char* fmt, ...);
         int info(const char* fmt, ...);
         int warn(const char* fmt, ...);

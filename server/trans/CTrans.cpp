@@ -39,12 +39,15 @@ int CTrans::pre_read(char* buff, int nlen){
 }
 
 int CTrans::read(char* buff, int nlen){
+    int ret = 0;
     info("read");
     if (m_lpPortSrc != NULL){
-        return m_lpPortSrc->read(buff, nlen);
+        CTrans* ptr = m_lpPortSrc->attach(this);
+        ret = m_lpPortSrc->read(buff, nlen);
+        m_lpPortSrc->attach(ptr);
     }
 
-    return 0;
+    return ret;
 }
 
 int CTrans::post_read(char* buff, int nlen, int nrecv){
@@ -56,11 +59,14 @@ int CTrans::pre_write(char* buff, int nlen){
 }
 
 int CTrans::write(char* buff, int nlen){
+    int ret = 0;
     if (m_lpPortSrc != NULL){
-        return m_lpPortSrc->write(buff, nlen);
+        CTrans* ptr = m_lpPortSrc->attach(this);
+        ret = m_lpPortSrc->write(buff, nlen);
+        m_lpPortSrc->attach(ptr);
     }
 
-    return 0;
+    return ret;
 }
 
 int CTrans::post_write(char*buff, int nlen, int nsend){
@@ -102,7 +108,9 @@ int CTrans::trans(){
         }
         // read from src
         //Info("read...");
+        CTrans* ptr = m_lpPortSrc->attach(this);
         r_cnt = m_lpPortSrc->read(m_chnl_buff_req, sizeof(m_chnl_buff_req));
+        m_lpPortSrc->attach(ptr);
         Info("r_cnt = %d", r_cnt);
         
         //info("post read");
@@ -120,7 +128,7 @@ int CTrans::trans(){
         memcpy(m_chnl_buff_req_bk, m_chnl_buff_req, r_cnt);
 
         Info("process: need ap process: %d", m_apProcess);
-        if (m_frameType == FRAME_COMPLETE && m_apProcess == 1){
+        if ( (m_frameType == FRAME_COMPLETE || m_frameType == FRAME_HALF_CONTINUE) && m_apProcess == 1 ){
             // decode
             Info("decode...");
             m_nLenReq = decode(m_chnl_buff_req, r_cnt);
@@ -151,7 +159,9 @@ int CTrans::trans(){
                 continue;
             }
 
+            CTrans* ptr = m_lpPortSrc->attach(this);
             w_cnt = m_lpPortSrc->write(m_chnl_buff_rsp, m_nLenRsp);
+            m_lpPortSrc->attach(ptr);
             info("w_cnt = %d", w_cnt);
 
             if ( 0 != post_write(m_chnl_buff_rsp, m_nLenRsp, w_cnt)){
@@ -178,7 +188,9 @@ int CTrans::trans(){
                     continue;
                 }
 
+                CTrans* ptr = m_lpPortDst->attach(this);
                 w_cnt = m_lpPortDst->write(m_chnl_buff_req_bk, r_cnt);
+                m_lpPortDst->attach(ptr);
                 Info("w_cnt = %d", w_cnt);
 
                 if ( 0 != post_write(m_chnl_buff_req_bk, r_cnt, w_cnt)){
@@ -207,7 +219,7 @@ int CTrans::encode(char* buff, int nlen){
     return nlen;
 }
 
-FRAME_TYPE CTrans::checkframe(char* buff, int nlen){
+FRAME_TYPE CTrans::checkframe(char* buff, int& nlen){
     return FRAME_COMPLETE;
 }
 

@@ -9,6 +9,7 @@
 CProtolDiag::CProtolDiag(){
     m_nDiagAT = 0;
     m_bPending = false;
+    m_iCurFrameType = FRAME_INVALID;
 }
 
 CProtolDiag::~CProtolDiag(){
@@ -87,17 +88,66 @@ int CProtolDiag::encode(char* buff, int len){
     return retlen;
 }
 
-FRAME_TYPE CProtolDiag::checkframe(char* buff, int nlen){
+/*
+1.  7E XX XX XX ... 7E :  compete frame, ap process or cp process
+2.  XX XX XX XX ... XX :  invalid frame, send to cp
+3.  7E XX XX XX ... XX :  invalid frame, ap process or cp process
+
+other:
+1. XX XX ... XX 7E XX XX XX ... 7E XX XX : find frame (7E XX XX ... XX XX 7E)
+2. XX XX ... XX 7E XX XX XX ... XX XX XX : find frame (7E XX XX ... XX XX XX)
+*/
+
+FRAME_TYPE CProtolDiag::checkframe(char* buff, int& nlen){
+    if (getApProcess() != 1){
+        return FRAME_COMPLETE;
+    }
+
     FRAME_TYPE ret = FRAME_INVALID;
     if (buff[0] == 0x7E && buff[nlen-1] == 0x7E){
         ret = FRAME_COMPLETE;
+    }else {
+        int start = findFrameFlag(buff, nlen);
+        if (start != -1){
+            int end = findFrameFlag(buff+start+1, nlen-start-1);
+            if (end != -1){
+                memmove(buff, buff+start, end+2);
+                nlen = end+2;
+                ret = FRAME_COMPLETE;
+            }else{
+                memmove(buff, buff+start, nlen-start);
+                nlen = nlen-start;
+                ret = FRAME_HALF_CONTINUE;
+            }
+        }
     }
+
+    m_iCurFrameType = ret;
 
     return ret;
 }
 
 int CProtolDiag::findframe(char* buff, int nlen){
     return nlen;
+}
+
+int CProtolDiag::findFrameFlag(char* buff, int nlen){
+    int offset = 0;
+    char* ptr = buff;
+    if (ptr == NULL) return -1;
+    while(offset < nlen){
+        if(*(ptr++) == 0x7E){
+            break;
+        }else{
+            offset++;
+        }
+    }
+
+    if (offset >= nlen){
+        offset = -1;
+    }
+
+    return offset;
 }
 
 bool CProtolDiag::checkPending(char*rsp, int nlen){

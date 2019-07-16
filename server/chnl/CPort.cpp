@@ -80,6 +80,12 @@ void CPort::init(char* devname, char* name, PORT_TYPE porttype, char* path, DATA
     }
 }
 
+CTrans* CPort::attach(CTrans* lpTrans){
+    CTrans* ptrLast = m_lpTrans;
+    m_lpTrans = lpTrans;
+    return ptrLast;
+}
+
 const char* CPort::TAG(){
 /*
     if (m_lpTrans){
@@ -301,11 +307,11 @@ int CPort::internal_read(char* buff, int nLen){
 
     fd_set readfd = {0};
 
+    memset(buff, 0, nLen);
     //to do
     do{
         int ret = 0;
         int max_fd =0;
-        memset(buff, 0, nLen);
         FD_ZERO(&readfd);
         FD_SET(m_fd,&readfd);
         if (m_pipeMonitor >= 0){
@@ -330,6 +336,7 @@ int CPort::internal_read(char* buff, int nLen){
                 Info("msg = %s", buff);
                 continue;
             }else if(FD_ISSET(m_fd,&readfd)){// read
+                int tmpOffset = 0;
                 Info("read...");
                 r_cnt = ::read(m_fd, buff+offset, rdSize);
                 Info("===> recv size = %d", r_cnt);
@@ -353,11 +360,19 @@ int CPort::internal_read(char* buff, int nLen){
                 offset += r_cnt;
 
                 // complete frame
+                tmpOffset = offset;
                 FRAME_TYPE type = m_lpTrans->checkframe(buff, offset);
+                if (tmpOffset != offset){
+                    Info("check frame: offset = %d", offset);
+                    printData(buff, offset, 20, 1);
+                }
+
                 if (type == FRAME_COMPLETE || type == FRAME_INVALID){
                     break;
+                }else if (type == FRAME_HALF_CONTINUE){
+                    warn("this frame is half, continue read ...");
                 }else{
-                    warn("non't complete frame");
+                    warn("this frame type is unknown");
                 }
 
                 // not invalid frame && buff is full, break

@@ -3,7 +3,7 @@
 
 typedef enum{
     FRAME_COMPLETE,
-    FRAME_HAVE_HEAD,
+    FRAME_HALF_CONTINUE,
     FRAME_INVALID,
 
     FRAME_UNKNOWN,

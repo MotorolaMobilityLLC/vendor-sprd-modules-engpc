@@ -13,5 +13,31 @@ typedef struct
     uint32  datalen;    // Data length
 } DIAG_TSX_DATA_HEAD;
 
+typedef struct
+{
+  unsigned int freq;
+  unsigned int temprature;
+}TSX_DATA_T;
+
+typedef struct
+{
+  unsigned int cmd;
+  unsigned int res_status;
+  TSX_DATA_T value[2];
+}TOOLS_DIAG_AP_TSX_DATA_T;
+
+typedef struct
+{
+  unsigned int freq;
+  unsigned int temprature;
+  unsigned int osctemprature;
+}TSX_DATA_EXT_T;
+
+typedef struct
+{
+  unsigned int cmd;
+  unsigned int res_status;
+  TSX_DATA_EXT_T value[4];
+}TOOLS_DIAG_AP_TSX_DATA_EXT_T;
 
 #endif

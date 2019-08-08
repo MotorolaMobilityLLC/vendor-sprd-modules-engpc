@@ -44,8 +44,8 @@ int CChnlMgr::load(char* dirpath){
             if (0 == lpCnf->parse(EngConf::CONF_CHNL, path)){
                 char chnlName[64] = {0};
                 CChnl *lpChnl = NULL;
-                char* name, *sDev, *sPort, *dDev, *dPort;
-                char* act, *datatype, *enable, *ap_process, *reserved, *desc;
+                char* name=NULL, *sDev=NULL, *sPort=NULL, *dDev=NULL, *dPort=NULL;
+                char* act=NULL, *datatype=NULL, *enable=NULL, *ap_process=NULL, *reserved=NULL, *desc=NULL;
 
                 strncpy(chnlName, ptr->d_name, strlen(ptr->d_name)-strlen(".conf"));
                 info("chnl name: %s", chnlName);

@@ -315,6 +315,8 @@ void CCPCtl::eng_socket_rw_thread(void *fd, void *arg)
     ::close(soc_fd);
 }
 
+TIME_SYNC_T g_time_sync = {0};
+
 void* CCPCtl::timesync(void *arg){
     int ser_fd = -1;
     int mod_cnt = -1;
@@ -419,7 +421,7 @@ void* CCPCtl::timesync(void *arg){
                         } else {
                             ENG_LOG("%s: receive time sync data from refnotify\n", __FUNCTION__);
                             pthread_mutex_lock(&(lpCpCtl->g_time_sync_lock));
-                            memcpy(&time_sync, &time_sync, sizeof(TIME_SYNC_T));
+                            memcpy(&g_time_sync, &time_sync, sizeof(TIME_SYNC_T));
                             pthread_mutex_unlock(&(lpCpCtl->g_time_sync_lock));
 
                             current_ap_time_stamp_handle(&time_sync, &time_stamp);

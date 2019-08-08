@@ -63,7 +63,7 @@ int CDevMgr::load(char* dirpath){
             EngConf *lpCnf = new EngConf();
             snprintf(path, sizeof(path), "%s/%s", dirpath, ptr->d_name);
             if (0 == lpCnf->parse(EngConf::CONF_DEV, path)){
-                char* bootmode,*name,*data_type,*port_type,*port_path,*reserved,*description;
+                char* bootmode=NULL,*name=NULL,*data_type=NULL,*port_type=NULL,*port_path=NULL,*reserved=NULL,*description=NULL;
                 char devName[64] = {0};
                 CDev *lpDev = NULL;
 
@@ -109,6 +109,8 @@ int CDevMgr::load(char* dirpath){
             }
         }
     }
+
+    closedir(dir);
 
     return 0;
 }

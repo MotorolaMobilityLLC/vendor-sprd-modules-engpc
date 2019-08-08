@@ -315,8 +315,6 @@ int CModuleMgr::eng_modules_load(){
     char lnk_path[MAX_MODULE_FILE_PATH]=" ";
     int readsize = 0;
 
-    eng_modules *modules;
-
     //get so name fail:empty
     DIR *dir;
     struct dirent *ptr;
@@ -354,13 +352,13 @@ int CModuleMgr::eng_modules_load(){
             }
 
             if (access(path, R_OK) == 0) {
-                handler = NULL;
                 handler = dlopen(path, RTLD_LAZY);
                 if (handler == NULL) {
                     ENG_LOG("%s dlopen fail! %s \n", path, dlerror());
                 } else {
                     eng_register_func = (REGISTER_FUNC)dlsym(handler, "register_this_module");
                     if (eng_register_func != NULL) {
+                        eng_modules *modules = NULL;
                         memset(&register_callback, 0, sizeof(struct eng_callback));
                         register_callback.diag_ap_cmd = -1;
                         register_callback.type = 0xFF;
@@ -379,6 +377,7 @@ int CModuleMgr::eng_modules_load(){
 
                     eng_register_ext_func = (REGISTER_EXT_FUNC)dlsym(handler, "register_this_module_ext");
                     if (eng_register_ext_func != NULL) {
+                        eng_modules *modules = NULL;
                         memset(register_arr, 0, sizeof(register_arr));
                         for (i = 0; i < sizeof(register_arr)/sizeof(struct eng_callback); i++) {
                             register_arr[i].diag_ap_cmd = -1;

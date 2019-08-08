@@ -38,19 +38,24 @@ const char* parseCmdline(){
             /*calibration*/
             str = strstr(cmdline, "androidboot.mode=cali");
             if (str != NULL) {
+                close(fd);
                 return BOOTMODE_CALI;
             }
 
             str = strstr(cmdline, "androidboot.mode=autotest");
             if (str != NULL) {
+                close(fd);
                 return BOOTMODE_AUTOTEST;
             }
 
             str = strstr(cmdline, "androidboot.mode=factorytest");
             if (str != NULL) {
+                close(fd);
                 return BOOTMODE_FACTORYTEST;
             }
         }
+
+        close(fd);
     }
 
     return NULL;

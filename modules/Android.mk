@@ -20,6 +20,7 @@ common_engpc_modules_dirs := charge \
                              libap_opt \
                              libapdeepsleep \
                              libcomcontrol \
+                             libchipid \
                              libdcxcali \
                              libdialppp \
                              libFactoryRadioTest\

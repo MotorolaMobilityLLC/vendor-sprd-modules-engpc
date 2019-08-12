@@ -17,6 +17,7 @@
 
 #define ENG_RAWDATA_FILE   "/mnt/vendor/productinfo/wcn/tsx_bt_data.txt"
 #define ENG_TXDATA_FILE    "/mnt/vendor/txdata.txt"
+#define ENG_TXDATA_BK_FILE    "/mnt/vendor/txdata.dat"
 
 int translate_packet(char *dest, char *src, int size) {
 
@@ -453,6 +454,11 @@ static int tsxdata_ex_handler(char *buf, int len, char *rsp, int rsplen){
         if(0 == ret)
         {
             tsxdata->res_status = 0;
+            //for bug1133893, remove tsx.dat
+            if(access(ENG_TXDATA_BK_FILE, F_OK) == 0)
+            {
+                remove(ENG_TXDATA_BK_FILE);
+            }
         }else{
             tsxdata->res_status = 1;
         }

@@ -177,11 +177,12 @@ int wait_for_modem_alive(int timeout)
                 if (fd >= 0) {
                     break;
                 }
-                EngLog::info("%s: times:%d, failed to open tty dev:  %s, fd = %d",__FUNCTION__, try_cnt, path, fd);
-                usleep(1000 * 1000);
+                if (try_cnt%10 == 0){
+                    EngLog::info("%s: times:%d, failed to open tty dev:  %s, fd = %d",__FUNCTION__, try_cnt, path, fd);
+                }
+                usleep(100 * 1000);
                 try_cnt--;
             } while (try_cnt > 0);
-        
             if (fd >= 0){
                 EngLog::info("%s: times:%d, succ open tty dev:  %s, fd = %d",__FUNCTION__, try_cnt, path, fd);
                 close(fd);

@@ -211,13 +211,13 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
         break;
     }
 
-    if (diagportswitch == 1){
+    if (diagportswitch == 1 && location == LOG_LOCATION_PC){
         eng_usb_config(usb_conf, sizeof(usb_conf));
         if (strcasecmp(usb_conf, ",gser") != 0){
             chnl_send_at_interface(AT_DIAG_OPEN, strlen(AT_DIAG_OPEN));
             sys_restart_self();
         }
-    }else if (diagportswitch == 2){
+    }else if (diagportswitch == 2 && location != LOG_LOCATION_PC){
         eng_usb_config(usb_conf, sizeof(usb_conf));
         if (strcasecmp(usb_conf, ",gser") == 0){
             chnl_send_at_interface(AT_DIAG_CLOSE, strlen(AT_DIAG_CLOSE));

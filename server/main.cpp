@@ -97,7 +97,7 @@ int main(){
 #ifndef ENGPC_AP_CALI
     //wait for modem alive
     EngLog::info("wait for modem alive");
-    if (0 != wait_for_modem_alive(60)){
+    if (0 != wait_for_modem_alive(600)){
         EngLog::error("wait modem alive fail!!!!!!!!! please check modem status!");
     }
 #else

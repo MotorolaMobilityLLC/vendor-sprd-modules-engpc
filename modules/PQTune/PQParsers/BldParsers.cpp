@@ -1,13 +1,13 @@
 #include <utils/Log.h>
-#include "tune_lite_r2p0.h"
-#include "pq_xml.h"
+#include "ParserCore.h"
 
 #define PARSE_BLD_HSVCM(i, X) \
 ({	\
 	if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-		bld->hsvcm[i].cm.X = strtoul((char *)szPropity, (char **)&endptr, 0); \
-		ENG_LOG(""#X" %d \n", bld->hsvcm[i].cm.X); \
+		bld->hsvcm[i].cm.X = strtoul((char *)szPropity, NULL, 0); \
+		ALOGD(""#X" %d \n", bld->hsvcm[i].cm.X); \
+		free(szPropity); \
 		propNode = propNode->next; \
 	}	\
 })
@@ -17,7 +17,8 @@
 	if (xmlHasProp(propNode, BAD_CAST #X)) {	\
 		snprintf(numStr, sizeof(numStr), "%d", bld->hsvcm[i].cm.X);	\
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr);	\
-		ENG_LOG(""#X" %d \n", bld->hsvcm[i].cm.X);	\
+		ALOGD(""#X" %d \n", bld->hsvcm[i].cm.X); \
+		free(szPropity); \
 		propNode = propNode->next; \
 	}	\
 })
@@ -56,7 +57,7 @@
 })
 
 
-static int parse_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
+static int parse_hsvcm(bld_common *bld, xmlNodePtr subNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlAttrPtr attrPtr;
@@ -70,12 +71,14 @@ static int parse_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
 		while (NULL != attrPtr) {
 			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"hue")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"hue");
-				bld->hsvcm[i].hsv.table[j].hue = strtoul((char *)szPropity, (char **)&endptr, 0);
-				ENG_LOG("hue %d \n", bld->hsvcm[i].hsv.table[j].hue);
+				bld->hsvcm[i].hsv.table[j].hue = strtoul((char *)szPropity, NULL, 0);
+				ALOGD("hue %d \n", bld->hsvcm[i].hsv.table[j].hue);
+				free(szPropity);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"sat")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"sat");
-				bld->hsvcm[i].hsv.table[j].sat = strtoul((char *)szPropity, (char **)&endptr, 0);
-				ENG_LOG("sat %d \n", bld->hsvcm[i].hsv.table[j].sat);
+				bld->hsvcm[i].hsv.table[j].sat = strtoul((char *)szPropity, NULL, 0);
+				ALOGD("sat %d \n", bld->hsvcm[i].hsv.table[j].sat);
+				free(szPropity);
 			}
 			attrPtr = attrPtr->next;
 		}
@@ -89,25 +92,26 @@ static int parse_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
 	return 0;
 }
 
-static int parse_bld_version(struct bld_common *bld, xmlNodePtr curNode)
+static int parse_bld_version(bld_common *bld, xmlNodePtr curNode)
 {
     xmlNodePtr subNode;
 	xmlChar* szPropity;
 	const char *endptr = NULL;
 
-    ENG_LOG("curNode name %s \n",curNode->name);
+    ALOGD("curNode name %s \n",curNode->name);
     subNode = curNode; //subNode table
-	while(!xmlStrcmp(subNode->name, "enhance")) {
-		if(xmlHasProp(subNode, BAD_CAST "version")) {
+	while(!xmlStrcmp(subNode->name, (const xmlChar*)"enhance")) {
+        if(xmlHasProp(subNode, BAD_CAST (const xmlChar*)"version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
-			bld->version.version = strtoul((char *)szPropity, (char **)&endptr, 0);
+			bld->version.version = strtoul((char *)szPropity, NULL, 0);
+			free(szPropity);
 		}
 		subNode = subNode->next;
 	}
     return 0;
 }
 
-static int parse_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
+static int parse_bld_hsvcm(bld_common *bld, xmlNodePtr curNode)
 {
 	int i = 0;
 	const char *endptr = NULL;
@@ -116,17 +120,23 @@ static int parse_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
-			if(!xmlStrcmp(szPropity, (const xmlChar *) "default"))
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
+				free(szPropity);
 				parse_hsvcm(bld, subNode->children, i);
-			else if (!xmlStrcmp(szPropity, (const xmlChar *) "middle"))
+			}
+			else if (!xmlStrcmp(szPropity, (const xmlChar *) "middle")) {
+				free(szPropity);
 				parse_hsvcm(bld, subNode->children, i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "high"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "high")) {
+				free(szPropity);
 				parse_hsvcm(bld, subNode->children, i);
+			}
 		}
 		i++;
 		subNode = subNode->next;
@@ -134,7 +144,7 @@ static int parse_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
 	return 0;
 }
 
-static int update_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
+static int update_hsvcm(bld_common *bld, xmlNodePtr subNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlAttrPtr attrPtr;
@@ -148,11 +158,11 @@ static int update_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
 		attrPtr = propNode->properties;
 		while (NULL != attrPtr) {
 			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"hue")) {
-				ENG_LOG("hue %d \n", bld->hsvcm[i].hsv.table[j].hue);
+				ALOGD("hue %d \n", bld->hsvcm[i].hsv.table[j].hue);
 				snprintf(numStr, sizeof(numStr), "%d", bld->hsvcm[i].hsv.table[j].hue);
 				xmlSetProp(propNode, BAD_CAST "hue", (const xmlChar*)numStr);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"sat")) {
-				ENG_LOG("sat %d \n", bld->hsvcm[i].hsv.table[j].sat);
+				ALOGD("sat %d \n", bld->hsvcm[i].hsv.table[j].sat);
 				snprintf(numStr, sizeof(numStr), "%d", bld->hsvcm[i].hsv.table[j].sat);
 				xmlSetProp(propNode, BAD_CAST "sat", (const xmlChar*)numStr);
 			}
@@ -168,15 +178,15 @@ static int update_hsvcm(struct bld_common *bld, xmlNodePtr subNode, int i)
 	return 0;
 }
 
-static int update_bld_version(struct bld_common *bld, xmlNodePtr curNode)
+static int update_bld_version(bld_common *bld, xmlNodePtr curNode)
 {
 	int i = 0;
 	xmlNodePtr subNode;
 	char numStr[12];
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode; //subNode table
-	while(!xmlStrcmp(subNode->name, "enhance")) {
+	while(!xmlStrcmp(subNode->name, (const xmlChar*)"enhance")) {
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			snprintf(numStr, sizeof(numStr), "%d", bld->version.version);
 			xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
@@ -186,7 +196,7 @@ static int update_bld_version(struct bld_common *bld, xmlNodePtr curNode)
 	return 0;
 }
 
-static int update_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
+static int update_bld_hsvcm(bld_common *bld, xmlNodePtr curNode)
 {
 	int i = 0;
 	const char *endptr = NULL;
@@ -196,17 +206,23 @@ static int update_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
-			if(!xmlStrcmp(szPropity, (const xmlChar *) "default"))
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
+				free(szPropity);
 				update_hsvcm(bld, subNode->children, i);
-			else if (!xmlStrcmp(szPropity, (const xmlChar *) "middle"))
-				parse_hsvcm(bld, subNode->children, i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "high"))
+			}
+			else if (!xmlStrcmp(szPropity, (const xmlChar *) "middle")) {
+				free(szPropity);
 				update_hsvcm(bld, subNode->children, i);
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "high")) {
+				free(szPropity);
+				update_hsvcm(bld, subNode->children, i);
+			}
 		}
 		i++;
 		subNode = subNode->next;
@@ -214,16 +230,86 @@ static int update_bld_hsvcm(struct bld_common *bld, xmlNodePtr curNode)
 	return 0;
 }
 
-int parse_lite_r2p0_bld_xml(struct bld_common *bld)
+int BldParser::parse_reg(uint08_t *ctx)
+{
+	int fd0, fd1;
+	uint32_t cnt0, cnt1;
+	uint32_t sizes0,sizes1;
+	uint08_t* data;
+	bld_common *bld;
+
+	bld = &((pq_tuning_parm *)ctx)->bld;
+
+	fd0 = open(DpuHsv, O_RDWR);
+	fd1 = open(DpuCm, O_RDWR);
+	if(fd0 < 0 || fd1 < 0) {
+		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		return errno;
+	}
+	sizes0 = sizeof(bld->hsvcm[0].hsv);
+	sizes1 = sizeof(bld->hsvcm[0].cm);
+	cnt0 = read(fd0, (uint08_t *)&bld->hsvcm[0].hsv, sizes0);
+	cnt1 = read(fd1, (uint08_t *)&bld->hsvcm[0].cm, sizes1);
+	close(fd0);
+	close(fd1);
+
+	if ((cnt0 == sizes0)&&(cnt1 == sizes1))
+		return 0;
+	else
+		return -1;
+}
+
+int BldParser::update_reg(uint08_t *ctx)
+{
+	int fd0, fd1, fd2;
+	uint32_t sizes0,sizes1;
+	uint08_t* data;
+	uint32_t disable;
+	bld_common *bld;
+
+	bld = &((pq_tuning_parm *)ctx)->bld;
+	ALOGD("PQ BLD  %s enalbe %d\n", __func__, bld->version.enable);
+	if(bld->version.enable) {
+
+		ALOGD("PQ BLD  %s\n", __func__);
+		fd0 = open(DpuHsv, O_RDWR);
+		fd1 = open(DpuCm, O_RDWR);
+		if(fd0 < 0 || fd1 < 0) {
+			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+			return errno;
+		}
+		sizes0 = sizeof(bld->hsvcm[0].hsv);
+		sizes1 = sizeof(bld->hsvcm[0].cm);
+		write(fd0, (uint08_t *)&bld->hsvcm[0].hsv, sizes0);
+		write(fd1, (uint08_t *)&bld->hsvcm[0].cm, sizes1);
+		close(fd0);
+		close(fd1);
+	} else {
+		fd2 = open(PQDisable, O_WRONLY);
+		if(fd2 < 0) {
+			ALOGD("%s: fd2 open file failed, err: %s\n", __func__, strerror(errno));
+			return errno;
+		}
+		disable = HSV_EN | CMS_EN;
+		write(fd2, &disable, sizeof(disable));
+		close(fd2);
+	}
+	return 0;
+}
+
+int BldParser::parse_xml(uint08_t *ctx)
 {
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	bld_common *bld;
+
+	bld = &((pq_tuning_parm *)ctx)->bld;
 
 	doc = xmlReadFile(bld_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-        ENG_LOG("Document not parsed successfully.\n");
+        ALOGD("Document not parsed successfully.\n");
         return -1;
 	}
 
@@ -231,13 +317,13 @@ int parse_lite_r2p0_bld_xml(struct bld_common *bld)
 
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"root"))
 	{
-		ENG_LOG("root node != root\n");
+		ALOGD("root node != root\n");
 		xmlFreeDoc(doc);
         return -1;
 	} else
-		ENG_LOG("root node is root\n");
+		ALOGD("root node is root\n");
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	curNode = curNode->children;
 
 	if(tmpNode = FindNode(curNode, "hsv_cm"))
@@ -251,16 +337,19 @@ int parse_lite_r2p0_bld_xml(struct bld_common *bld)
 
 }
 
-int update_lite_r2p0_bld_xml(struct bld_common *bld)
+int BldParser::update_xml(uint08_t *ctx)
 {
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	bld_common *bld;
+
+	bld = &((pq_tuning_parm *)ctx)->bld;
 
 	doc = xmlReadFile(bld_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-        ENG_LOG("Document not parsed successfully.\n");
+        ALOGD("Document not parsed successfully.\n");
         return -1;
 	}
 
@@ -268,13 +357,13 @@ int update_lite_r2p0_bld_xml(struct bld_common *bld)
 
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"root"))
 	{
-        ENG_LOG("root node != root\n");
+        ALOGD("root node != root\n");
 		xmlFreeDoc(doc);
         return -1;
 	} else
-		ENG_LOG("root node is root\n");
+		ALOGD("root node is root\n");
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	curNode = curNode->children;
 
 	if(tmpNode = FindNode(curNode, "enhance"))

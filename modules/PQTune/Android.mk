@@ -7,30 +7,32 @@ LOCAL_MODULE_RELATIVE_PATH := npidevice
 LOCAL_PROPRIETARY_MODULE := true
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)
-LOCAL_C_INCLUDES += external/libxml2/include \
-                    $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc
+LOCAL_C_INCLUDES += $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/PQParsers
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/PQCores
+LOCAL_C_INCLUDES += external/libxml2/include
 
-LOCAL_SRC_FILES := pq_diag.c \
-				   pq_util.c \
-				   pq_xml.c
+LOCAL_SRC_FILES := PQDiag.cpp 
 
-LOCAL_SRC_FILES += pq_minui/graphics.c \
-				   pq_minui/graphics_drm.c
+LOCAL_SRC_FILES += Minui/graphics.c \
+                   Minui/graphics_drm.c
 
-LOCAL_SRC_FILES += pq_r2p0/tune_r2p0.c \
-				   pq_r2p0/tune_abc.c \
-				   pq_r2p0/tune_bld.c \
-				   pq_r2p0/tune_cms.c \
-				   pq_r2p0/tune_gamma.c \
-				   pq_r2p0/tune_rwreg.c
+LOCAL_SRC_FILES += PQCores/PQTuneCore.cpp \
+				   PQCores/PQTuneAllCores.cpp
 
-
-LOCAL_SRC_FILES += pq_lite_r2p0/tune_lite_r2p0.c \
-				   pq_lite_r2p0/tune_abc.c \
-				   pq_lite_r2p0/tune_bld.c \
-				   pq_lite_r2p0/tune_cms.c \
-				   pq_lite_r2p0/tune_gamma.c \
-				   pq_lite_r2p0/tune_rwreg.c
+LOCAL_SRC_FILES += PQParsers/ParserCore.cpp \
+		PQParsers/AbcParsers.cpp \
+		PQParsers/BldParsers.cpp \
+		PQParsers/CmsParsers.cpp \
+		PQParsers/GammaParsers.cpp \
+		PQParsers/sharkl5/AbcParsersLiteR2p0.cpp \
+		PQParsers/sharkl5/BldParsersLiteR2p0.cpp \
+		PQParsers/sharkl5/CmsParsersLiteR2p0.cpp \
+		PQParsers/sharkl5/GammaParsersLiteR2p0.cpp \
+		PQParsers/roc1/AbcParsersR3p0.cpp \
+		PQParsers/sharkl5Pro/CmsParsersR4p0.cpp \
+		PQParsers/sharkl5Pro/AbcParsersR4p0.cpp \
+		PQParsers/sharkl5Pro/HsvParsers.cpp 
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
@@ -54,11 +56,11 @@ else
 endif
 endif
 LOCAL_SHARED_LIBRARIES += libcutils   \
-						  libutils \
-						  libdl \
-						  libxml2 \
-						  liblog \
-						  libdrm
+			  libutils \
+			  libdl \
+			  libxml2 \
+			  liblog \
+			  libdrm
 
 include $(BUILD_SHARED_LIBRARY)
 

@@ -1,13 +1,13 @@
 #include <utils/Log.h>
-#include "tune_lite_r2p0.h"
-#include "pq_xml.h"
+#include "ParserCore.h"
 
 #define PARSE_CMS_HSVCM(i, X) \
 ({	\
 	if (xmlHasProp(propNode, BAD_CAST #X)) {	\
 		szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-		cms->hsvcm[i].cm.X = strtoul((char *)szPropity, (char **)&endptr, 0); \
-		ENG_LOG(""#X" %d \n", cms->hsvcm[i].cm.X); \
+		cms->hsvcm[i].cm.X = strtoul((char *)szPropity, NULL, 0); \
+		ALOGD(""#X" %d \n", cms->hsvcm[i].cm.X); \
+		free(szPropity); \
 		propNode = propNode->next; \
 	}	\
 })
@@ -16,8 +16,9 @@
 ({	\
 	if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-		cms->cm[i].X = strtoul((char *)szPropity, (char **)&endptr, 0);	\
-		ENG_LOG(""#X" %d \n", cms->cm[i].X); \
+		cms->cm[i].X = strtoul((char *)szPropity, NULL, 0);	\
+		ALOGD(""#X" %d \n", cms->cm[i].X); \
+		free(szPropity); \
 		propNode = propNode->next; \
 	} \
 })
@@ -27,7 +28,7 @@
 	if (xmlHasProp(propNode, BAD_CAST #X)) {	\
 		snprintf(numStr, sizeof(numStr), "%d", cms->hsvcm[i].cm.X);	\
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr);	\
-		ENG_LOG(""#X" %d \n", cms->hsvcm[i].cm.X);	\
+		ALOGD(""#X" %d \n", cms->hsvcm[i].cm.X);	\
 		propNode = propNode->next; \
 	}	\
 })
@@ -37,7 +38,7 @@
 	if (xmlHasProp(propNode, BAD_CAST #X)) {	\
 		snprintf(numStr, sizeof(numStr), "%d", cms->cm[i].X);	\
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr);	\
-		ENG_LOG(""#X" %d \n", cms->cm[i].X);	\
+		ALOGD(""#X" %d \n", cms->cm[i].X);	\
 		propNode = propNode->next; \
 	} \
 })
@@ -109,7 +110,7 @@
 })
 
 
-static int parse_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
+static int parse_hsvcm(cms_common *cms, xmlNodePtr subNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlAttrPtr attrPtr;
@@ -123,12 +124,14 @@ static int parse_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 		while (NULL != attrPtr) {
 			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"hue")) {
                 szPropity = xmlGetProp(propNode, (const xmlChar*)"hue");
-				cms->hsvcm[i].hsv.table[j].hue = strtoul((char *)szPropity, (char **)&endptr, 0);
-				ENG_LOG("parse_hue j %d hue %d \n", j, cms->hsvcm[i].hsv.table[j].hue);
+				cms->hsvcm[i].hsv.table[j].hue = strtoul((char *)szPropity, NULL, 0);
+				ALOGD("parse_hue j %d hue %d \n", j, cms->hsvcm[i].hsv.table[j].hue);
+				free(szPropity);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"sat")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"sat");
-				cms->hsvcm[i].hsv.table[j].sat = strtoul((char *)szPropity, (char **)&endptr, 0);
-				ENG_LOG("sat %d \n", cms->hsvcm[i].hsv.table[j].sat);
+				cms->hsvcm[i].hsv.table[j].sat = strtoul((char *)szPropity, NULL, 0);
+				ALOGD("sat %d \n", cms->hsvcm[i].hsv.table[j].sat);
+				free(szPropity);
 			}
 			attrPtr = attrPtr->next;
 		}
@@ -142,25 +145,26 @@ static int parse_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 	return 0;
 }
 
-static int parse_cms_version(struct cms_common *cms, xmlNodePtr curNode)
+static int parse_cms_version(cms_common *cms, xmlNodePtr curNode)
 {
 	xmlNodePtr subNode;
 	xmlChar* szPropity;
     const char *endptr = NULL;
 
-    ENG_LOG("curNode name %s \n",curNode->name);
+    ALOGD("curNode name %s \n",curNode->name);
     subNode = curNode; //subNode table
-	while(!xmlStrcmp(subNode->name, "enhance")) {
+	while(!xmlStrcmp(subNode->name, BAD_CAST"enhance")) {
         if(xmlHasProp(subNode, BAD_CAST "version")) {
-            szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
-            cms->version.version = strtoul((char *)szPropity, (char **)&endptr, 0);
+			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
+            cms->version.version = strtoul((char *)szPropity, NULL, 0);
+			free(szPropity);
         }
 		subNode = subNode->next;
 	}
-    return 0;
+        return 0;
 }
 
-static int parse_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
+static int parse_cms_hsvcm(cms_common *cms, xmlNodePtr curNode)
 {
 	const char *endptr = NULL;
 	xmlNodePtr subNode;
@@ -168,21 +172,24 @@ static int parse_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "auto")) {
-				ENG_LOG("PQ CMS coef auto\n");
+				free(szPropity);
+				ALOGD("PQ CMS coef auto\n");
 				parse_hsvcm(cms, subNode->children, 0);
 			}
 			else if (!xmlStrcmp(szPropity, (const xmlChar *) "enhance")) {
-				ENG_LOG("PQ CMS enhance coef\n");
+				free(szPropity);
+				ALOGD("PQ CMS enhance coef\n");
 				parse_hsvcm(cms, subNode->children, 1);
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard")) {
-				ENG_LOG("PQ CMS coef standard\n");
+				free(szPropity);
+				ALOGD("PQ CMS coef standard\n");
 				parse_hsvcm(cms, subNode->children, 2);
 			}
 		}
@@ -191,7 +198,7 @@ static int parse_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 	return 0;
 }
 
-static int parse_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
+static int parse_cms_rgbmap_table(cms_common *cms, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -202,19 +209,21 @@ static int parse_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
 	xmlChar* szPropity;
 
 	subNode = curNode;
-	ENG_LOG("PQ read curNode name %s \n",curNode->name);
+	ALOGD("PQ read curNode name %s \n",curNode->name);
 	propNode = subNode->children;
 	while (NULL != propNode) {
 		attrPtr = propNode->properties;
 		while (NULL != attrPtr) {
 			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"rgb")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"rgb");
-				cms->rgbcm[i].rgb = strtoul((char *)szPropity, (char **)&endptr, 0);
-				ENG_LOG("rgb %d \n", cms->rgbcm[i].rgb);
+				cms->rgbcm[i].rgb = strtoul((char *)szPropity, NULL, 0);
+				ALOGD("rgb %d \n", cms->rgbcm[i].rgb);
+				free(szPropity);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"index")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"index");
-				cms->rgbcm[i].cmindex = strtoul((char *)szPropity, (char **)&endptr, 0);
-				ENG_LOG("index %d \n", cms->rgbcm[i].cmindex);
+				cms->rgbcm[i].cmindex = strtoul((char *)szPropity, NULL, 0);
+				ALOGD("index %d \n", cms->rgbcm[i].cmindex);
+				free(szPropity);
 			}
 			attrPtr = attrPtr->next;
         }
@@ -225,7 +234,7 @@ static int parse_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
 }
 
 
-static int parse_cms_config_table(struct cms_common *cms, xmlNodePtr curNode)
+static int parse_cms_config_table(cms_common *cms, xmlNodePtr curNode)
 {
 	int i = 0;
 	const char *endptr = NULL;
@@ -234,41 +243,63 @@ static int parse_cms_config_table(struct cms_common *cms, xmlNodePtr curNode)
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
 	propNode = subNode->children;
 
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
-			if(!xmlStrcmp(szPropity, (const xmlChar *) "cold"))
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "cold")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if (!xmlStrcmp(szPropity, (const xmlChar *) "warm"))
+			}
+			else if (!xmlStrcmp(szPropity, (const xmlChar *) "warm")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
+			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "0")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-				ENG_LOG("PQ auto_auto read 0 \n");
+				ALOGD("PQ auto_auto read 0 \n");
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "1")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-				ENG_LOG("PQ auto_auto 1 read \n");
+				ALOGD("PQ auto_auto 1 read \n");
 			}
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "2"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "2")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "3"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "3")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "4"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "4")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "5"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "5")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "6"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "6")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "7"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "7")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "8"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "8")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "9"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "9")) {
+				free(szPropity);
 				PARSE_CM_CONFIG_ARRAYS(i);
+			}
 		}
 		i++;
 		subNode = subNode->next;
@@ -276,11 +307,11 @@ static int parse_cms_config_table(struct cms_common *cms, xmlNodePtr curNode)
 			propNode = subNode->children;
 	}
 
-	ENG_LOG("cm_config finish0 %s \n",curNode->name);
+	ALOGD("cm_config finish0 %s \n",curNode->name);
 	return 0;
 }
 
-static int update_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
+static int update_hsvcm(cms_common *cms, xmlNodePtr subNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlAttrPtr attrPtr;
@@ -297,12 +328,12 @@ static int update_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 				snprintf(numStr, sizeof(numStr), "%d", cms->hsvcm[i].hsv.table[j].hue);
 				//snprintf(numStr, sizeof(numStr), "%d", 100);
 				xmlSetProp(propNode, BAD_CAST "hue", (const xmlChar*)numStr);
-				ENG_LOG("hue %d \n", cms->hsvcm[i].hsv.table[j].hue);
+				ALOGD("hue %d \n", cms->hsvcm[i].hsv.table[j].hue);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"sat")) {
 				snprintf(numStr, sizeof(numStr), "%d", cms->hsvcm[i].hsv.table[j].sat);
 				//snprintf(numStr, sizeof(numStr), "%d", 100);
 				xmlSetProp(propNode, BAD_CAST "sat", (const xmlChar*)numStr);
-				ENG_LOG("sat %d \n", cms->hsvcm[i].hsv.table[j].sat);
+				ALOGD("sat %d \n", cms->hsvcm[i].hsv.table[j].sat);
 			}
 			attrPtr = attrPtr->next;
  		}
@@ -315,25 +346,26 @@ static int update_hsvcm(struct cms_common *cms, xmlNodePtr subNode, int i)
 	return 0;
 }
 
-static int update_cms_version(struct cms_common *cms, xmlNodePtr curNode)
+static int update_cms_version(cms_common *cms, xmlNodePtr curNode)
 {
-    int i = 0;
-    xmlNodePtr subNode;
-    char numStr[12];
+        int i = 0;
+        xmlNodePtr subNode;
+        char numStr[12];
 
-    ENG_LOG("curNode name %s \n",curNode->name);
-    subNode = curNode; //subNode table
-	while(!xmlStrcmp(subNode->name, "enhance")) {
-		if(xmlHasProp(subNode, BAD_CAST "version")) {
-            snprintf(numStr, sizeof(numStr), "%d", cms->version.version);
-            xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
+        ALOGD("curNode name %s \n",curNode->name);
+        subNode = curNode; //subNode table
+		while(!xmlStrcmp(subNode->name, BAD_CAST"enhance")) {
+			if(xmlHasProp(subNode, BAD_CAST "version")) {
+				snprintf(numStr, sizeof(numStr), "%d", cms->version.version);
+				xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
+			}
+			subNode = subNode->next;
 		}
-		subNode = subNode->next;
-	}
-    return 0;
+
+        return 0;
 }
 
-static int update_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
+static int update_cms_hsvcm(cms_common *cms, xmlNodePtr curNode)
 {
 	const char *endptr = NULL;
 	xmlNodePtr subNode;
@@ -342,21 +374,21 @@ static int update_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "auto")) {
-				ENG_LOG("PQ wr CMS coef auto\n");
+				ALOGD("PQ wr CMS coef auto\n");
 				update_hsvcm(cms, subNode->children, 0);
 			}
 			else if (!xmlStrcmp(szPropity, (const xmlChar *) "enhance")) {
-				ENG_LOG("PQ wr CMS coef enhance\n");
+				ALOGD("PQ wr CMS coef enhance\n");
 				update_hsvcm(cms, subNode->children, 1);
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard")) {
-				ENG_LOG("PQ wr CMS coef standard\n");
+				ALOGD("PQ wr CMS coef standard\n");
 				update_hsvcm(cms, subNode->children, 2);
 			}
 		}
@@ -365,7 +397,7 @@ static int update_cms_hsvcm(struct cms_common *cms, xmlNodePtr curNode)
 	return 0;
 }
 
-static int update_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
+static int update_cms_rgbmap_table(cms_common *cms, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -377,7 +409,7 @@ static int update_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
 	char numStr[10];
 
 	subNode = curNode;
-	ENG_LOG("PQ enter updatea rgpmap curNode name %s \n",curNode->name);
+	ALOGD("PQ enter updatea rgpmap curNode name %s \n",curNode->name);
 	propNode = subNode->children;
 	while (NULL != propNode) {
 		attrPtr = propNode->properties;
@@ -385,11 +417,11 @@ static int update_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
 			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"rgb")) {
 				snprintf(numStr, sizeof(numStr), "%d", cms->rgbcm[i].rgb);
 				xmlSetProp(propNode, BAD_CAST "rgb", (const xmlChar*)numStr);
-				ENG_LOG("rgb %d \n", cms->rgbcm[i].rgb);
+				ALOGD("rgb %d \n", cms->rgbcm[i].rgb);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"index")) {
 				snprintf(numStr, sizeof(numStr), "%d", cms->rgbcm[i].cmindex);
 				xmlSetProp(propNode, BAD_CAST "index", (const xmlChar*)numStr);
-				ENG_LOG("index %d \n", cms->rgbcm[i].cmindex);
+				ALOGD("index %d \n", cms->rgbcm[i].cmindex);
 			}
 			attrPtr = attrPtr->next;
         }
@@ -400,7 +432,7 @@ static int update_cms_rgbmap_table(struct cms_common *cms, xmlNodePtr curNode)
 }
 
 
-static int update_cms_config_table(struct cms_common *cms, xmlNodePtr curNode)
+static int update_cms_config_table(cms_common *cms, xmlNodePtr curNode)
 {
 	int i = 0;
 	const char *endptr = NULL;
@@ -410,7 +442,7 @@ static int update_cms_config_table(struct cms_common *cms, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
 	propNode = subNode->children;
 
@@ -423,11 +455,11 @@ static int update_cms_config_table(struct cms_common *cms, xmlNodePtr curNode)
 				UPDATE_CM_CONFIG_ARRAYS(i);
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "0")) {
 				UPDATE_CM_CONFIG_ARRAYS(i);
-				ENG_LOG("PQ auto_auto 0\n");
+				ALOGD("PQ auto_auto 0\n");
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "1")) {
 				UPDATE_CM_CONFIG_ARRAYS(i);
-				ENG_LOG("PQ auto_auto 1\n");
+				ALOGD("PQ auto_auto 1\n");
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "2"))
 				UPDATE_CM_CONFIG_ARRAYS(i);
@@ -452,27 +484,96 @@ static int update_cms_config_table(struct cms_common *cms, xmlNodePtr curNode)
 			propNode = subNode->children;
 	}
 
-	ENG_LOG("cm_config finish0 %s \n",curNode->name);
+	ALOGD("cm_config finish0 %s \n",curNode->name);
 	return 0;
 }
 
-int update_lite_r2p0_cms_xml(struct cms_common *cms)
+int CmsParser::parse_reg(uint08_t *ctx)
+{
+	int fd0, fd1;
+	uint32_t sizes0,sizes1;
+	uint08_t* data;
+	int cnt;
+	cms_common *cms;
+
+	cms = &((pq_tuning_parm *)ctx)->cms;
+
+	fd0 = open(DpuHsv, O_RDWR);
+	fd1 = open(DpuCm, O_RDWR);
+	if(fd0 < 0 || fd1 < 0) {
+		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		return errno;
+	}
+	sizes0 = sizeof(cms->hsvcm[0].hsv);
+	sizes1 = sizeof(cms->hsvcm[0].cm);
+	ALOGD("parse_cms_reg sizes0 %d: size1 %d\n", sizes0, sizes1);
+	cnt = read(fd0, &(cms->hsvcm[0].hsv), sizes0);
+	ALOGD("parse_cms_reg cnt0 %d \n", cnt);
+	cnt = read(fd1, &(cms->hsvcm[0].cm), sizes1);
+	ALOGD("parse_cms_reg cnt %d\n", cnt);
+	close(fd0);
+	close(fd1);
+
+	return 0;
+}
+
+int CmsParser::update_reg(uint08_t *ctx)
+{
+	int fd0, fd1, fd2;
+	uint32_t sizes0,sizes1;
+	uint08_t* data;
+	uint32_t disable;
+	cms_common *cms;
+
+	cms = &((pq_tuning_parm *)ctx)->cms;
+
+	if(cms->version.enable) {
+		fd0 = open(DpuHsv, O_RDWR);
+		fd1 = open(DpuCm, O_RDWR);
+		if(fd0 < 0 || fd1 < 0) {
+			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+			return errno;
+		}
+		sizes0 = sizeof(cms->hsvcm[0].hsv);
+		sizes1 = sizeof(cms->hsvcm[0].cm);
+		write(fd0, (uint08_t *)&cms->hsvcm[0].hsv, sizes0);
+		write(fd1, (uint08_t *)&cms->hsvcm[0].cm, sizes1);
+		close(fd0);
+		close(fd1);
+	} else {
+		fd2 = open(PQDisable, O_WRONLY);
+		if(fd2 < 0) {
+			ALOGD("%s: fd2 open file failed, err: %s\n", __func__, strerror(errno));
+			return errno;
+		}
+		disable = CMS_EN | HSV_EN;
+		write(fd2, &disable, sizeof(disable));
+		close(fd2);
+	}
+
+	return 0;
+}
+
+int CmsParser::update_xml(uint08_t *ctx)
 {
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	cms_common *cms;
+
+	cms = &((pq_tuning_parm *)ctx)->cms;
 
 	doc = xmlReadFile(cms_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-        ENG_LOG("Document not parsed successfully.\n");
+        ALOGD("Document not parsed successfully.\n");
         return -1;
 	}
 
 	curNode = xmlDocGetRootElement(doc);
 
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"root")) {
-        ENG_LOG("root node != root\n");
+        ALOGD("root node != root\n");
 		xmlFreeDoc(doc);
         return -1;
 	}
@@ -490,28 +591,31 @@ int update_lite_r2p0_cms_xml(struct cms_common *cms)
 
 	xmlSaveFormatFileEnc(cms_xml, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
-	ENG_LOG("this is pq\n");
+	ALOGD("this is pq\n");
 	return 0;
 }
 
 
-int parse_lite_r2p0_cms_xml(struct cms_common *cms)
+int CmsParser::parse_xml(uint08_t *ctx)
 {
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	cms_common *cms;
+
+	cms = &((pq_tuning_parm *)ctx)->cms;
 
 	doc = xmlReadFile(cms_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-        ENG_LOG("Document not parsed successfully.\n");
+        ALOGD("Document not parsed successfully.\n");
         return -1;
 	}
 
 	curNode = xmlDocGetRootElement(doc);
 
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"root")) {
-		ENG_LOG("root node != root\n");
+		ALOGD("root node != root\n");
 		xmlFreeDoc(doc);
 		return -1;
 	}
@@ -529,6 +633,6 @@ int parse_lite_r2p0_cms_xml(struct cms_common *cms)
 
 	xmlSaveFormatFileEnc(cms_xml, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
-	ENG_LOG("this is pq\n");
+	ALOGD("this is pq\n");
 	return 0;
 }

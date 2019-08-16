@@ -1,23 +1,12 @@
 #include <utils/Log.h>
-#include "pq_xml.h"
-#include "tune_r2p0.h"
+#include "ParserCore.h"
 
-#define PARSE_EPF_SP_CONFIG(X, I, J) \
+#define PARSE_EPF_CONFIG(X, I, J) \
 	({ \
 	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-	 abc->sceneTable[I].sceneTableItem[J].epfCfgSunlightProtector.X = strtoul((char *)szPropity, (char **)&endptr, 0); \
-	 ENG_LOG("aabbcc EPF_SP "#X" = %d \n",abc->sceneTable[I].sceneTableItem[J].epfCfgSunlightProtector.X);\
-	 propNode = propNode->next; \
-	 } \
-	 })
-
-#define PARSE_EPF_SR_CONFIG(X, I, J) \
-	({ \
-	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
-	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-	 abc->sceneTable[I].sceneTableItem[J].epfCfgSuperResolution.X = strtoul((char *)szPropity, (char **)&endptr, 0); \
-	 ENG_LOG("aabbcc EPF_SR "#X" = %d \n",abc->sceneTable[I].sceneTableItem[J].epfCfgSuperResolution.X);\
+	 abc->sceneTable[I].sceneTableItem[J].epfCfg.X = strtoul((char *)szPropity, NULL, 0); \
+	 free(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
@@ -26,28 +15,31 @@
 	({ \
 	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-	 abc->sceneTable[I].sceneTableItem[J].slpCfg.X = strtoul((char *)szPropity, (char **)&endptr, 0); \
+	 abc->sceneTable[I].sceneTableItem[J].slpCfg.X = strtoul((char *)szPropity, NULL, 0); \
+	 free(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
 
-#define UPDATE_EPF_SP_CONFIG(X, I, J)	\
+#define PARSE_LTM_CONFIG(X, I, J) \
+	({ \
+		if (xmlHasProp(propNode, BAD_CAST #X)) { \
+			szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
+			abc->sceneTable[I].sceneTableItem[J].ltmCfg.X = strtoul((char *)szPropity, NULL, 0); \
+			free(szPropity); \
+			propNode = propNode->next; \
+		} \
+	 })
+
+#define UPDATE_EPF_CONFIG(X, I, J)	\
 	({	\
 	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
-	 snprintf(numStr, sizeof(numStr), "%d", abc->sceneTable[I].sceneTableItem[J].epfCfgSunlightProtector.X); \
+	 snprintf(numStr, sizeof(numStr), "%d", abc->sceneTable[I].sceneTableItem[J].epfCfg.X); \
 	 xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
 	 propNode = propNode->next; \
 	 } \
 	 })
 
-#define UPDATE_EPF_SR_CONFIG(X, I, J)	\
-	({	\
-	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
-	 snprintf(numStr, sizeof(numStr), "%d", abc->sceneTable[I].sceneTableItem[J].epfCfgSuperResolution.X); \
-	 xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
-	 propNode = propNode->next; \
-	 } \
-	 })
 
 #define UPDATE_SLP_CONFIG(X, I, J) \
 	({	\
@@ -56,6 +48,15 @@
 	 xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
 	 propNode = propNode->next; \
 	 } \
+	 })
+
+#define UPDATE_LTM_CONFIG(X, I, J) \
+	 ({  \
+		 if (xmlHasProp(propNode, BAD_CAST #X)) {	 \
+			 snprintf(numStr, sizeof(numStr), "%d", abc->sceneTable[I].sceneTableItem[J].ltmCfg.X);	 \
+			 xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr);  \
+			 propNode = propNode->next; \
+		 } \
 	 })
 
 #define UPDATE_SLP_CONFIG_CHILD_XML(X) \
@@ -82,7 +83,19 @@
 	propNode = childNode; \
 	 })
 
-static int parse_epf_child_config(struct abc_common *abc, xmlNodePtr curNode , int epf_fun, int i)
+#define UPDATE_LTM_CONFIG_CHILD_XML(X) \
+({ \
+		childNode = xmlNewNode(NULL,BAD_CAST "param"); \
+		if(!propNode) \
+			xmlAddChild(subNode, childNode); \
+		snprintf(numStr, sizeof(numStr), "%d", 1); \
+		xmlNewProp(childNode, BAD_CAST #X, BAD_CAST numStr); \
+		if (propNode) \
+			xmlAddSibling(propNode, childNode); \
+		propNode = childNode; \
+})
+
+static int parse_epf_child_config(abc_common_sharkl5 *abc, xmlNodePtr curNode , int i)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -94,36 +107,20 @@ static int parse_epf_child_config(struct abc_common *abc, xmlNodePtr curNode , i
 	while(NULL != subNode) {
 		propNode = subNode->children;//param
 		while (NULL != propNode) {
-			if(EPF_FUN_SUNLIGHT_PROTECTOR == epf_fun) {
-				PARSE_EPF_SP_CONFIG(epsilon0, i, j);
-				PARSE_EPF_SP_CONFIG(epsilon1, i, j);
-				PARSE_EPF_SP_CONFIG(gain0, i, j);
-				PARSE_EPF_SP_CONFIG(gain1, i, j);
-				PARSE_EPF_SP_CONFIG(gain2, i, j);
-				PARSE_EPF_SP_CONFIG(gain3, i, j);
-				PARSE_EPF_SP_CONFIG(gain4, i, j);
-				PARSE_EPF_SP_CONFIG(gain5, i, j);
-				PARSE_EPF_SP_CONFIG(gain6, i, j);
-				PARSE_EPF_SP_CONFIG(gain7, i, j);
-				PARSE_EPF_SP_CONFIG(max_diff, i, j);
-				PARSE_EPF_SP_CONFIG(min_diff, i, j);
-			} else if(EPF_FUN_SUPER_RESOLUTION == epf_fun) {
-				PARSE_EPF_SR_CONFIG(epsilon0, i, j);
-				PARSE_EPF_SR_CONFIG(epsilon1, i, j);
-				PARSE_EPF_SR_CONFIG(gain0, i, j);
-				PARSE_EPF_SR_CONFIG(gain1, i, j);
-				PARSE_EPF_SR_CONFIG(gain2, i, j);
-				PARSE_EPF_SR_CONFIG(gain3, i, j);
-				PARSE_EPF_SR_CONFIG(gain4, i, j);
-				PARSE_EPF_SR_CONFIG(gain5, i, j);
-				PARSE_EPF_SR_CONFIG(gain6, i, j);
-				PARSE_EPF_SR_CONFIG(gain7, i, j);
-				PARSE_EPF_SR_CONFIG(max_diff, i, j);
-				PARSE_EPF_SR_CONFIG(min_diff, i, j);
-			}
+			PARSE_EPF_CONFIG(epsilon0, i, j);
+			PARSE_EPF_CONFIG(epsilon1, i, j);
+			PARSE_EPF_CONFIG(gain0, i, j);
+			PARSE_EPF_CONFIG(gain1, i, j);
+			PARSE_EPF_CONFIG(gain2, i, j);
+			PARSE_EPF_CONFIG(gain3, i, j);
+			PARSE_EPF_CONFIG(gain4, i, j);
+			PARSE_EPF_CONFIG(gain5, i, j);
+			PARSE_EPF_CONFIG(gain6, i, j);
+			PARSE_EPF_CONFIG(gain7, i, j);
+			PARSE_EPF_CONFIG(max_diff, i, j);
+			PARSE_EPF_CONFIG(min_diff, i, j);
 			if (propNode)
 				propNode = propNode->next;
-			ENG_LOG("aabbcc parse %s  j = %d \n", __func__, j);
 		}
 		subNode = subNode->next;
 		j++;
@@ -131,7 +128,7 @@ static int parse_epf_child_config(struct abc_common *abc, xmlNodePtr curNode , i
 	return 0;
 }
 
-static int parse_epf_next_config(struct abc_common *abc, xmlNodePtr curNode, int epf_fun)
+static int parse_epf_config(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -141,12 +138,13 @@ static int parse_epf_next_config(struct abc_common *abc, xmlNodePtr curNode, int
 	subNode = curNode->children;//config mode
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				parse_epf_child_config(abc, subNode, epf_fun, 0);
+				free(szPropity);
+				parse_epf_child_config(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				parse_epf_child_config(abc, subNode, epf_fun, 1);
+				free(szPropity);
+				parse_epf_child_config(abc, subNode, 1);
 			}
 		}
 		subNode = subNode->next;
@@ -155,24 +153,7 @@ static int parse_epf_next_config(struct abc_common *abc, xmlNodePtr curNode, int
 	return 0;
 }
 
-static int parse_epf_config(struct abc_common *abc, xmlNodePtr curNode)
-{
-	xmlNodePtr tmpNode;
-	xmlNodePtr subNode = curNode->children;
-
-	if(tmpNode = FindNode(subNode, "sunlight_protector")) {
-		ENG_LOG("curNode name %s \n", tmpNode->name);
-		parse_epf_next_config(abc, tmpNode, EPF_FUN_SUNLIGHT_PROTECTOR);
-	}
-	if(tmpNode = FindNode(subNode, "super_resolution")) {
-		ENG_LOG("curNode name %s \n", tmpNode->name);
-		parse_epf_next_config(abc, tmpNode, EPF_FUN_SUPER_RESOLUTION);
-	}
-
-	return 0;
-}
-
-static int parse_slp_child_config(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int parse_slp_child_config(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -200,7 +181,7 @@ static int parse_slp_child_config(struct abc_common *abc, xmlNodePtr curNode, in
 
 }
 
-static int parse_slp_config(struct abc_common *abc, xmlNodePtr curNode)
+static int parse_slp_config(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -210,11 +191,13 @@ static int parse_slp_config(struct abc_common *abc, xmlNodePtr curNode)
 	subNode = curNode->children;
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
+				free(szPropity);
 				parse_slp_child_config(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
 				parse_slp_child_config(abc, subNode, 1);
 			}
 		}
@@ -224,26 +207,81 @@ static int parse_slp_config(struct abc_common *abc, xmlNodePtr curNode)
 	return 0;
 }
 
-static int parse_abc_version(struct abc_common *abc, xmlNodePtr curNode)
+static int parse_ltm_child_config(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
+{
+	xmlNodePtr propNode;
+	xmlNodePtr subNode;
+	xmlChar* szPropity;
+	const char *endptr = NULL;
+	int j = 0;
+
+	subNode = curNode->children;//number
+	while(subNode) {
+		propNode = subNode->children;//param
+		while (NULL != propNode){
+			PARSE_LTM_CONFIG(slp_step_clip, i, j);
+			PARSE_LTM_CONFIG(slp_high_clip, i, j);
+			PARSE_LTM_CONFIG(slp_low_clip, i, j);
+			if (propNode)
+				propNode = propNode->next;
+		}
+		subNode = subNode->next;
+		j++;
+	}
+	return 0;
+
+}
+
+static int parse_ltm_config(abc_common_sharkl5 *abc, xmlNodePtr curNode)
+{
+	xmlNodePtr propNode;
+	xmlNodePtr subNode;
+	xmlChar* szPropity;
+	const char *endptr = NULL;
+
+	subNode = curNode->children;
+	while(NULL != subNode) {
+		if(xmlHasProp(subNode, BAD_CAST "mode")) {
+			ALOGD("curNode name %s \n",subNode->name);
+			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
+				free(szPropity);
+				parse_ltm_child_config(abc, subNode, 0);
+			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
+				parse_ltm_child_config(abc, subNode, 1);
+			}
+		}
+		subNode = subNode->next;
+	}
+
+	return 0;
+}
+
+static int parse_abc_version(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	xmlNodePtr subNode;
 	xmlChar* szPropity;
 	const char *endptr = NULL;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode; //enhance version
-	while(!xmlStrcmp(subNode->name, "enhance")) {
+	while(!xmlStrcmp(subNode->name, BAD_CAST"enhance")) {
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
-			abc->version.version = strtoul((char *)szPropity, (char **)&endptr, 0);
-			ENG_LOG("aaaaa abc verison %d\n", abc->version.version);
+			abc->version.version = strtoul((char *)szPropity, NULL, 0);
+			free(szPropity);
+		} else if (xmlHasProp(subNode, BAD_CAST "major_version")) {
+			szPropity = xmlGetProp(subNode, (const xmlChar*) "major_version");
+			abc->nMajorVersion = strtoul((char *)szPropity, NULL, 0);
+			free(szPropity);
 		}
 		subNode = subNode->next;
 	}
 	return 0;
 }
 
-static int parse_slp_mapping_child_table(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int parse_slp_mapping_child_table(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 	int j = 0;
 	int k = 0;
@@ -261,10 +299,12 @@ static int parse_slp_mapping_child_table(struct abc_common *abc, xmlNodePtr curN
 			while (NULL != attrPtr) {
 				if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"ambient")) {
 					szPropity = xmlGetProp(propNode, (const xmlChar*)"ambient");
-					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].ambient = strtoul((char *)szPropity, (char **)&endptr, 0);
+					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].ambient = strtoul((char *)szPropity, NULL, 0);
+					free(szPropity);
 				} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"brightness")) {
 					szPropity = xmlGetProp(propNode, (const xmlChar*)"brightness");
-					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].slp_brightness_factor = strtoul((char *)szPropity, (char **)&endptr, 0);
+					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].slp_brightness_factor = strtoul((char *)szPropity, NULL, 0);
+					free(szPropity);
 				}
 				attrPtr = attrPtr->next;
 			}
@@ -282,7 +322,7 @@ static int parse_slp_mapping_child_table(struct abc_common *abc, xmlNodePtr curN
 	return 0;
 }
 
-static int parse_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
+static int parse_slp_mapping_table(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -292,11 +332,13 @@ static int parse_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 	subNode = curNode->children;// table mode
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
+				free(szPropity);
 				parse_slp_mapping_child_table(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
 				parse_slp_mapping_child_table(abc, subNode, 1);
 			}
 		}
@@ -306,7 +348,7 @@ static int parse_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 	return 0;
 }
 
-static int parse_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
+static int parse_bl_mapping_table(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -316,22 +358,24 @@ static int parse_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //table mode
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			propNode = subNode->children;
 			while (NULL != propNode) {
 				attrPtr = propNode->properties;
 				while (NULL != attrPtr) {
 					if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"ambient")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"ambient");
-						abc->blMappingTable[i].item[j].ambient = strtoul((char *)szPropity, (char **)&endptr, 0);
+						abc->blMappingTable[i].item[j].ambient = strtoul((char *)szPropity, NULL, 0);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"brightness")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"brightness");
-						abc->blMappingTable[i].item[j].backlight = strtoul((char *)szPropity, (char **)&endptr, 0);
+						abc->blMappingTable[i].item[j].backlight = strtoul((char *)szPropity, NULL, 0);
 					}
+					if (szPropity)
+						free(szPropity);
 					attrPtr = attrPtr->next;
 				}
 				j++;
@@ -347,15 +391,15 @@ static int parse_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 	return 0;
 }
 
-static int update_abc_version(struct abc_common *abc, xmlNodePtr curNode)
+static int update_abc_version(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	int i = 0;
 	xmlNodePtr subNode;
 	char numStr[12];
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode; //enhance version
-	while(!xmlStrcmp(subNode->name, "enhance")) {
+	while(!xmlStrcmp(subNode->name, BAD_CAST"enhance")) {
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			snprintf(numStr, sizeof(numStr), "%d", abc->version.version);
 			xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
@@ -375,7 +419,7 @@ static int update_slp_items_xml(xmlNodePtr curNode, int wrItemnums, int Itemnums
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("vvvvvvitem wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
+	ALOGD("vvvvvvitem wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
 	propNode = curNode;
 	if (Itemnums < wrItemnums) {
 		for(; Itemnums < wrItemnums; Itemnums++) {
@@ -410,7 +454,7 @@ static int update_slp_mapping_items_child_xml(xmlNodePtr curNode, int wrItemnums
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("vvvvvvitem wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
+	ALOGD("vvvvvvitemsssss wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
 	subNode = curNode;
 	if (Itemnums < wrItemnums) {
 		for(; Itemnums < wrItemnums; Itemnums++) {
@@ -426,10 +470,11 @@ static int update_slp_mapping_items_child_xml(xmlNodePtr curNode, int wrItemnums
 		}
 	}
 
+
 	return 0;
 }
 
-static int update_slp_index_xml(struct abc_common *abc, xmlNodePtr curNode, int Indexnums, int i)
+static int update_slp_index_xml(abc_common_sharkl5 *abc, xmlNodePtr curNode, int Indexnums, int i)
 {
 
 	xmlNodePtr subNode;
@@ -469,7 +514,7 @@ static int update_slp_index_xml(struct abc_common *abc, xmlNodePtr curNode, int 
 	return 0;
 }
 
-static int update_slp_mapping_indexs_arrays(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int update_slp_mapping_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 
 	xmlNodePtr propNode;
@@ -479,9 +524,9 @@ static int update_slp_mapping_indexs_arrays(struct abc_common *abc, xmlNodePtr c
 	int wrIndexnums, wrItemnums;
 	int Indexnums, Itemnums;
 	char numStr[10];
-	struct slp_mapping_table_item *item;
+	slp_mapping_table_item *item;
 
-	ENG_LOG("vvvvvv %s in \n", __func__);
+	ALOGD("vvvvvv %s in \n", __func__);
 	wrIndexnums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	Indexnums = 0;
@@ -507,11 +552,11 @@ static int update_slp_mapping_indexs_arrays(struct abc_common *abc, xmlNodePtr c
 			break;
 		}
 	}
-	ENG_LOG("vvvvvv %s out \n", __func__);
+	ALOGD("vvvvvv %s out \n", __func__);
 	return 0;
 }
 
-static int update_slp_mapping_child_table(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int update_slp_mapping_child_table(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -524,7 +569,7 @@ static int update_slp_mapping_child_table(struct abc_common *abc, xmlNodePtr cur
 	int index_nums, item_nums;
 	char numStr[10];
 
-	ENG_LOG("vvvvvv %s in \n", __func__);
+	ALOGD("vvvvvv %s in \n", __func__);
 	index_nums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	while(NULL != subNode) {
@@ -548,11 +593,11 @@ static int update_slp_mapping_child_table(struct abc_common *abc, xmlNodePtr cur
 		j++;
 		subNode = subNode->next;
 	}
-	ENG_LOG("vvvvvv %s out \n", __func__);
+	ALOGD("vvvvvv %s out \n", __func__);
 	return 0;
 }
 
-static int update_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
+static int update_slp_mapping_table(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -563,19 +608,21 @@ static int update_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("vvvvvv update_slp_mapping_table in \n");
+	ALOGD("vvvvvv update_slp_mapping_table in \n");
 	subNode = curNode->children;//table normal
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				ENG_LOG("PQ  bl mapping normal \n");
+				free(szPropity);
+				ALOGD("PQ  bl mapping normal \n");
 				if(abc->mode == 1) {
 					update_slp_mapping_indexs_arrays(abc, subNode, 0);
 					update_slp_mapping_child_table(abc, subNode, 0);
 				}
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
 				if(abc->mode == 2) {
 					update_slp_mapping_indexs_arrays(abc, subNode, 1);
 					update_slp_mapping_child_table(abc, subNode, 1);
@@ -585,11 +632,11 @@ static int update_slp_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 		subNode = subNode->next;
 	}
 
-	ENG_LOG("vvvvvv update_slp_mapping_table out \n");
+	ALOGD("vvvvvv update_slp_mapping_table out \n");
 	return 0;
 }
 
-static int update_bl_child_table(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int update_bl_child_table(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr NextpropNode;
@@ -616,7 +663,7 @@ static int update_bl_child_table(struct abc_common *abc, xmlNodePtr curNode, int
 		}
 		j++;
 		if ((propNode->next) && ( j < nums)) {
-			ENG_LOG("PQ nums =  %d j = %d \n", nums, j);
+			ALOGD("PQ nums =  %d j = %d \n", nums, j);
 			propNode = propNode->next;
 		}
 		else
@@ -640,14 +687,14 @@ static int update_bl_child_table(struct abc_common *abc, xmlNodePtr curNode, int
 				RemoveNode(curNode, propNode);
 			j++;
 			propNode = NextpropNode;
-			ENG_LOG("PQ REMOVE  j = %d\n", j);
+			ALOGD("PQ REMOVE  j = %d\n", j);
 		}
 	}
 
 	return 0;
 }
 
-static int update_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
+static int update_bl_mapping_table(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -658,16 +705,18 @@ static int update_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("PQ curNode name %s abc->mode %d \n", curNode->name, abc->mode);
+	ALOGD("PQ curNode name %s abc->mode %d \n", curNode->name, abc->mode);
 	subNode = curNode->children; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
+				free(szPropity);
 				if(abc->mode == 1)
 					update_bl_child_table(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
 				if(abc->mode == 2)
 					update_bl_child_table(abc, subNode, 1);
 			}
@@ -678,7 +727,7 @@ static int update_bl_mapping_table(struct abc_common *abc, xmlNodePtr curNode)
 	return 0;
 }
 
-static int update_epf_child_config(struct abc_common *abc, xmlNodePtr curNode, int epf_fun, int i)
+static int update_epf_child_config(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -691,33 +740,18 @@ static int update_epf_child_config(struct abc_common *abc, xmlNodePtr curNode, i
 	while(NULL != subNode) {
 		propNode = subNode->children;
 		while (NULL != propNode){
-			if(EPF_FUN_SUNLIGHT_PROTECTOR == epf_fun) {
-				UPDATE_EPF_SP_CONFIG(epsilon0, i, j);
-				UPDATE_EPF_SP_CONFIG(epsilon1, i, j);
-				UPDATE_EPF_SP_CONFIG(gain0, i, j);
-				UPDATE_EPF_SP_CONFIG(gain1, i, j);
-				UPDATE_EPF_SP_CONFIG(gain2, i, j);
-				UPDATE_EPF_SP_CONFIG(gain3, i, j);
-				UPDATE_EPF_SP_CONFIG(gain4, i, j);
-				UPDATE_EPF_SP_CONFIG(gain5, i, j);
-				UPDATE_EPF_SP_CONFIG(gain6, i, j);
-				UPDATE_EPF_SP_CONFIG(gain7, i, j);
-				UPDATE_EPF_SP_CONFIG(max_diff, i, j);
-				UPDATE_EPF_SP_CONFIG(min_diff, i, j);
-			} else if(EPF_FUN_SUPER_RESOLUTION == epf_fun) {
-				UPDATE_EPF_SR_CONFIG(epsilon0, i, j);
-				UPDATE_EPF_SR_CONFIG(epsilon1, i, j);
-				UPDATE_EPF_SR_CONFIG(gain0, i, j);
-				UPDATE_EPF_SR_CONFIG(gain1, i, j);
-				UPDATE_EPF_SR_CONFIG(gain2, i, j);
-				UPDATE_EPF_SR_CONFIG(gain3, i, j);
-				UPDATE_EPF_SR_CONFIG(gain4, i, j);
-				UPDATE_EPF_SR_CONFIG(gain5, i, j);
-				UPDATE_EPF_SR_CONFIG(gain6, i, j);
-				UPDATE_EPF_SR_CONFIG(gain7, i, j);
-				UPDATE_EPF_SR_CONFIG(max_diff, i, j);
-				UPDATE_EPF_SR_CONFIG(min_diff, i, j);
-			}
+			UPDATE_EPF_CONFIG(epsilon0, i, j);
+			UPDATE_EPF_CONFIG(epsilon1, i, j);
+			UPDATE_EPF_CONFIG(gain0, i, j);
+			UPDATE_EPF_CONFIG(gain1, i, j);
+			UPDATE_EPF_CONFIG(gain2, i, j);
+			UPDATE_EPF_CONFIG(gain3, i, j);
+			UPDATE_EPF_CONFIG(gain4, i, j);
+			UPDATE_EPF_CONFIG(gain5, i, j);
+			UPDATE_EPF_CONFIG(gain6, i, j);
+			UPDATE_EPF_CONFIG(gain7, i, j);
+			UPDATE_EPF_CONFIG(max_diff, i, j);
+			UPDATE_EPF_CONFIG(min_diff, i, j);
 		}
 		j++;
 		subNode = subNode->next;
@@ -725,8 +759,6 @@ static int update_epf_child_config(struct abc_common *abc, xmlNodePtr curNode, i
 
 	return 0;
 }
-
-#if 1
 
 static int update_epf_config_child_xml(xmlNodePtr curNode)
 {
@@ -756,7 +788,7 @@ static int update_epf_config_child_xml(xmlNodePtr curNode)
 	return 0;
 }
 
-static int update_epf_config_index_xml(struct abc_common *abc, xmlNodePtr curNode, int Indexnums, int i)
+static int update_epf_config_index_xml(abc_common_sharkl5 *abc, xmlNodePtr curNode, int Indexnums, int i)
 {
 
 	xmlNodePtr subNode;
@@ -795,7 +827,7 @@ static int update_epf_config_index_xml(struct abc_common *abc, xmlNodePtr curNod
 	return 0;
 }
 
-static int update_epf_config_indexs_arrays(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int update_epf_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 
 	xmlNodePtr propNode;
@@ -805,9 +837,9 @@ static int update_epf_config_indexs_arrays(struct abc_common *abc, xmlNodePtr cu
 	int wrIndexnums, wrItemnums;
 	int Indexnums, Itemnums;
 	char numStr[10];
-	struct slp_mapping_table_item *item;
+	slp_mapping_table_item *item;
 
-	ENG_LOG("vvvvvv %s in \n", __func__);
+	ALOGD("vvvvvv %s in \n", __func__);
 	wrIndexnums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	Indexnums = 0;
@@ -820,12 +852,11 @@ static int update_epf_config_indexs_arrays(struct abc_common *abc, xmlNodePtr cu
 			break;
 		}
 	}
-	ENG_LOG("vvvvvv %s out \n", __func__);
+	ALOGD("vvvvvv %s out \n", __func__);
 	return 0;
 }
-#endif
 
-static int update_epf_next_config(struct abc_common *abc, xmlNodePtr curNode, int epf_fun)
+static int update_epf_config(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -836,22 +867,24 @@ static int update_epf_next_config(struct abc_common *abc, xmlNodePtr curNode, in
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("PQ curNode name %s \n",curNode->name);
-	subNode = curNode->children;//config mode
+	ALOGD("PQ curNode name %s \n",curNode->name);
+	subNode = curNode->children;
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				ENG_LOG("PQ  epf config normal \n");
+				ALOGD("PQ  epf config normal \n");
+				free(szPropity);
 				if(abc->mode == 1) {
 					update_epf_config_indexs_arrays(abc, subNode, 0);
-					update_epf_child_config(abc, subNode, epf_fun, 0);
+					update_epf_child_config(abc, subNode, 0);
 				}
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
 				if(abc->mode == 2) {
 					update_epf_config_indexs_arrays(abc, subNode, 1);
-					update_epf_child_config(abc, subNode, epf_fun, 1);
+					update_epf_child_config(abc, subNode, 1);
 				}
 			}
 		}
@@ -861,24 +894,7 @@ static int update_epf_next_config(struct abc_common *abc, xmlNodePtr curNode, in
 	return 0;
 }
 
-static int update_epf_config(struct abc_common *abc, xmlNodePtr curNode)
-{
-	xmlNodePtr tmpNode;
-	xmlNodePtr subNode = curNode->children;
-
-	if(tmpNode = FindNode(subNode, "sunlight_protector")) {
-		ENG_LOG("curNode name %s \n", tmpNode->name);
-		update_epf_next_config(abc, tmpNode, EPF_FUN_SUNLIGHT_PROTECTOR);
-	}
-	if(tmpNode = FindNode(subNode, "super_resolution")) {
-		ENG_LOG("curNode name %s \n", tmpNode->name);
-		update_epf_next_config(abc, tmpNode, EPF_FUN_SUPER_RESOLUTION);
-	}
-
-	return 0;
-}
-
-static int update_slp_child_config(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int update_slp_child_config(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 	xmlNodePtr propNode;
 	xmlNodePtr subNode;
@@ -930,7 +946,7 @@ static int update_slp_config_child_xml(xmlNodePtr curNode)
 	return 0;
 }
 
-static int update_slp_config_index_xml(struct abc_common *abc, xmlNodePtr curNode, int Indexnums, int i)
+static int update_slp_config_index_xml(abc_common_sharkl5 *abc, xmlNodePtr curNode, int Indexnums, int i)
 {
 
 	xmlNodePtr subNode;
@@ -969,7 +985,7 @@ static int update_slp_config_index_xml(struct abc_common *abc, xmlNodePtr curNod
 	return 0;
 }
 
-static int update_slp_config_indexs_arrays(struct abc_common *abc, xmlNodePtr curNode, int i)
+static int update_slp_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
 {
 
 	xmlNodePtr propNode;
@@ -979,9 +995,9 @@ static int update_slp_config_indexs_arrays(struct abc_common *abc, xmlNodePtr cu
 	int wrIndexnums, wrItemnums;
 	int Indexnums, Itemnums;
 	char numStr[10];
-	struct slp_mapping_table_item *item;
+	slp_mapping_table_item *item;
 
-	ENG_LOG("vvvvvv %s in \n", __func__);
+	ALOGD("vvvvvv %s in \n", __func__);
 	wrIndexnums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	Indexnums = 0;
@@ -994,12 +1010,12 @@ static int update_slp_config_indexs_arrays(struct abc_common *abc, xmlNodePtr cu
 			break;
 		}
 	}
-	ENG_LOG("vvvvvv %s out \n", __func__);
+	ALOGD("vvvvvv %s out \n", __func__);
 	return 0;
 }
 #endif
 
-static int update_slp_config(struct abc_common *abc, xmlNodePtr curNode)
+static int update_slp_config(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -1010,19 +1026,21 @@ static int update_slp_config(struct abc_common *abc, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("PQ curNode name %s \n",curNode->name);
+	ALOGD("PQ curNode name %s \n",curNode->name);
 	subNode = curNode->children;
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				ENG_LOG("PQ  slp config normal \n");
+				free(szPropity);
+				ALOGD("PQ  slp config normal \n");
 				if(abc->mode == 1) {
 					update_slp_config_indexs_arrays(abc, subNode, 0);
 					update_slp_child_config(abc, subNode, 0);
 				}
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
 				if(abc->mode == 2) {
 					update_slp_config_indexs_arrays(abc, subNode, 1);
 					update_slp_child_config(abc, subNode, 1);
@@ -1034,23 +1052,274 @@ static int update_slp_config(struct abc_common *abc, xmlNodePtr curNode)
 	return 0;
 }
 
-int parse_r2p0_abc_xml(struct abc_common *abc)
+static int update_ltm_child_config(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
+{
+	xmlNodePtr propNode;
+	xmlNodePtr subNode;
+	xmlChar* szPropity;
+	const char *endptr = NULL;
+	char numStr[10];
+	int j = 0;
+
+	subNode = curNode->children;//number index
+	while(NULL != subNode) {
+		propNode = subNode->children;
+		while (NULL != propNode){
+			if (xmlHasProp(propNode, BAD_CAST"slp_step_clip")) {
+				snprintf(numStr, sizeof(numStr), "%d", abc->sceneTable[i].sceneTableItem[j].ltmCfg.slp_step_clip);
+				xmlSetProp(propNode, BAD_CAST"slp_step_clip", (const xmlChar*)numStr);
+			} else if (xmlHasProp(propNode, BAD_CAST"slp_high_clip")) {
+				snprintf(numStr, sizeof(numStr), "%d", abc->sceneTable[i].sceneTableItem[j].ltmCfg.slp_high_clip);
+				xmlSetProp(propNode, BAD_CAST"slp_high_clip", (const xmlChar*)numStr);
+			} else if (xmlHasProp(propNode, BAD_CAST"slp_low_clip")) {
+				snprintf(numStr, sizeof(numStr), "%d", abc->sceneTable[i].sceneTableItem[j].ltmCfg.slp_low_clip);
+				xmlSetProp(propNode, BAD_CAST"slp_low_clip", (const xmlChar*)numStr);
+			}
+			propNode = propNode->next;
+		}
+		subNode = subNode->next;
+		j++;
+	}
+	return 0;
+}
+
+#if 1
+
+static int update_ltm_config_child_xml(xmlNodePtr curNode)
+{
+
+	xmlNodePtr subNode;
+	xmlNodePtr propNode = NULL;
+	xmlNodePtr NextpropNode;
+	xmlNodePtr childNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	char numStr[10];
+
+	subNode = curNode;
+
+	UPDATE_LTM_CONFIG_CHILD_XML(slp_step_clip);
+	UPDATE_LTM_CONFIG_CHILD_XML(slp_high_clip);
+	UPDATE_LTM_CONFIG_CHILD_XML(slp_low_clip);
+
+	return 0;
+}
+
+static int update_ltm_config_index_xml(abc_common_sharkl5 *abc, xmlNodePtr curNode, int Indexnums, int i)
+{
+
+	xmlNodePtr subNode;
+	xmlNodePtr NextpropNode;
+	xmlNodePtr childNode;
+	xmlNodePtr parentNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	char numStr[10];
+	int wrIndexnums, wrItemnums;
+
+	wrIndexnums = abc->sceneTable[i].num;
+	subNode = curNode;
+	parentNode = curNode->parent;
+
+	if (Indexnums < wrIndexnums) {
+		for(; Indexnums < wrIndexnums; Indexnums++) {
+			childNode = xmlNewNode(NULL,BAD_CAST "number");
+			xmlAddSibling(subNode, childNode);
+			snprintf(numStr, sizeof(numStr), "%d", Indexnums);
+			xmlNewProp(childNode, BAD_CAST "index", BAD_CAST numStr);
+			update_ltm_config_child_xml(childNode);
+		}
+	} else {
+		subNode = subNode->next;
+		while (NULL != subNode) {
+			NextpropNode = subNode->next;
+			if(subNode) {
+				RemoveNode(subNode, subNode->children);
+				RemoveNode(parentNode, subNode);
+			}
+			subNode = NextpropNode;
+		}
+	}
+
+	return 0;
+}
+
+static int update_ltm_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr curNode, int i)
+{
+
+	xmlNodePtr propNode;
+	xmlNodePtr subNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	int wrIndexnums, wrItemnums;
+	int Indexnums, Itemnums;
+	char numStr[10];
+	slp_mapping_table_item *item;
+
+	ALOGD("vvvvvv %s in \n", __func__);
+	wrIndexnums = abc->sceneTable[i].num;
+	subNode = curNode->children;//number index
+	Indexnums = 0;
+	while(NULL != subNode) {
+		Indexnums++;
+		if((subNode->next) && (Indexnums < wrIndexnums))
+			subNode = subNode->next;
+		else {
+			update_ltm_config_index_xml(abc, subNode, Indexnums, i);
+			break;
+		}
+	}
+	ALOGD("vvvvvv %s out \n", __func__);
+	return 0;
+}
+#endif
+
+static int update_ltm_config(abc_common_sharkl5 *abc, xmlNodePtr curNode)
+{
+	int i = 0;
+	int j = 0;
+	const char *endptr = NULL;
+	xmlNodePtr subNode;
+	xmlNodePtr propNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	char numStr[10];
+
+	ALOGD("PQ curNode name %s \n",curNode->name);
+	subNode = curNode->children;
+	while(NULL != subNode) {
+		if(xmlHasProp(subNode, BAD_CAST "mode")) {
+			ALOGD("curNode name %s \n",subNode->name);
+			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
+				free(szPropity);
+				ALOGD("PQ  slp config normal \n");
+				if(abc->mode == 1) {
+					update_ltm_config_indexs_arrays(abc, subNode, 0);
+					update_ltm_child_config(abc, subNode, 0);
+					ALOGD("update_ltm_child_config finish\n");
+				}
+			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
+				free(szPropity);
+				if(abc->mode == 2) {
+					update_ltm_config_indexs_arrays(abc, subNode, 1);
+					update_ltm_child_config(abc, subNode, 1);
+					ALOGD("update_ltm_child_config finish mode 2\n");
+				}
+			}
+		}
+		subNode = subNode->next;
+	}
+	return 0;
+}
+
+int AbcParserLiteR2p0::parse_reg(uint08_t *ctx)
+{
+	int fd, fd1;
+	unsigned int cnt;
+	unsigned int sizes, sizes1;
+	unsigned char* data;
+	unsigned short tmp,tmp1;
+	abc_common_sharkl5 *abc;
+
+	abc = &((pq_tuning_parm_sharkl5 *)ctx)->abc;
+	fd = open(DpuSlp, O_RDWR);
+	fd1 = open(DpuEpf, O_RDWR);
+
+	if(fd < 0 || fd1 < 0) {
+		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		return errno;
+	}
+	sizes = sizeof(slp_ltm_params);
+	memset(&slp_ltm_params, sizes, 0);
+	sizes1 = sizeof(abc->sceneTable[0].sceneTableItem[0].epfCfg);
+	cnt = read(fd1, (unsigned char*)&abc->sceneTable[0].sceneTableItem[0].epfCfg, sizes1);
+	cnt = read(fd, (unsigned char*)&slp_ltm_params, sizes);
+	tmp = sizeof(abc->sceneTable[0].sceneTableItem[0].slpCfg);
+	memcpy((unsigned char*)&abc->sceneTable[0].sceneTableItem[0].slpCfg, (unsigned char*)&slp_ltm_params, tmp);
+	tmp1 = sizeof(abc->sceneTable[0].sceneTableItem[0].ltmCfg);
+	memcpy((unsigned char*)&abc->sceneTable[0].sceneTableItem[0].ltmCfg, (unsigned char*)&slp_ltm_params + tmp, tmp1);
+	close(fd);
+	close(fd1);
+
+	return 0;
+}
+
+int AbcParserLiteR2p0::update_reg(uint08_t *ctx)
+{
+	int fd;
+	int fd1;
+	char backlight[11] = {0};
+	unsigned int sizes, sizes1;
+	unsigned char* data;
+	unsigned int disable;
+	unsigned short tmp,tmp1;
+	abc_common_sharkl5 *abc;
+
+	abc = &((pq_tuning_parm_sharkl5 *)ctx)->abc;
+
+	if(abc->version.enable) {
+		if (abc->slpblMode == 2) {
+			fd = open(Brightness, O_RDWR);
+			if (fd < 0)
+				return errno;
+			snprintf(backlight, sizeof(backlight), "%d", 255);
+			write(fd, backlight, sizeof(backlight));
+			ALOGD("PQ backlights  %s", backlight);
+			close(fd);
+		}
+		 fd = open(DpuSlp, O_RDWR);
+		 fd1 = open(DpuEpf, O_RDWR);
+		 if(fd < 0 || fd1 < 0) {
+			 ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+			 return errno;
+		}
+		tmp = sizeof(abc->sceneTable[0].sceneTableItem[0].slpCfg);
+		memcpy((unsigned char*)&slp_ltm_params, (unsigned char*)&abc->sceneTable[0].sceneTableItem[0].slpCfg, tmp);
+		tmp1 = sizeof(abc->sceneTable[0].sceneTableItem[0].ltmCfg);
+		memcpy((unsigned char*)&slp_ltm_params + tmp, (unsigned char*)&abc->sceneTable[0].sceneTableItem[0].ltmCfg, tmp1);
+		sizes = sizeof(slp_ltm_params) - 2;
+		write(fd, (unsigned char *)&slp_ltm_params, sizes);
+		sizes1 = sizeof(abc->sceneTable[0].sceneTableItem[0].epfCfg);
+		write(fd1, (unsigned char *)&abc->sceneTable[0].sceneTableItem[0].epfCfg, sizes1);
+		close(fd);
+		close(fd1);
+	}
+	else {
+		fd1 = open(PQDisable, O_WRONLY);
+		if(fd1 < 0) {
+			ALOGD("PQ %s: open fd 1file failed, err: %s\n", __func__, strerror(errno));
+			return errno;
+		}
+		disable = SLP_EN | LTM_EN | EPF_EN;
+		write(fd1, &disable, sizeof(disable));
+		close(fd1);
+	}
+
+	return 0;
+}
+
+int AbcParserLiteR2p0::parse_xml(uint08_t *ctx)
 {
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	abc_common_sharkl5 *abc;
+
+	ALOGD("%s in\n", __func__);
+	abc = &((pq_tuning_parm_sharkl5 *)ctx)->abc;
 
 	doc = xmlReadFile(abc_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-		ENG_LOG("read %s Document not parsed successfully.\n",__func__);
+		ALOGD("read %s Document not parsed successfully.\n",__func__);
 		return -1;
 	}
 
 	curNode = xmlDocGetRootElement(doc);
 
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"root")) {
-		ENG_LOG("root node != root\n");
+		ALOGD("root node != root\n");
 		xmlFreeDoc(doc);
 		return -1;
 	}
@@ -1060,6 +1329,8 @@ int parse_r2p0_abc_xml(struct abc_common *abc)
 		parse_epf_config(abc, tmpNode);
 	if(tmpNode = FindNode(curNode, "slp_config"))
 		parse_slp_config(abc, tmpNode);
+	if(tmpNode = FindNode(curNode, "ltm_config"))
+		parse_ltm_config(abc, tmpNode);
 	if(tmpNode = FindNode(curNode, "slp_mapping_table"))
 		parse_slp_mapping_table(abc, tmpNode);
 	if(tmpNode = FindNode(curNode, "bl_mapping_table"))
@@ -1069,27 +1340,32 @@ int parse_r2p0_abc_xml(struct abc_common *abc)
 
 	xmlSaveFormatFileEnc(abc_xml, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
-
+	ALOGD("%s exit\n", __func__);
 	return 0;
 }
 
-int update_r2p0_abc_xml(struct abc_common *abc)
+int AbcParserLiteR2p0::update_xml(uint08_t *ctx)
 {
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	int ret;
+	abc_common_sharkl5 *abc;
+
+	ALOGD("%s in\n", __func__);
+	abc = &((pq_tuning_parm_sharkl5 *)ctx)->abc;
 
 	doc = xmlReadFile(abc_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-		ENG_LOG("write %s Document not parsed successfully.\n",__func__);
-		return -1;
+		ALOGD("write %s Document not parsed successfully.\n",__func__);
+		return 1;
 	}
 	curNode = xmlDocGetRootElement(doc);
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"root")) {
-		ENG_LOG("root node != root\n");
+		ALOGD("root node != root\n");
 		xmlFreeDoc(doc);
-		return -1;
+		return 1;
 	}
 	curNode = curNode->children;
 
@@ -1097,6 +1373,8 @@ int update_r2p0_abc_xml(struct abc_common *abc)
 		update_epf_config(abc, tmpNode);
 	if(tmpNode = FindNode(curNode, "slp_config"))
 		update_slp_config(abc, tmpNode);
+	if(tmpNode = FindNode(curNode, "ltm_config"))
+		update_ltm_config(abc, tmpNode);
 	if(tmpNode = FindNode(curNode, "slp_mapping_table")) {
 		if(abc->slpblMode == 1)
 			update_slp_mapping_table(abc, tmpNode);
@@ -1108,8 +1386,13 @@ int update_r2p0_abc_xml(struct abc_common *abc)
 	if(tmpNode = FindNode(curNode, "enhance"))
 		update_abc_version(abc, tmpNode);
 
-	xmlSaveFormatFileEnc(abc_xml, doc, "UTF-8", 1);
+	ret = xmlSaveFormatFileEnc(abc_xml, doc, "UTF-8", 1);
+	if (ret == -1)
+		ret = xmlSaveFormatFileEnc(abc_xml, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
+
+	if (ret == -1)
+		return 1;
 
 	return 0;
 }

@@ -17,17 +17,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <utils/Log.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <time.h>
-#include "sprd_fts_type.h"
-#include "sprd_fts_log.h"
 #include "minui.h"
 #include "graphics.h"
 
@@ -84,16 +81,14 @@ void gr_flip() {
 }
 
 int gr_init(void) {
-	ENG_LOG("PQ open drm enter\n");
+	ALOGD("PQ open drm enter\n");
 	gr_backend = open_drm();
 	gr_draw = gr_backend->init(gr_backend);
 	if (gr_draw == NULL) {
-		ENG_LOG("PQ open drm fail\n");
+		ALOGD("PQ open drm fail\n");
 		return -1;
 	}
-	//gr_flip();
-	//gr_flip();
-	ENG_LOG("PQ open drm exit\n");
+	ALOGD("PQ open drm exit\n");
 
     return 0;
 }

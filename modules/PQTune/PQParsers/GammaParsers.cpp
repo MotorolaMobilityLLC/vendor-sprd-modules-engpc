@@ -1,27 +1,27 @@
 #include <utils/Log.h>
-#include "tune_r2p0.h"
-#include "pq_xml.h"
+#include "ParserCore.h"
 
-static int parse_gamma_version(struct gamma_common *gamma, xmlNodePtr curNode)
+static int parse_gamma_version(gamma_common *gamma, xmlNodePtr curNode)
 {
 	xmlNodePtr subNode;
 	xmlChar* szPropity;
 	const char *endptr = NULL;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode; //subNode table
-	while(!xmlStrcmp(subNode->name, "enhance")) {
+	while(!xmlStrcmp(subNode->name, BAD_CAST"enhance")) {
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
-			gamma->version.version = strtoul((char *)szPropity, (char **)&endptr, 0);
-			ENG_LOG("aaaaaa gamma verison %d \n", gamma->version.version);
+			gamma->version.version = strtoul((char *)szPropity, NULL, 0);
+			ALOGD("aaaaaa gamma verison %d \n", gamma->version.version);
+			free(szPropity);
 		}
 		subNode = subNode->next;
 	}
 	return 0;
 }
 
-static int parse_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode)
+static int parse_gamma_regs_table(gamma_common *gamma, xmlNodePtr curNode)
 {
 	int i = 0;
 	const char *endptr = NULL;
@@ -30,27 +30,30 @@ static int parse_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			propNode = subNode->children;
 			while (NULL != propNode) {
 				attrPtr = propNode->properties;
 				while (NULL != attrPtr) {
                 	if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"r")) {
                     	szPropity = xmlGetProp(propNode, (const xmlChar*)"r");
-						gamma->gamma.r[i] = strtoul((char *)szPropity, (char **)&endptr, 0);
-						ENG_LOG("r %d \n", gamma->gamma.r[i]);
+						gamma->gamma.r[i] = strtoul((char *)szPropity, NULL, 0);
+						ALOGD("r %d \n", gamma->gamma.r[i]);
+						free(szPropity);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"g")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"g");
-						gamma->gamma.g[i] = strtoul((char *)szPropity, (char **)&endptr, 0);
-						ENG_LOG("g %d \n", gamma->gamma.g[i]);
+						gamma->gamma.g[i] = strtoul((char *)szPropity, NULL, 0);
+						ALOGD("g %d \n", gamma->gamma.g[i]);
+						free(szPropity);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"b")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"b");
-						gamma->gamma.b[i] = strtoul((char *)szPropity, (char **)&endptr, 0);
-						ENG_LOG("b %d \n", gamma->gamma.b[i]);
+						gamma->gamma.b[i] = strtoul((char *)szPropity, NULL, 0);
+						ALOGD("b %d \n", gamma->gamma.b[i]);
+						free(szPropity);
 					}
 					attrPtr = attrPtr->next;
             	}
@@ -65,15 +68,15 @@ static int parse_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode
 	return 0;
 }
 
-static int update_gamma_version(struct gamma_common *gamma, xmlNodePtr curNode)
+static int update_gamma_version(gamma_common *gamma, xmlNodePtr curNode)
 {
     int i = 0;
     xmlNodePtr subNode;
     char numStr[12];
 
-    ENG_LOG("ggaammaa version = %d \n", gamma->version.version);
+    ALOGD("ggaammaa version = %d \n", gamma->version.version);
     subNode = curNode; //subNode table
-	while(!xmlStrcmp(subNode->name, "enhance")) {
+	while(!xmlStrcmp(subNode->name, BAD_CAST"enhance")) {
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
             snprintf(numStr, sizeof(numStr), "%d", gamma->version.version);
             xmlSetProp(subNode, BAD_CAST "version", (const xmlChar*)numStr);
@@ -83,7 +86,7 @@ static int update_gamma_version(struct gamma_common *gamma, xmlNodePtr curNode)
         return 0;
 }
 
-static int update_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNode)
+static int update_gamma_regs_table(gamma_common *gamma, xmlNodePtr curNode)
 {
 	int i = 0;
 	int j = 0;
@@ -94,19 +97,19 @@ static int update_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNod
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ENG_LOG("curNode name %s \n",curNode->name);
+	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode; //subNode table
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
-			ENG_LOG("curNode name %s \n",subNode->name);
+			ALOGD("curNode name %s \n",subNode->name);
 			propNode = subNode->children;
 			while (NULL != propNode) {
 				attrPtr = propNode->properties;
 				while (NULL != attrPtr) {
-                			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"r")) {
+                	if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"r")) {
 						snprintf(numStr, sizeof(numStr), "%d", gamma->gamma.r[i]);
 						xmlSetProp(propNode, BAD_CAST "r", (const xmlChar*)numStr);
-						ENG_LOG("r %d \n", gamma->gamma.r[i]);
+						ALOGD("r %d \n", gamma->gamma.r[i]);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"g")) {
 						snprintf(numStr, sizeof(numStr), "%d", gamma->gamma.g[i]);
 						xmlSetProp(propNode, BAD_CAST "g", (const xmlChar*)numStr);
@@ -127,17 +130,81 @@ static int update_gamma_regs_table(struct gamma_common *gamma, xmlNodePtr curNod
 	return 0;
 }
 
-int update_r2p0_gamma_xml(struct gamma_common *gamma)
+int GammaParser::parse_reg(uint08_t *ctx)
+{
+	int fd;
+	uint32_t sizes;
+	uint08_t* data;
+	int cnt;
+	gamma_common *gamma;
+
+	gamma = &((pq_tuning_parm *)ctx)->gamma;
+
+	fd = open(DpuGamma, O_RDWR);
+
+	if(fd < 0) {
+		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		return errno;
+	}
+	sizes = sizeof(gamma->gamma);
+	cnt = read(fd, &gamma->gamma, sizes);
+	ALOGD("parse_gamma_reg cnt0 %d sizes %d \n", cnt, sizes);
+	close(fd);
+
+	return 0;
+}
+
+int GammaParser::update_reg(uint08_t *ctx)
+{
+	int fd;
+	int fd1;
+	uint32_t sizes;
+	uint08_t* data;
+	int cnt;
+	uint32_t disable;
+	gamma_common *gamma;
+
+	gamma = &((pq_tuning_parm *)ctx)->gamma;
+
+	if(gamma->version.enable) {
+		fd = open(DpuGamma, O_RDWR);
+		if(fd < 0) {
+			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+			return errno;
+		}
+		sizes = sizeof(gamma->gamma);
+		cnt = write(fd, &gamma->gamma, sizes);
+		close(fd);
+	}
+	else {
+		fd1 = open(PQDisable, O_WRONLY);
+		if(fd1 < 0) {
+			ALOGD("%s: open file fd1 failed, err: %s\n", __func__, strerror(errno));
+			return errno;
+		}
+		disable = GAMMA_EN;
+		write(fd1, &disable, sizeof(disable));
+		close(fd1);
+	}
+
+	return 0;
+}
+
+
+int GammaParser::update_xml(uint08_t *ctx)
 {
 
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	gamma_common *gamma;
+
+	gamma = &((pq_tuning_parm *)ctx)->gamma;
 
 	doc = xmlReadFile(gamma_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-		ENG_LOG("Document not parsed successfully.\n");
+		ALOGD("Document not parsed successfully.\n");
 		return -1;
 	}
 
@@ -145,7 +212,7 @@ int update_r2p0_gamma_xml(struct gamma_common *gamma)
 
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"gamma_config"))
 	{
-		ENG_LOG("gamma_config node != root\n");
+		ALOGD("gamma_config node != root\n");
 		xmlFreeDoc(doc);
 		return -1;
 	}
@@ -162,24 +229,27 @@ int update_r2p0_gamma_xml(struct gamma_common *gamma)
 	return 0;
 }
 
-int parse_r2p0_gamma_xml(struct gamma_common *gamma)
+int GammaParser::parse_xml(uint08_t *ctx)
 {
 
 	xmlDocPtr doc;
 	xmlNodePtr curNode;
 	xmlNodePtr tmpNode;
+	gamma_common *gamma;
+
+	gamma = &((pq_tuning_parm *)ctx)->gamma;
 
 	doc = xmlReadFile(gamma_xml, "utf-8", XML_PARSE_NOBLANKS);
 	if (NULL == doc)
 	{
-		ENG_LOG("Document not parsed successfully.\n");
+		ALOGD("Document not parsed successfully.\n");
 		return -1;
 	}
 
 	curNode = xmlDocGetRootElement(doc);
 
 	if (xmlStrcmp(curNode->name, (const xmlChar*)"gamma_config")) {
-		ENG_LOG("gamma_config node != root\n");
+		ALOGD("gamma_config node != root\n");
 		xmlFreeDoc(doc);
 		return -1;
 	}
@@ -193,6 +263,6 @@ int parse_r2p0_gamma_xml(struct gamma_common *gamma)
 
 	xmlSaveFormatFileEnc(gamma_xml, doc, "UTF-8", 1);
 	xmlFreeDoc(doc);
-	ENG_LOG("this is pq\n");
+	ALOGD("this is pq\n");
 	return 0;
 }

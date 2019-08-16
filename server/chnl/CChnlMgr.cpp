@@ -106,6 +106,8 @@ int CChnlMgr::load(char* dirpath){
         }
     }
 
+    closedir(dir);
+
     return 0;
 }
 

@@ -16,3 +16,21 @@ LOCAL_C_INCLUDES:= \
 LOCAL_SHARED_LIBRARIES:= liblog libc libcutils
 
 include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES:= dcxsrv.c
+
+LOCAL_SHARED_LIBRARIES := libutils
+
+LOCAL_MODULE := dcxsrv
+LOCAL_INIT_RC := dcxsrv.rc
+LOCAL_MODULE_TAGS := optional
+LOCAL_PROPRIETARY_MODULE := true
+
+LOCAL_C_INCLUDES:= \
+    $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc
+
+LOCAL_SHARED_LIBRARIES:= liblog 
+
+include $(BUILD_EXECUTABLE)

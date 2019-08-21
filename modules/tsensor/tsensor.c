@@ -1,17 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <time.h>
 #include <string.h>
 #include <getopt.h>
+#include <ctype.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include "eng_diag.h"
-#include "eng_modules.h"
-#include "engopt.h"
-#include "vlog.h"
+
+#include "sprd_fts_type.h"
+#include "sprd_fts_diag.h"
+#include "sprd_fts_log.h"
 
 #define BIT(x) (1<<x)
 #define	SC27XX_TSEN_CTRL0	0x1b34
@@ -46,10 +48,10 @@ typedef struct
     unsigned short reserved[2];
 }DIAG_AP_PMIC_AFC_TSX_TEMP_T;
 
-typedef struct {
-       unsigned short status;  //==0:success, != 0:fail
+/*typedef struct {
+       unsigned short status;
        unsigned short length;
-} TOOLS_DIAG_AP_CNF_T;
+} TOOLS_DIAG_AP_CNF_T;*/
 
 static unsigned int ana_read(unsigned int reg_addr)
 {
@@ -80,6 +82,7 @@ static unsigned int ana_write(unsigned int reg_addr,unsigned int value)
 	ENG_LOG("%s: reg_addr:0x%x val:0x%x",__FUNCTION__,reg_addr,value);
 	close(fd_reg);
 	close(fd_val);
+	usleep(10000);
 	return 0;
 }
 

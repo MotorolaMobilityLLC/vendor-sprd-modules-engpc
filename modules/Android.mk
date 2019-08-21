@@ -29,6 +29,7 @@ common_engpc_modules_dirs := charge \
                              libreboot_cmd \
                              libtracedump \
                              libtsxdata \
-                             PQTune
+                             PQTune \
+                             tsensor
 
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

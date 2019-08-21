@@ -10,6 +10,9 @@ on property:vendor.flag.engpc.restart=1
 on property:vendor.ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
     setprop sys.usb.config vser
 
+on property:vendor.ro.bootmode=cali && property:sys.usb.state=vser
+    setprop vendor.sys.usb.state vser
+
 on cali-fs
     chmod 0660 /dev/block/mmcblk0p22
     chmod 0660 /dev/block/mmcblk0p24

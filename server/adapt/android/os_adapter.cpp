@@ -101,19 +101,19 @@ void OS_usb_vser_enable(int mode){
     ALOGD("ENGPC: vser enable: %d", mode);
     if (mode == 0){//autotest
         property_set(PROP_USB_CONFIG, PROP_USB_CONFIG_VALUE);
-        //wait_for_usbenum_succ(60, USB_CONFIG_VSER);
-        usleep(2000*1000);
+        wait_for_usbenum_succ(600, USB_CONFIG_VSER);
+        //usleep(2000*1000);
     }else if (mode == 1){//cali
         const char* path = OS_usb_getEnablePath();
         if (path == NULL) {
             ALOGD("ENGPC: invalid usb enable path.");
             return ;
         }
-    
+
         ALOGD("ENGPC: usb enable path: %s", path);
         OS_usb_getEnableCmd(cmd, sizeof(cmd));
         ALOGD("ENGPC: usb enable cmd: %s", cmd);
-    
+
         fd = open(path, O_WRONLY);
         if (fd >= 0) {
             ret = write(fd, cmd, strlen(cmd));
@@ -140,7 +140,7 @@ int wait_for_usbenum_succ(int timeout, char *state)
             ALOGD("ENGPC: %s: succ", __FUNCTION__);
             return 0;
         }
-        usleep(1000 * 1000);
+        usleep(100 * 1000);
     } while (try_cnt-- > 0);
 
     return -1;

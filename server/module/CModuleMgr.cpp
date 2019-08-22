@@ -12,6 +12,7 @@
 #include "../common/englog.h"
 #include "modules.h"
 #include "bqb.h"
+#include "CProtolDiag.h"
 
 
 extern CModuleMgr* g_lpModMgr;
@@ -20,7 +21,16 @@ extern CModuleMgr* g_lpModMgr;
 
 int write_to_host_diag(char* buff, int len){
     if (g_lpModMgr != NULL && g_lpModMgr->m_lpHostDiagPort != NULL){
-        return g_lpModMgr->m_lpHostDiagPort->write(buff, len);
+        char *dst = (char* )malloc(len*2);
+        if (dst == NULL){
+            ENG_LOG("malloc %d fail", len*2);
+            return 0;
+        }
+        memset(dst, 0, len*2);
+        int retlen = CProtolDiag::translate_packet(dst, buff+1, len-2);
+        retlen = g_lpModMgr->m_lpHostDiagPort->write(dst, retlen);
+        free(dst);
+        return retlen;
     }else{
         EngLog::error("write_to_host_diag fail: g_lpModMgr = NULL or s_lpModMgr->m_lpHostDiagPort = NULL");
     }

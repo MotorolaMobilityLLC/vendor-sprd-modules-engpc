@@ -12,13 +12,3 @@ on property:vendor.ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
 
 on property:vendor.ro.bootmode=cali && property:sys.usb.state=vser
     setprop vendor.sys.usb.state vser
-
-on cali-fs
-    chmod 0660 /dev/block/mmcblk0p22
-    chmod 0660 /dev/block/mmcblk0p24
-    chmod 0660 /dev/block/mmcblk0p25
-    chmod 0660 /dev/block/mmcblk0p26
-    chown system system /dev/block/mmcblk0p22
-    chown system system /dev/block/mmcblk0p24
-    chown system system /dev/block/mmcblk0p25
-    chown system system /dev/block/mmcblk0p26

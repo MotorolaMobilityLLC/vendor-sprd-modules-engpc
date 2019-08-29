@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <time.h>
 #include <string.h>
 #include <getopt.h>
@@ -11,6 +12,9 @@
 #include <sys/types.h>
 #include <sys/reboot.h>
 #include <cutils/android_reboot.h>
+#include <bootloader_message/bootloader_message.h>
+#include <cutils/properties.h>
+#include <pthread.h>
 
 #include "sprd_fts_type.h"
 #include "sprd_fts_log.h"
@@ -19,20 +23,56 @@
 #define AT_AUTODLOADER "AT+SPREF=\"AUTODLOADER\""
 
 //reboot with cmd...
-#define AT_REBOOT_CMD        "AT+SPREBOOTCMD="
+#define AT_REBOOT_CMD       "AT+SPREBOOTCMD="
 
+//reboot to factory reset
+#define AT_ETSRESET         "AT+ETSRESET"
 
 static char reboot_cmd_param[64] = {0};
 
 void* autodloader_thread(void* arg) {
-    sleep(2);
+    usleep(2000*1000);
     android_reboot(ANDROID_RB_RESTART2, 0, "autodloader");
     return NULL;
 }
 
 void* reboot_cmd_thread(void* arg) {
+    usleep(2000*1000);
+    android_reboot(ANDROID_RB_RESTART2, 0, (char*)arg);
+    return NULL;
+}
+
+
+int reboot_into_recovery(const std::vector<std::string>& options) {
+    LOGD("Rebooting into recovery");
+    std::string err;
+    if (!write_bootloader_message(options, &err)) {
+    LOGE("Rebooting into recovery fail!");
+        return -1;
+    }
+    property_set("sys.powerctl", "reboot,recovery");
+    return 0;
+}
+int phone_shutdown_new_API(void)
+{
+#ifdef LANGUAGE_CN
+    const char Cmd1[] = "--wipe_data\n--locale=zh_CN";
+#else
+    const char Cmd1[] = "--wipe_data\n--locale=en_US";
+#endif
+    const char Cmd2[] = "--reason=wipe_data_via_recovery\n";
+   LOGD("phone_shutdown_new_API Cmd1=%s,Cmd2=%s",Cmd1,Cmd2);
+   return reboot_into_recovery({Cmd1, Cmd2});
+}
+
+int phone_reset_factorytest()
+{
+    return phone_shutdown_new_API();
+}
+
+void* reset_cmd_thread(void* arg) {
     sleep(2);
-    android_reboot(ANDROID_RB_RESTART2, 0, arg);
+    phone_reset_factorytest();
     return NULL;
 }
 
@@ -56,8 +96,8 @@ static int dloader_handle(char *buff, char *rsp)
     {
         ptr = strdup(buff);
     }
-
     ENG_LOG("%s ptr = %s", __FUNCTION__, ptr);
+
     if (strncasecmp(ptr, AT_AUTODLOADER,strlen(AT_AUTODLOADER)) == 0){
         //android_reboot(ANDROID_RB_RESTART2, 0, "autodloader");
         
@@ -86,8 +126,16 @@ static int reboot_cmd_handle(char *buff, char *rsp)
         return rsp != NULL ? strlen(rsp) : 0;
     }
 
-    ptr = buff + 1 + sizeof(MSG_HEAD_T);
+    if(buff[0] == 0x7e)
+    {
+        ptr = buff + 1 + sizeof(MSG_HEAD_T);
+    }
+    else
+    {
+        ptr = strdup(buff);
+    }
     ENG_LOG("%s ptr = %s", __FUNCTION__, ptr);
+
     if (strncasecmp(ptr, AT_REBOOT_CMD,strlen(AT_REBOOT_CMD)) == 0){
         char *ptrpara = ptr+strlen(AT_REBOOT_CMD);
         memset(reboot_cmd_param, 0, sizeof(reboot_cmd_param));
@@ -107,6 +155,46 @@ static int reboot_cmd_handle(char *buff, char *rsp)
     return strlen(rsp);
 }
 
+static int reset_cmd_handle(char *buff, char *rsp)
+{
+    char *ptr = NULL;
+    char cmd_buf[256] = {0};
+    int ret = -1;
+    int nlen = 0;
+    if (NULL == buff)
+    {
+        ALOGE("%s,null pointer", __FUNCTION__);
+        sprintf(rsp, "\r\nERROR\r\n");
+        return rsp != NULL ? strlen(rsp) : 0;
+    }
+
+    if(buff[0] == 0x7e)
+    {
+        ptr = buff + 1 + sizeof(MSG_HEAD_T);
+    }
+    else
+    {
+        ptr = strdup(buff);
+    }
+    ENG_LOG("%s ptr = %s", __FUNCTION__, ptr);
+
+    if (strncasecmp(ptr, AT_ETSRESET,strlen(AT_ETSRESET)) == 0){
+        pthread_attr_t attr;
+        pthread_t pthread;
+        pthread_attr_init(&attr);
+        pthread_create(&pthread, &attr, reset_cmd_thread, NULL);
+        sprintf(rsp, "\r\nOK\r\n");
+    }else{
+        sprintf(rsp, "\r\nERROR\r\n");
+    }
+
+    return strlen(rsp);
+}
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {
     int moudles_num = 0;
@@ -120,6 +208,13 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
     (reg + moudles_num)->eng_linuxcmd_func = reboot_cmd_handle;
     moudles_num++;
 
+    sprintf((reg + moudles_num)->at_cmd, "%s", AT_ETSRESET);
+    (reg + moudles_num)->eng_linuxcmd_func = reset_cmd_handle;
+    moudles_num++;
+
     *num = moudles_num;
     ENG_LOG("register_this_module_ext: %d - %d",*num, moudles_num);
 }
+#ifdef __cplusplus
+}
+#endif

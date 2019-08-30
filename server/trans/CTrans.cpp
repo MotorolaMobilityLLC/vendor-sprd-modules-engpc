@@ -146,7 +146,7 @@ int CTrans::trans(){
             continue;
         }
 
-        if (DYMIC_RET_DEAL_SUCCESS == ret || DYMIC_RET_ALSO_NEED_TO_CP == ret){
+        if (DYMIC_RET_DEAL_SUCCESS == ret || DYMIC_RET_ALSO_NEED_TO_CP == ret || DYMIC_RET_ENCODE_TO_DEST == ret){
             info("DYMIC_RET_DEAL_SUCCESS: write to src port");
 
             // encode
@@ -159,10 +159,17 @@ int CTrans::trans(){
                 continue;
             }
 
-            CTrans* ptr = m_lpPortSrc->attach(this);
-            w_cnt = m_lpPortSrc->write(m_chnl_buff_rsp, m_nLenRsp);
-            m_lpPortSrc->attach(ptr);
-            info("w_cnt = %d", w_cnt);
+            if (DYMIC_RET_ENCODE_TO_DEST == ret){
+                CTrans* ptr = m_lpPortDst->attach(this);
+                w_cnt = m_lpPortDst->write(m_chnl_buff_rsp, m_nLenRsp);
+                m_lpPortDst->attach(ptr);
+                Info("w_cnt = %d", w_cnt);
+            }else{
+                CTrans* ptr = m_lpPortSrc->attach(this);
+                w_cnt = m_lpPortSrc->write(m_chnl_buff_rsp, m_nLenRsp);
+                m_lpPortSrc->attach(ptr);
+                info("w_cnt = %d", w_cnt);
+            }
 
             if ( 0 != post_write(m_chnl_buff_rsp, m_nLenRsp, w_cnt)){
                 error("post write return !0, continue");
@@ -178,7 +185,7 @@ int CTrans::trans(){
             }
         }
 
-        if( DYMIC_RET_NO_DEAL == ret || DYMIC_RET_ALSO_NEED_TO_CP == ret){
+        if( DYMIC_RET_NO_DEAL == ret || DYMIC_RET_ALSO_NEED_TO_CP == ret ){
             // write to dst
             Info("write...: portType = %s", m_lpPortDst->getPortTypeStr());
             if(m_lpPortDst->getPortType() != PORT_LOOP){

@@ -9,6 +9,7 @@ typedef enum {
     DYMIC_RET_DEAL_SUCCESS = 1,
     DYMIC_RET_ALSO_NEED_TO_CP = 2,
     DYMIC_RET_NO_RESPONSE_TO_PC = 3,
+    DYMIC_RET_ENCODE_TO_DEST = 4,
 } DYMIC_RET_E;
 
 typedef struct eng_modules_info

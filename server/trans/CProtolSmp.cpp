@@ -18,7 +18,7 @@ int CProtolSmp::decode(char* buff, int nlen){
 }
 
 int CProtolSmp::encode(char* buff, int nlen){
-    info("encode");
+    info("encode: type = %d", m_dataType);
     memmove(buff+20, buff, nlen);
     if (m_dataType == DATA_AGDSP_LOG){
         ag_dsplog_add_headers((uint8_t*)buff, nlen, AUDIO_DSP_LOG);

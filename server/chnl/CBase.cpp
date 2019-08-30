@@ -97,6 +97,8 @@ char* CBase::DataType2str(DATA_TYPE type){
         return "DATA_AGDSP_LOG";
     }else if (type == DATA_AGDSP_PCM){
         return "DATA_AGDSP_PCM";
+    }else if (type == DATA_AGDSP_MEM){
+        return "DATA_AGDSP_MEM";
     }else if (type == DATA_AGDSP_MIX){
         return "DATA_AGDSP_MIX";
     }else {

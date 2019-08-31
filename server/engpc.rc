@@ -1,7 +1,7 @@
 service vendor.engpcclientlte /vendor/bin/engpc
     class core
     user root
-    group system radio shell net_bt_admin input audio wifi media camera
+    group root system radio shell net_bt_admin input audio wifi media camera
     oneshot
 
 on property:vendor.flag.engpc.restart=1

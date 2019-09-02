@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <pthread.h>
+#include <cutils/android_filesystem_config.h>
 
 #include "englog.h"
 #include "CDevMgr.h"
@@ -26,7 +27,7 @@
 void* eng_printlog_thread(void* x);
 int wait_for_modem_alive(int timeout);
 void wait_for_data_ready();
-void log_start();
+void switchGidToRoot(void);
 
 CModuleMgr* g_lpModMgr = NULL;
 CDevMgr* g_lpDevMgr = NULL;
@@ -38,8 +39,8 @@ int main(){
     const char* bootmode = initBootMode();
     EngLog::info("bootmode = %s", bootmode);
 
-    if (strcasecmp(bootmode, BOOTMODE_CALI) == 0 || strcasecmp(bootmode, BOOTMODE_AUTOTEST) == 0){
-        log_start();
+    if (strcasecmp(bootmode, BOOTMODE_CALI) == 0){
+        switchGidToRoot();
     }
 
     //init module manager
@@ -200,70 +201,22 @@ int wait_for_modem_alive(int timeout)
     return 0;
 }
 
-void* eng_printlog_thread(void* x) {
-  int ret = -1;
-  int fd = -1;
+void switchGidToRoot(void){
+    gid_t list[64];
+    gid_t gid;
+    int n, max;
 
-  EngLog::error("eng_printlog_thread thread start\n");
+    EngLog::info("%s", __FUNCTION__);
+    max = getgroups(64, list);
+    gid = getgid();
 
-  if (0 != access("/data/local/englog", F_OK)) {
-    ret = mkdir("/data/local/englog", S_IRWXU | S_IRWXG | S_IRWXO);
-    if (-1 == ret && (errno != EEXIST)) {
-      EngLog::error("mkdir /data/local/englog failed.");
-      return 0;
+    if (max < 0) max = 0;
+    list[max++] = gid;
+
+    if (setgroups(max, list)) {
+        EngLog::error("setgroups failed: %s", strerror(errno));
     }
-  }
-  ret = chmod("/data/local/englog", S_IRWXU | S_IRWXG | S_IRWXO);
-  if (-1 == ret) {
-    EngLog::error("chmod /data/local/englog failed.");
-    return 0;
-  }
-
-  if (0 == access("/data/local/englog/last_eng.log", F_OK)) {
-    ret = remove("/data/local/englog/last_eng.log");
-    if (-1 == ret) {
-      EngLog::error("remove failed.");
-      return 0;
+    if (setgid(AID_ROOT)){
+        EngLog::error("set failed: %s", strerror(errno));
     }
-  }
-
-  if (0 == access("/data/local/englog/eng.log", F_OK)) {
-    ret =
-        rename("/data/local/englog/eng.log", "/data/local/englog/last_eng.log");
-    if (-1 == ret) {
-      EngLog::error("rename failed.");
-      return 0;
-    }
-  }
-
-  fd = open("/data/local/englog/eng.log", O_RDWR | O_CREAT,
-            S_IRWXU | S_IRWXG | S_IRWXO);
-  if (fd == -1 && (errno != EEXIST)) {
-    EngLog::error("creat /data/local/englog/eng.log failed.");
-    return 0;
-  }
-  if (fd >= 0) close(fd);
-
-  ret = chmod("/data/local/englog/eng.log", 0777);
-  if (-1 == ret) {
-    EngLog::error("chmod /data/local/englog/eng.log failed.");
-    return 0;
-  }
-
-  ret = system("logcat -v threadtime -f /data/local/englog/eng.log &");
-  if (!WIFEXITED(ret) || WEXITSTATUS(ret) || -1 == ret) {
-    EngLog::error(" system failed.");
-    return 0;
-  }
-
-  system("sync");
-
-  return 0;
-}
-
-void log_start(){
-    pthread_t t;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_create(&t, &attr, eng_printlog_thread, NULL);
 }

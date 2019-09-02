@@ -31,6 +31,7 @@ common_engpc_modules_dirs := charge \
                              libtsxdata \
                              PQTune \
                              tsensor \
-			     libnefuse
+                             libnefuse \
+                             libapcomm
 
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

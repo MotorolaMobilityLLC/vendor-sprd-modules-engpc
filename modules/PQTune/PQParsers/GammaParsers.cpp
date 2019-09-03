@@ -14,7 +14,7 @@ static int parse_gamma_version(gamma_common *gamma, xmlNodePtr curNode)
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
 			gamma->version.version = strtoul((char *)szPropity, NULL, 0);
 			ALOGD("aaaaaa gamma verison %d \n", gamma->version.version);
-			free(szPropity);
+			xmlFree(szPropity);
 		}
 		subNode = subNode->next;
 	}
@@ -43,17 +43,17 @@ static int parse_gamma_regs_table(gamma_common *gamma, xmlNodePtr curNode)
                     	szPropity = xmlGetProp(propNode, (const xmlChar*)"r");
 						gamma->gamma.r[i] = strtoul((char *)szPropity, NULL, 0);
 						ALOGD("r %d \n", gamma->gamma.r[i]);
-						free(szPropity);
+						xmlFree(szPropity);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"g")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"g");
 						gamma->gamma.g[i] = strtoul((char *)szPropity, NULL, 0);
 						ALOGD("g %d \n", gamma->gamma.g[i]);
-						free(szPropity);
+						xmlFree(szPropity);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"b")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"b");
 						gamma->gamma.b[i] = strtoul((char *)szPropity, NULL, 0);
 						ALOGD("b %d \n", gamma->gamma.b[i]);
-						free(szPropity);
+						xmlFree(szPropity);
 					}
 					attrPtr = attrPtr->next;
             	}

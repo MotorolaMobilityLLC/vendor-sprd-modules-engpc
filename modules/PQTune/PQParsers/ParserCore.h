@@ -26,6 +26,10 @@ enum epf_fun
 	EPF_FUN_MAX,
 };
 
+typedef struct {
+	uint32_t value[729];
+} lut3d_cfg;
+
 typedef struct
 {
 	uint08_t brightness;
@@ -66,6 +70,7 @@ typedef struct
 
 static slp_ltm_cfg  slp_ltm_params;
 static slp_ltm_cfg_sharkl5pro  slp_ltm_params_l5pro;
+static lut3d_cfg lut3d_l5pro;
 
 class XmlParser {
 public:

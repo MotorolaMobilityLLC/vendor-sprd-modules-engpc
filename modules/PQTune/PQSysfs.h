@@ -5,18 +5,23 @@
 #include "sprd_fts_log.h"
 #include "sprd_fts_list.h"
 
+#define SCL_EN         (1 << 0)
 #define EPF_EN         (1 << 1)
 #define HSV_EN         (1 << 2)
 #define CMS_EN         (1 << 3)
 #define SLP_EN         (1 << 4)
 #define GAMMA_EN       (1 << 5)
 #define LTM_EN         (1 << 6)
+#define SLP_MASK_EN    (1 << 7)
+#define CABC_EN        (1 << 8)
+#define LUT3D_EN       (1 << 9)
+#define DITHER_EN      (1 << 10)
 
 #define bld_xml             "/mnt/vendor/enhance/bld.xml"
 #define abc_xml             "/mnt/vendor/enhance/abc.xml"
 #define gamma_xml           "/mnt/vendor/enhance/gamma.xml"
 #define cms_xml             "/mnt/vendor/enhance/cms.xml"
-#define hsv_xml				"/mnt/vendor/enhance/3dlut.xml"
+#define hsv_xml				"/mnt/vendor/enhance/3d_lut.xml"
 #define DpuVersion			"/sys/class/display/dispc0/dpu_version"
 #define DispcBg 			"/sys/class/display/dispc0/bg_color"
 #define PanelSize 			"/sys/class/display/panel0/resolution"

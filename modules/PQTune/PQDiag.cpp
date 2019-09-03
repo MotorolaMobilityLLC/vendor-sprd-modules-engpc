@@ -200,6 +200,7 @@ int pq_adapt_dpu_core(void)
 
 	ret = read(fd, version, sizeof(version));
 	TuneCore = pq_create_TuneCore(version);
+	close(fd);
 
 	return 0;
 }

@@ -6,7 +6,7 @@
 	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	 abc->sceneTable[I].sceneTableItem[J].epfCfg.X = strtoul((char *)szPropity, NULL, 0); \
-	 free(szPropity); \
+	 xmlFree(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
@@ -16,7 +16,7 @@
 	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	 abc->sceneTable[I].sceneTableItem[J].slpCfg.X = strtoul((char *)szPropity, NULL, 0); \
-	 free(szPropity); \
+	 xmlFree(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
@@ -26,7 +26,7 @@
 		  if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		  szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 		  abc->sceneTable[I].slpbasecfg.X = strtoul((char *)szPropity, NULL, 0); \
-		  free(szPropity); \
+		  xmlFree(szPropity); \
 		  propNode = propNode->next; \
 		  } \
 		  })
@@ -38,7 +38,7 @@
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	 abc->sceneTable[I].sceneTableItem[J].epfCfgSunlightProtector.X = strtoul((char *)szPropity, NULL, 0); \
 	 ENG_LOG("aabbcc EPF_SP "#X" = %d \n",abc->sceneTable[I].sceneTableItem[J].epfCfgSunlightProtector.X);\
-	 free(szPropity); \
+	 xmlFree(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
@@ -48,7 +48,7 @@
 	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	 abc->sceneTable[I].sceneTableItem[J].epfCfgSuperResolution.X = strtoul((char *)szPropity, NULL, 0); \
-	 free(szPropity); \
+	 xmlFree(szPropity); \
 	 ENG_LOG("aabbcc EPF_SR "#X" = %d \n",abc->sceneTable[I].sceneTableItem[J].epfCfgSuperResolution.X);\
 	 propNode = propNode->next; \
 	 } \
@@ -59,7 +59,7 @@
 		if (xmlHasProp(propNode, BAD_CAST #X)) { \
 			szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 			abc->sceneTable[I].sceneTableItem[J].ltmCfg.X = strtoul((char *)szPropity, NULL, 0); \
-			free(szPropity); \
+			xmlFree(szPropity); \
 			propNode = propNode->next; \
 		} \
 	 })
@@ -196,7 +196,6 @@ static int parse_epf_child_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode
 			}
 			if (propNode)
 				propNode = propNode->next;
-				ENG_LOG("aabbcc parsel5p5o %s  j = %d \n", __func__, j);
 		}
 		subNode = subNode->next;
 		j++;
@@ -217,10 +216,10 @@ static int parse_epf_next_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode,
 			ENG_LOG("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_epf_child_config(abc, subNode, epf_fun, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_epf_child_config(abc, subNode, epf_fun, 1);
 			}
 		}
@@ -344,10 +343,10 @@ static int parse_slp_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
 			ENG_LOG("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_child_config(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_child_config(abc, subNode, 1);
 			}
 		}
@@ -398,10 +397,10 @@ static int parse_ltm_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
 			ENG_LOG("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_ltm_child_config(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_ltm_child_config(abc, subNode, 1);
 			}
 		}
@@ -423,11 +422,11 @@ static int parse_abc_version(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
 			abc->version.version = strtoul((char *)szPropity, NULL, 0);
-			free(szPropity);
+			xmlFree(szPropity);
 		} else if (xmlHasProp(subNode, BAD_CAST "major_version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "major_version");
 			abc->nMajorVersion = strtoul((char *)szPropity, NULL, 0);
-			free(szPropity);
+			xmlFree(szPropity);
 		}
 		subNode = subNode->next;
 	}
@@ -453,11 +452,11 @@ static int parse_slp_mapping_child_table(abc_common_sharkl5Pro *abc, xmlNodePtr 
 				if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"ambient")) {
 					szPropity = xmlGetProp(propNode, (const xmlChar*)"ambient");
 					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].ambient = strtoul((char *)szPropity, NULL, 0);
-					free(szPropity);
+					xmlFree(szPropity);
 				} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"brightness")) {
 					szPropity = xmlGetProp(propNode, (const xmlChar*)"brightness");
 					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].slp_brightness_factor = strtoul((char *)szPropity, NULL, 0);
-					free(szPropity);
+					xmlFree(szPropity);
 				}
 				attrPtr = attrPtr->next;
 			}
@@ -488,10 +487,10 @@ static int parse_slp_mapping_table(abc_common_sharkl5Pro *abc, xmlNodePtr curNod
 			ENG_LOG("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_mapping_child_table(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_mapping_child_table(abc, subNode, 1);
 			}
 		}
@@ -726,17 +725,13 @@ static int update_slp_mapping_table(abc_common_sharkl5Pro *abc, xmlNodePtr curNo
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
 				ENG_LOG("PQ  bl mapping normal \n");
-				free(szPropity);
-				if(abc->mode == 1) {
-					update_slp_mapping_indexs_arrays(abc, subNode, 0);
-					update_slp_mapping_child_table(abc, subNode, 0);
-				}
+				xmlFree(szPropity);
+				update_slp_mapping_indexs_arrays(abc, subNode, 0);
+				update_slp_mapping_child_table(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
-				if(abc->mode == 2) {
-					update_slp_mapping_indexs_arrays(abc, subNode, 1);
-					update_slp_mapping_child_table(abc, subNode, 1);
-				}
+				xmlFree(szPropity);
+				update_slp_mapping_indexs_arrays(abc, subNode, 1);
+				update_slp_mapping_child_table(abc, subNode, 1);
 			}
 		}
 		subNode = subNode->next;
@@ -909,17 +904,13 @@ static int update_epf_next_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
 				ENG_LOG("PQ  epf config normal \n");
-				free(szPropity);
-				if(abc->mode == 1) {
-					update_epf_config_indexs_arrays(abc, subNode, 0);
-					update_epf_child_config(abc, subNode, epf_fun, 0);
-				}
+				xmlFree(szPropity);
+				update_epf_config_indexs_arrays(abc, subNode, 0);
+				update_epf_child_config(abc, subNode, epf_fun, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
-				if(abc->mode == 2) {
-					update_epf_config_indexs_arrays(abc, subNode, 1);
-					update_epf_child_config(abc, subNode, epf_fun, 1);
-				}
+				xmlFree(szPropity);
+				update_epf_config_indexs_arrays(abc, subNode, 1);
+				update_epf_child_config(abc, subNode, epf_fun, 1);
 			}
 		}
 		subNode = subNode->next;
@@ -954,7 +945,7 @@ static int update_slp_child_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNod
 	char numStr[10];
 	int j = 0;
 
-	subNode = curNode->children;//number index
+	subNode = curNode;//number index
 	while(NULL != subNode) {
 		propNode = subNode->children;
 		while (NULL != propNode){
@@ -1121,6 +1112,7 @@ static int update_slp_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
 	int j = 0;
 	const char *endptr = NULL;
 	xmlNodePtr subNode;
+	xmlNodePtr tmpNode;
 	xmlNodePtr propNode;
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
@@ -1133,18 +1125,17 @@ static int update_slp_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
 			ENG_LOG("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
-				ENG_LOG("PQ  slp config normal \n");
+				xmlFree(szPropity);
 				update_slp_baseconfig(abc, subNode, 0);
-				subNode = FindNode(subNode->children, "number");
-				update_slp_config_indexs_arrays(abc, subNode, 0);
-				update_slp_child_config(abc, subNode, 0);
+				tmpNode = FindNode(subNode->children, "number");
+				update_slp_config_indexs_arrays(abc, tmpNode, 0);
+				update_slp_child_config(abc, tmpNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				update_slp_baseconfig(abc, subNode, 1);
-				subNode = FindNode(subNode->children, "number");
-				update_slp_config_indexs_arrays(abc, subNode, 1);
-				update_slp_child_config(abc, subNode, 1);
+				tmpNode = FindNode(subNode->children, "number");
+				update_slp_config_indexs_arrays(abc, tmpNode, 1);
+				update_slp_child_config(abc, tmpNode, 1);
 			}
 		}
 		subNode = subNode->next;
@@ -1293,19 +1284,15 @@ static int update_ltm_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
 				ENG_LOG("PQ  slp config normal \n");
-				free(szPropity);
-				if(abc->mode == 1) {
-					update_ltm_config_indexs_arrays(abc, subNode, 0);
-					update_ltm_child_config(abc, subNode, 0);
-					ENG_LOG("update_ltm_child_config finish\n");
-				}
+				xmlFree(szPropity);
+				update_ltm_config_indexs_arrays(abc, subNode, 0);
+				update_ltm_child_config(abc, subNode, 0);
+				ENG_LOG("update_ltm_child_config finish\n");
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
-				if(abc->mode == 2) {
-					update_ltm_config_indexs_arrays(abc, subNode, 1);
-					update_ltm_child_config(abc, subNode, 1);
-					ENG_LOG("update_ltm_child_config finish mode 2\n");
-				}
+				xmlFree(szPropity);
+				update_ltm_config_indexs_arrays(abc, subNode, 1);
+				update_ltm_child_config(abc, subNode, 1);
+				ENG_LOG("update_ltm_child_config finish mode 2\n");
 			}
 		}
 		subNode = subNode->next;
@@ -1327,6 +1314,10 @@ int AbcParserR4p0::parse_reg(uint08_t *ctx)
 	fdepf = open(DpuEpf, O_RDWR);
 
 	if(fdslp < 0 || fdepf < 0) {
+		if (fdslp >= 0)
+			close(fdslp);
+		if (fdepf >= 0)
+			close(fdepf);
 		ENG_LOG("%s: open file failed, err: %s\n", __func__, strerror(errno));
 		return errno;
 	}
@@ -1352,7 +1343,7 @@ int AbcParserR4p0::parse_reg(uint08_t *ctx)
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index0 = slp_ltm_params_l5pro.fst_pth_index[0];
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index1 = slp_ltm_params_l5pro.fst_pth_index[1];
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index2 = slp_ltm_params_l5pro.fst_pth_index[2];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index2 = slp_ltm_params_l5pro.fst_pth_index[3];	
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index3 = slp_ltm_params_l5pro.fst_pth_index[3];	
 
 	abc->sceneTable[0].slpbasecfg.hist_exb_no = slp_ltm_params_l5pro.hist_exb_no;
 	abc->sceneTable[0].slpbasecfg.hist_exb_percent = slp_ltm_params_l5pro.hist_exb_percent;
@@ -1407,6 +1398,10 @@ int AbcParserR4p0::update_reg(uint08_t *ctx)
 		 fdslp = open(DpuSlp, O_RDWR);
 		 fdepf = open(DpuEpf, O_RDWR);
 		 if(fdslp< 0 || fdepf < 0) {
+			if (fdslp >= 0)
+				close(fdslp);
+			if (fdepf >= 0)
+				close(fdepf);
 			 ENG_LOG("%s: open file failed, err: %s\n", __func__, strerror(errno));
 			 return errno;
 		}

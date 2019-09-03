@@ -13,11 +13,11 @@ static int parse_gamma_version(gamma_common_sharkl5 *gamma, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
 			gamma->version.version = strtoul((char *)szPropity, NULL, 0);
-			free(szPropity);
+			xmlFree(szPropity);
 		} else if (xmlHasProp(subNode, BAD_CAST "major_version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "major_version");
 			gamma->nMajorVersion = strtoul((char *)szPropity, NULL, 0);
-			free(szPropity);
+			xmlFree(szPropity);
 		}
 		subNode = subNode->next;
 	}
@@ -39,15 +39,15 @@ static int parse_gamma_child_config(gamma_common_sharkl5 *gamma, xmlNodePtr curN
 			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"r")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"r");
 				gamma->gamma[i].r[j] = strtoul((char *)szPropity, NULL, 0);
-				free(szPropity);
+				xmlFree(szPropity);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"g")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"g");
 				gamma->gamma[i].g[j] = strtoul((char *)szPropity, NULL, 0);
-				free(szPropity);
+				xmlFree(szPropity);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"b")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"b");
 				gamma->gamma[i].b[j] = strtoul((char *)szPropity, NULL, 0);
-				free(szPropity);
+				xmlFree(szPropity);
 			}
 			attrPtr = attrPtr->next;
 		}
@@ -70,10 +70,10 @@ static int parse_gamma_regs_table(gamma_common_sharkl5 *gamma, xmlNodePtr curNod
 			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_gamma_child_config(gamma, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_gamma_child_config(gamma, subNode, 1);
 			}
 		}
@@ -152,10 +152,10 @@ static int update_gamma_regs_table(gamma_common_sharkl5 *gamma, xmlNodePtr curNo
 				ALOGD("curNode name %s \n",subNode->name);
 				szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 				if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
-					free(szPropity);
+					xmlFree(szPropity);
 					update_gamma_child_config(gamma, subNode, 0);
 				} else if(!xmlStrcmp(szPropity, (const xmlChar *) "standard")) {
-					free(szPropity);
+					xmlFree(szPropity);
 					update_gamma_child_config(gamma, subNode, 1);
 				}
 			}

@@ -354,48 +354,49 @@ typedef struct
     cm_cfg              cm[12];
 } cms_common_sharkl5Pro;
 
-typedef struct  
+typedef struct
 {
-    uint16_t brightness;
-    uint16_t brightness_step;
-    uint08_t first_max_bright_th;
-    uint08_t first_max_bright_th_step0;
-    uint08_t first_max_bright_th_step1;
-    uint08_t first_max_bright_th_step2;
-    uint08_t first_max_bright_th_step3;
-    uint08_t first_max_bright_th_step4;
-    uint16_t mask_height;
-    uint32_t first_percent_th;
-    uint08_t first_pth_index0;
-    uint08_t first_pth_index1;
-    uint08_t first_pth_index2;
-    uint08_t first_pth_index3;
-
+	uint08_t brightness;
+	uint08_t reserved0;
+	uint16_t brightness_step;
+	uint08_t first_max_bright_th;
+	uint08_t first_max_bright_th_step0;
+	uint08_t first_max_bright_th_step1;
+	uint08_t first_max_bright_th_step2;
+	uint08_t first_max_bright_th_step3;
+	uint08_t first_max_bright_th_step4;
+	uint16_t mask_height;
+	uint08_t first_percent_th;
+	uint08_t first_pth_index0;
+	uint08_t first_pth_index1;
+	uint08_t first_pth_index2;
+	uint08_t first_pth_index3;
+	uint08_t reserved[3];
 } slp_cfg_sharkl5Pro_abc;
 
-typedef struct  
+typedef struct
 {
-    uint16_t hist_exb_no;
-    uint16_t hist_exb_percent;
-    uint16_t hist9_index0;
-    uint16_t hist9_index1;
-    uint16_t hist9_index2;
-    uint16_t hist9_index3;
-    uint16_t hist9_index4;
-    uint16_t hist9_index5;
-    uint16_t hist9_index6;
-    uint16_t hist9_index7;
-    uint16_t hist9_index8;
-    uint16_t glb_x1;
-    uint16_t glb_x2;
-    uint16_t glb_x3;
-    uint16_t glb_s1;
-    uint16_t glb_s2;
-    uint16_t glb_s3;
-    uint16_t fast_ambient_th;
-    uint16_t screen_change_percent_th;
-    uint16_t local_weight;
-
+	uint08_t hist_exb_no;
+	uint08_t hist_exb_percent;
+	uint08_t hist9_index0;
+	uint08_t hist9_index1;
+	uint08_t hist9_index2;
+	uint08_t hist9_index3;
+	uint08_t hist9_index4;
+	uint08_t hist9_index5;
+	uint08_t hist9_index6;
+	uint08_t hist9_index7;
+	uint08_t hist9_index8;
+	uint08_t glb_x1;
+	uint08_t glb_x2;
+	uint08_t glb_x3;
+	uint16_t glb_s1;
+	uint16_t glb_s2;
+	uint16_t glb_s3;
+	uint08_t fast_ambient_th;
+	uint08_t screen_change_percent_th;
+	uint08_t local_weight;
+	uint08_t reserved;
 } slp_basecfg_sharkl5Pro_abc;
 
 typedef struct  

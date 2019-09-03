@@ -7,7 +7,7 @@
 		szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 		bld->hsvcm[i].cm.X = strtoul((char *)szPropity, NULL, 0); \
 		ALOGD(""#X" %d \n", bld->hsvcm[i].cm.X); \
-		free(szPropity); \
+		xmlFree(szPropity); \
 		propNode = propNode->next; \
 	}	\
 })
@@ -18,7 +18,6 @@
 		snprintf(numStr, sizeof(numStr), "%d", bld->hsvcm[i].cm.X);	\
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr);	\
 		ALOGD(""#X" %d \n", bld->hsvcm[i].cm.X); \
-		free(szPropity); \
 		propNode = propNode->next; \
 	}	\
 })
@@ -73,12 +72,12 @@ static int parse_hsvcm(bld_common *bld, xmlNodePtr subNode, int i)
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"hue");
 				bld->hsvcm[i].hsv.table[j].hue = strtoul((char *)szPropity, NULL, 0);
 				ALOGD("hue %d \n", bld->hsvcm[i].hsv.table[j].hue);
-				free(szPropity);
+				xmlFree(szPropity);
 			} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"sat")) {
 				szPropity = xmlGetProp(propNode, (const xmlChar*)"sat");
 				bld->hsvcm[i].hsv.table[j].sat = strtoul((char *)szPropity, NULL, 0);
 				ALOGD("sat %d \n", bld->hsvcm[i].hsv.table[j].sat);
-				free(szPropity);
+				xmlFree(szPropity);
 			}
 			attrPtr = attrPtr->next;
 		}
@@ -104,7 +103,7 @@ static int parse_bld_version(bld_common *bld, xmlNodePtr curNode)
         if(xmlHasProp(subNode, BAD_CAST (const xmlChar*)"version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
 			bld->version.version = strtoul((char *)szPropity, NULL, 0);
-			free(szPropity);
+			xmlFree(szPropity);
 		}
 		subNode = subNode->next;
 	}
@@ -126,15 +125,15 @@ static int parse_bld_hsvcm(bld_common *bld, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_hsvcm(bld, subNode->children, i);
 			}
 			else if (!xmlStrcmp(szPropity, (const xmlChar *) "middle")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_hsvcm(bld, subNode->children, i);
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "high")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_hsvcm(bld, subNode->children, i);
 			}
 		}
@@ -212,15 +211,15 @@ static int update_bld_hsvcm(bld_common *bld, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				update_hsvcm(bld, subNode->children, i);
 			}
 			else if (!xmlStrcmp(szPropity, (const xmlChar *) "middle")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				update_hsvcm(bld, subNode->children, i);
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "high")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				update_hsvcm(bld, subNode->children, i);
 			}
 		}
@@ -244,6 +243,10 @@ int BldParser::parse_reg(uint08_t *ctx)
 	fd1 = open(DpuCm, O_RDWR);
 	if(fd0 < 0 || fd1 < 0) {
 		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		if (fd0 >= 0)
+			close(fd0);
+		if (fd1 >= 0)
+			close(fd1);
 		return errno;
 	}
 	sizes0 = sizeof(bld->hsvcm[0].hsv);
@@ -276,6 +279,10 @@ int BldParser::update_reg(uint08_t *ctx)
 		fd1 = open(DpuCm, O_RDWR);
 		if(fd0 < 0 || fd1 < 0) {
 			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+			if (fd0 >= 0)
+				close(fd0);
+			if (fd1 >= 0)
+				close(fd1);
 			return errno;
 		}
 		sizes0 = sizeof(bld->hsvcm[0].hsv);

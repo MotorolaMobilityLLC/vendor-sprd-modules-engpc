@@ -6,7 +6,7 @@
 	     if (xmlHasProp(propNode, BAD_CAST #X)) { \
 	         szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	         bld->cmrange.cm.X = strtoul((char *)szPropity, NULL, 0); \
-			 free(szPropity); \
+		 xmlFree(szPropity); \
 	         propNode = propNode->next; \
 	     }   \
 })
@@ -57,9 +57,9 @@
 ({  \
 	if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-	    bld->cmrange.range.X = strtoul((char *)szPropity, NULL, 0); \
-		free(szPropity); \
-	    propNode = propNode->next; \
+	    	bld->cmrange.range.X = strtoul((char *)szPropity, NULL, 0); \
+		xmlFree(szPropity); \
+	    	propNode = propNode->next; \
 	}   \
 })
 
@@ -105,11 +105,11 @@ static int parse_bld_version(bld_common_sharkl5 *bld, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
 			bld->version.version = strtoul((char *)szPropity, NULL, 0);
-			free(szPropity);
+			xmlFree(szPropity);
 		} else if (xmlHasProp(subNode, BAD_CAST "major_version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "major_version");
 			bld->nMajorVersion = strtoul((char *)szPropity, NULL, 0);
-			free(szPropity);
+			xmlFree(szPropity);
 		}
 		subNode = subNode->next;
 	}
@@ -155,7 +155,7 @@ static int parse_bld_cmrange_config(bld_common_sharkl5 *bld, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_cmrange(bld, subNode->children);
 			}
 		}
@@ -222,7 +222,7 @@ static int update_bld_cmrange_config(bld_common_sharkl5 *bld, xmlNodePtr curNode
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				update_cmrange(bld, subNode->children);
 			}
 		}
@@ -249,7 +249,7 @@ static int update_bld_cm_config(bld_common_sharkl5 *bld, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "default")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				update_cmrange(bld, subNode->children);
 			}
 		}
@@ -272,6 +272,10 @@ int BldParserLiteR2p0::parse_reg(uint08_t *ctx)
 	fd0 = open(DpuHsv, O_RDWR);
 	fd1 = open(DpuCm, O_RDWR);
 	if(fd0 < 0 || fd1 < 0) {
+		if (fd0 >= 0)
+			close(fd0);
+		if (fd1 >= 0)
+			close(fd1);
 		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
 		return errno;
 	}
@@ -302,6 +306,10 @@ int BldParserLiteR2p0::update_reg(uint08_t *ctx)
 		fd0 = open(DpuHsv, O_RDWR);
 		fd1 = open(DpuCm, O_RDWR);
 		if(fd0 < 0 || fd1 < 0) {
+			if (fd0 >= 0)
+				close(fd0);
+			if (fd1 >= 0)
+				close(fd1);
 			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
 			return errno;
 		}

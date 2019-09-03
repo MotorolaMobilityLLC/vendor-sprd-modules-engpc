@@ -7,7 +7,7 @@
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	 abc->sceneTable[I].sceneTableItem[J].epfCfgSunlightProtector.X = strtoul((char *)szPropity, NULL, 0); \
 	 ALOGD("aabbcc EPF_SP "#X" = %d \n",abc->sceneTable[I].sceneTableItem[J].epfCfgSunlightProtector.X);\
-	 free(szPropity); \
+	 xmlFree(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
@@ -18,7 +18,7 @@
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	 abc->sceneTable[I].sceneTableItem[J].epfCfgSuperResolution.X = strtoul((char *)szPropity, NULL, 0); \
 	 ALOGD("aabbcc EPF_SR "#X" = %d \n",abc->sceneTable[I].sceneTableItem[J].epfCfgSuperResolution.X);\
-	 free(szPropity); \
+	 xmlFree(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
@@ -28,7 +28,7 @@
 	 if (xmlHasProp(propNode, BAD_CAST #X)) { \
 	 szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
 	 abc->sceneTable[I].sceneTableItem[J].slpCfg.X = strtoul((char *)szPropity, NULL, 0); \
-	 free(szPropity); \
+	 xmlFree(szPropity); \
 	 propNode = propNode->next; \
 	 } \
 	 })
@@ -146,10 +146,10 @@ static int parse_epf_next_config(abc_common *abc, xmlNodePtr curNode, int epf_fu
 			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_epf_child_config(abc, subNode, epf_fun, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_epf_child_config(abc, subNode, epf_fun, 1);
 			}
 		}
@@ -217,10 +217,10 @@ static int parse_slp_config(abc_common *abc, xmlNodePtr curNode)
 			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_child_config(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_child_config(abc, subNode, 1);
 			}
 		}
@@ -243,7 +243,7 @@ static int parse_abc_version(abc_common *abc, xmlNodePtr curNode)
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
 			abc->version.version = strtoul((char *)szPropity, NULL, 0);
 			ALOGD("aaaaa abc verison %d\n", abc->version.version);
-			free(szPropity);
+			xmlFree(szPropity);
 		}
 		subNode = subNode->next;
 	}
@@ -269,12 +269,12 @@ static int parse_slp_mapping_child_table(abc_common *abc, xmlNodePtr curNode, in
 				if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"ambient")) {
 					szPropity = xmlGetProp(propNode, (const xmlChar*)"ambient");
 					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].ambient = strtoul((char *)szPropity, NULL, 0);
+					xmlFree(szPropity);
 				} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"brightness")) {
 					szPropity = xmlGetProp(propNode, (const xmlChar*)"brightness");
 					abc->sceneTable[i].sceneTableItem[j].slpMappingTable.item[k].slp_brightness_factor = strtoul((char *)szPropity, NULL, 0);
+					xmlFree(szPropity);
 				}
-				if (szPropity)
-					free(szPropity);
 				attrPtr = attrPtr->next;
 			}
 			k++;
@@ -304,10 +304,10 @@ static int parse_slp_mapping_table(abc_common *abc, xmlNodePtr curNode)
 			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_mapping_child_table(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				parse_slp_mapping_child_table(abc, subNode, 1);
 			}
 		}
@@ -339,11 +339,11 @@ static int parse_bl_mapping_table(abc_common *abc, xmlNodePtr curNode)
 					if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"ambient")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"ambient");
 						abc->blMappingTable[i].item[j].ambient = strtoul((char *)szPropity, NULL, 0);
-						free(szPropity);
+						xmlFree(szPropity);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"brightness")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"brightness");
 						abc->blMappingTable[i].item[j].backlight = strtoul((char *)szPropity, NULL, 0);
-						free(szPropity);
+						xmlFree(szPropity);
 					}
 					attrPtr = attrPtr->next;
 				}
@@ -584,17 +584,13 @@ static int update_slp_mapping_table(abc_common *abc, xmlNodePtr curNode)
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
 				ALOGD("PQ  bl mapping normal \n");
-				free(szPropity);
-				if(abc->mode == 1) {
-					update_slp_mapping_indexs_arrays(abc, subNode, 0);
-					update_slp_mapping_child_table(abc, subNode, 0);
-				}
+				xmlFree(szPropity);
+				update_slp_mapping_indexs_arrays(abc, subNode, 0);
+				update_slp_mapping_child_table(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
-				if(abc->mode == 2) {
-					update_slp_mapping_indexs_arrays(abc, subNode, 1);
-					update_slp_mapping_child_table(abc, subNode, 1);
-				}
+				xmlFree(szPropity);
+				update_slp_mapping_indexs_arrays(abc, subNode, 1);
+				update_slp_mapping_child_table(abc, subNode, 1);
 			}
 		}
 		subNode = subNode->next;
@@ -680,13 +676,11 @@ static int update_bl_mapping_table(abc_common *abc, xmlNodePtr curNode)
 			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
-				if(abc->mode == 1)
-					update_bl_child_table(abc, subNode, 0);
+				xmlFree(szPropity);
+				update_bl_child_table(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
-				if(abc->mode == 2)
-					update_bl_child_table(abc, subNode, 1);
+				xmlFree(szPropity);
+				update_bl_child_table(abc, subNode, 1);
 			}
 		}
 		subNode = subNode->next;
@@ -860,18 +854,14 @@ static int update_epf_next_config(abc_common *abc, xmlNodePtr curNode, int epf_f
 			ALOGD("curNode name %s \n",subNode->name);
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
-				free(szPropity);
+				xmlFree(szPropity);
 				ALOGD("PQ  epf config normal \n");
-				if(abc->mode == 1) {
-					update_epf_config_indexs_arrays(abc, subNode, 0);
-					update_epf_child_config(abc, subNode, epf_fun, 0);
-				}
+				update_epf_config_indexs_arrays(abc, subNode, 0);
+				update_epf_child_config(abc, subNode, epf_fun, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
-				if(abc->mode == 2) {
-					update_epf_config_indexs_arrays(abc, subNode, 1);
-					update_epf_child_config(abc, subNode, epf_fun, 1);
-				}
+				xmlFree(szPropity);
+				update_epf_config_indexs_arrays(abc, subNode, 1);
+				update_epf_child_config(abc, subNode, epf_fun, 1);
 			}
 		}
 		subNode = subNode->next;
@@ -1037,17 +1027,13 @@ static int update_slp_config(abc_common *abc, xmlNodePtr curNode)
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
 			if(!xmlStrcmp(szPropity, (const xmlChar *) "normal")) {
 				ALOGD("PQ  slp config normal \n");
-				free(szPropity);
-				if(abc->mode == 1) {
-					update_slp_config_indexs_arrays(abc, subNode, 0);
-					update_slp_child_config(abc, subNode, 0);
-				}
+				xmlFree(szPropity);
+				update_slp_config_indexs_arrays(abc, subNode, 0);
+				update_slp_child_config(abc, subNode, 0);
 			} else if(!xmlStrcmp(szPropity, (const xmlChar *) "low power")) {
-				free(szPropity);
-				if(abc->mode == 2) {
-					update_slp_config_indexs_arrays(abc, subNode, 1);
-					update_slp_child_config(abc, subNode, 1);
-				}
+				xmlFree(szPropity);
+				update_slp_config_indexs_arrays(abc, subNode, 1);
+				update_slp_child_config(abc, subNode, 1);
 			}
 		}
 		subNode = subNode->next;

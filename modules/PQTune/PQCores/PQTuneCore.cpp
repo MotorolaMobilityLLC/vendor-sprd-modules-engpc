@@ -128,43 +128,43 @@ static void tune_module_enable(int version, void *ctx, int module)
 {
 	switch(version){
 		case DPU_R2P0:
-			if (module == GAMMA_EN)
+			if (module & GAMMA_EN)
 				((pq_tuning_parm *)ctx)->gamma.version.enable = 1;
-			if (module == SLP_EN)
+			if (module & SLP_EN)
 				((pq_tuning_parm *)ctx)->abc.version.enable = 1;
-			if (module == CMS_EN)
+			if (module & CMS_EN)
 				((pq_tuning_parm *)ctx)->cms.version.enable = 1;
-			if (module == HSV_EN)
+			if (module & HSV_EN)
 				((pq_tuning_parm *)ctx)->bld.version.enable = 1;
 			break;
 		case DPU_LITE_R2P0:
-			if (module == GAMMA_EN)
+			if (module & GAMMA_EN)
 				((pq_tuning_parm_sharkl5 *)ctx)->gamma.version.enable = 1;
-			if (module == SLP_EN)
+			if (module & SLP_EN)
 				((pq_tuning_parm_sharkl5 *)ctx)->abc.version.enable = 1;
-			if (module == CMS_EN)
+			if (module & CMS_EN)
 				((pq_tuning_parm_sharkl5 *)ctx)->cms.version.enable = 1;
-			if (module == HSV_EN)
+			if (module & HSV_EN)
 				((pq_tuning_parm_sharkl5 *)ctx)->bld.version.enable = 1;
 			break;
 		case DPU_R3P0:
-			if (module == GAMMA_EN)
+			if (module & GAMMA_EN)
 				((pq_tuning_parm_roc1 *)ctx)->gamma.version.enable = 1;
-			if (module == SLP_EN)
+			if (module & SLP_EN)
 				((pq_tuning_parm_roc1 *)ctx)->abc.version.enable = 1;
-			if (module == CMS_EN)
+			if (module & CMS_EN)
 				((pq_tuning_parm_roc1 *)ctx)->cms.version.enable = 1;
-			if (module == HSV_EN)
+			if (module & HSV_EN)
 				((pq_tuning_parm_roc1 *)ctx)->bld.version.enable = 1;
 			break;
 		case DPU_R4P0:
-			if (module == GAMMA_EN)
+			if (module & GAMMA_EN)
 				((pq_tuning_parm_sharkl5Pro *)ctx)->gamma.version.enable = 1;
-			if (module == SLP_EN)
+			if (module & SLP_EN)
 				((pq_tuning_parm_sharkl5Pro *)ctx)->abc.version.enable = 1;
-			if (module == CMS_EN)
+			if (module & CMS_EN)
 				((pq_tuning_parm_sharkl5Pro *)ctx)->cms.version.enable = 1;
-			if (module == HSV_EN)
+			if (module & HSV_EN)
 				((pq_tuning_parm_sharkl5Pro *)ctx)->bld.version.enable = 1;
 			break;
 
@@ -203,6 +203,8 @@ PQTuneCore::PQTuneCore(int ver)
 	cms = new CmsParser();
 	bld = new BldParser();
 	gamma = new GammaParser();
+	hsv = NULL;
+	hsv_size = 0;
 	ctx = (uint08_t *)malloc(sizeof(pq_tuning_parm));
 	tune_sizes = sizeof(pq_tuning_parm);
 	gamma_size = sizeof(gamma_common);
@@ -210,6 +212,7 @@ PQTuneCore::PQTuneCore(int ver)
 	cms_size = sizeof(cms_common);
 	abc_size = sizeof(abc_common);
 	offset = 0;
+
 	ALOGD("%S created\n", __func__);
 }
 
@@ -219,6 +222,7 @@ PQTuneCore:: ~PQTuneCore()
 	delete cms;
 	delete bld;
 	delete gamma;
+	free(ctx);
 }
 
 int  PQTuneCore::tune_version()
@@ -253,6 +257,14 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	if (fd < 0 || fd1 < 0 || fd2 < 0 || fd3 < 0) {
 		ALOGD("%s: open file failed, err: %s\n", __func__,
 			strerror(errno));
+		if (fd >= 0)
+			close(fd);
+		if (fd1 >= 0)
+			close(fd1);
+		if (fd2 >= 0)
+			close(fd2);
+		if (fd3 >= 0)
+			close(fd3);
 		return errno;
 	}
 
@@ -281,14 +293,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 		pchar = strstr(info, "0x");
 		if (pchar) {
 			status = strtol(pchar, NULL, 16);
-			if (status & GAMMA_EN)
-				tune_module_enable(version, ctx, GAMMA_EN);
-			if (status & SLP_EN)
-				tune_module_enable(version, ctx, SLP_EN);
-			if (status & CMS_EN)
-				tune_module_enable(version, ctx, CMS_EN);
-			if (status & HSV_EN)
-				tune_module_enable(version, ctx, HSV_EN);
+			tune_module_enable(version, ctx, status);
 		}
 	}
 	ALOGD("PQ status %x\n", status);
@@ -296,12 +301,23 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	memset(dut_info, 0, sizeof(DUT_INFO_T));
 	sizes = read(fd1, info, 1024);
 	pchar = strstr(info, "androidboot.hardware");
+	if (pchar == NULL)
+		return -1;
 	pchar = strstr(pchar, "=");
+	if (pchar == NULL)
+		return -1;
 	ptemp = strchr(pchar + 1, ' ');
 	sizes = ptemp - pchar - 1;
 	tune_version_copy(version, dut_info->szModelName);
 	strncpy(dut_info->szChipName, pchar + 1, sizes);
 	sizes = read(fd, info, 1024);
+	if (sizes < 0) {
+		close(fd);
+		close(fd1);
+		close(fd2);
+		close(fd3);
+		return -1;
+        }
 	parse_panelsize(info, sizes , dut_info);
 	memcpy(rsp, buf, DIAG_HEADER_LENGTH + 5);
 	memcpy(rsp + DIAG_HEADER_LENGTH + 5, dut_info, sizeof(DUT_INFO_T));
@@ -337,6 +353,10 @@ int PQTuneCore::tune_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 	fd0 = open(FlipDisable, O_RDWR);
 	if (fd < 0 || fd0 < 0) {
 		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		if (fd >= 0)
+			close(fd);
+		if (fd0 >= 0)
+			close(fd0);
 		return errno;
 	}
 	if(flip_en) {
@@ -390,7 +410,11 @@ int PQTuneCore::tune_read_regs(char *buf, int len, char *rsp, int rsplen)
 	fd0 = open(DispcRegsOffset, O_RDWR);
 	fd1 = open(DispcWrRegs, O_RDWR);
 	if (fd0 < 0 || fd1 < 0) {
-			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		if (fd0 >= 0)
+			close(fd0);
+		if (fd1 >= 0)
+			close(fd1);
 		return errno;
 	}
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
@@ -436,6 +460,10 @@ int PQTuneCore::tune_write_regs(char *buf, int len, char *rsp, int rsplen)
 	fd1 = open(DispcWrRegs, O_RDWR);
 	if ((fd0 < 0) || (fd1 < 0)) {
 		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		if (fd0 >= 0)
+			close(fd0);
+		if (fd1 >= 0)
+			close(fd1);
 		return errno;
 	}
 	cmds = (rsp + DIAG_HEADER_LENGTH + 5);
@@ -927,6 +955,7 @@ int PQTuneCore::tune_rd_ambient(char *buf, int len, char *rsp, int rsplen)
 	rsp_len = DIAG_HEADER_LENGTH + 10;
 	rsp_head->len = rsp_len - 2;
 	rsp[rsp_len - 1] = 0x7e;
+	close(fd);
 
 	return rsp_len;
 }

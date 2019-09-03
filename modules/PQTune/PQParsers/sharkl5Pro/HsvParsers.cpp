@@ -13,9 +13,12 @@ static int parse_hsv_version(hsv_common_sharkl5Pro *hsv, xmlNodePtr curNode)
 		if(xmlHasProp(subNode, BAD_CAST "version")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*) "version");
 			hsv->version.version = strtoul((char *)szPropity, NULL, 0);
-			ALOGD("aaaaaa hsv verison %d \n", hsv->version.version);
-			free(szPropity);
-		}
+			xmlFree(szPropity);
+		} else if (xmlHasProp(subNode, BAD_CAST "major_version")) {
+                        szPropity = xmlGetProp(subNode, (const xmlChar*) "major_version");
+                        hsv->nMajorVersion = strtoul((char *)szPropity, NULL, 0);
+                        xmlFree(szPropity);
+                }
 		subNode = subNode->next;
 	}
 	return 0;
@@ -40,22 +43,22 @@ static int parse_hsv_regs_table(hsv_common_sharkl5Pro *hsv, xmlNodePtr curNode)
 			while (NULL != propNode) {
 				attrPtr = propNode->properties;
 				while (NULL != attrPtr) {
-                	if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"r")) {
-                    	szPropity = xmlGetProp(propNode, (const xmlChar*)"r");
+                			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)"r")) {
+                    				szPropity = xmlGetProp(propNode, (const xmlChar*)"r");
 						hsv->lut3d[i].r[j] = strtoul((char *)szPropity, NULL, 0);
-						free(szPropity);
+						xmlFree(szPropity);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"g")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"g");
 						hsv->lut3d[i].g[j] = strtoul((char *)szPropity, NULL, 0);
-						free(szPropity);
+						xmlFree(szPropity);
 					} else if(!xmlStrcmp(attrPtr->name, (const xmlChar*)"b")) {
 						szPropity = xmlGetProp(propNode, (const xmlChar*)"b");
 						hsv->lut3d[i].b[j] = strtoul((char *)szPropity, NULL, 0);
-						free(szPropity);
+						xmlFree(szPropity);
 					}
 					attrPtr = attrPtr->next;
-            	}
-				i++;
+            			}
+				j++;
 				propNode = propNode->next;
 			}
 		}
@@ -145,9 +148,13 @@ int HsvParser::parse_reg(uint08_t *ctx)
 		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
 		return errno;
 	}
-	sizes = sizeof(hsv->lut3d);
-	cnt = read(fd, &hsv->lut3d, sizes);
-	ALOGD("parse_hsv_reg cnt0 %d sizes %d \n", cnt, sizes);
+	sizes = sizeof(lut3d_l5pro);
+	cnt = read(fd, &lut3d_l5pro, sizes);
+	for (cnt = 0; cnt < 729; cnt++) {
+		hsv->lut3d[0].r[cnt] = ((lut3d_l5pro.value[cnt] >> 20)& 0x3ff);
+		hsv->lut3d[0].g[cnt] = ((lut3d_l5pro.value[cnt] >> 10) & 0x3ff);
+		hsv->lut3d[0].b[cnt] = (lut3d_l5pro.value[cnt] & 0x3ff);
+	}
 	close(fd);
 
 	return 0;
@@ -171,8 +178,14 @@ int HsvParser::update_reg(uint08_t *ctx)
 			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
 			return errno;
 		}
-		sizes = sizeof(hsv->lut3d);
-		cnt = write(fd, &hsv->lut3d, sizes);
+		memset(&lut3d_l5pro, 0, sizeof(lut3d_l5pro));
+		for (cnt = 0; cnt < 729; cnt++) {
+			lut3d_l5pro.value[cnt] |=  ((hsv->lut3d[0].r[cnt] & 0x3ff) << 20);
+			lut3d_l5pro.value[cnt] |=  (hsv->lut3d[0].g[cnt] & 0x3ff) << 10;
+			lut3d_l5pro.value[cnt] |=  hsv->lut3d[0].b[cnt] & 0x3ff;
+		}
+		sizes = sizeof(lut3d_l5pro);
+		cnt = write(fd, &lut3d_l5pro, sizes);
 		close(fd);
 	}
 	else {
@@ -181,11 +194,10 @@ int HsvParser::update_reg(uint08_t *ctx)
 			ALOGD("%s: open file fd1 failed, err: %s\n", __func__, strerror(errno));
 			return errno;
 		}
-		disable = GAMMA_EN;
+		disable = LUT3D_EN;
 		write(fd1, &disable, sizeof(disable));
 		close(fd1);
 	}
-	ALOGD("PQ update_hsv_reg cnt0 %d sizes %d enable =  %x\n", cnt, sizes, hsv->version.enable);
 
 	return 0;
 }
@@ -210,7 +222,7 @@ int HsvParser::update_xml(uint08_t *ctx)
 
 	curNode = xmlDocGetRootElement(doc);
 
-	if (xmlStrcmp(curNode->name, (const xmlChar*)"hsv_config"))
+	if (xmlStrcmp(curNode->name, (const xmlChar*)"LUT_config"))
 	{
 		ALOGD("hsv_config node != root\n");
 		xmlFreeDoc(doc);
@@ -248,7 +260,7 @@ int HsvParser::parse_xml(uint08_t *ctx)
 
 	curNode = xmlDocGetRootElement(doc);
 
-	if (xmlStrcmp(curNode->name, (const xmlChar*)"hsv_config")) {
+	if (xmlStrcmp(curNode->name, (const xmlChar*)"LUT_config")) {
 		ALOGD("hsv_config node != root\n");
 		xmlFreeDoc(doc);
 		return -1;
@@ -256,7 +268,7 @@ int HsvParser::parse_xml(uint08_t *ctx)
 
 	curNode = curNode->children;
 
-	if(tmpNode = FindNode(curNode, "reg_table_mode"))
+	if(tmpNode = FindNode(curNode, "reg_table"))
 		parse_hsv_regs_table(hsv, tmpNode);
 	if(tmpNode = FindNode(curNode, "enhance"))
 		parse_hsv_version(hsv, tmpNode);

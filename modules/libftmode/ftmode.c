@@ -129,6 +129,7 @@ int getTestMode(char *req, char *rsp){
                 strcpy(rsp, MODE_AUTOTEST);
             }
         }
+        close(fd);
     }
 
     return strlen(rsp);

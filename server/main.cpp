@@ -131,11 +131,7 @@ int main(){
         sys_getlogdest(logtype, logdest);
         EngLog::info("modem log dest: %s", logdest);
         if (logdest[0] != LOG_LOCATION_PC){
-            CDev* lpDev = g_lpDevMgr->find(DEV_MODEM_NAME);
-            if (lpDev != NULL){
-                lpDev->enablePortRD(false);
-                lpDev->enablePortWR(false);
-            }
+            lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, false);
         }
     }
 

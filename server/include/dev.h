@@ -18,6 +18,7 @@
 
 #define DEV_MODEM_NAME "cp"
 #define DEV_MODEM_DIAG_NAME "COM_DIAG"
+#define DEV_MODEM_AT_NAME "COM_AT"
 
 typedef enum {
     DATA_AT,

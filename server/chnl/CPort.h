@@ -85,11 +85,11 @@ class CPort:public CBase{
         pthread_mutex_t m_mtx;
 
         bool m_bEnableRD;
-        char m_buff_RD[MAX_PORT_BUFF_RD];
+        //char m_buff_RD[MAX_PORT_BUFF_RD];
         pthread_mutex_t m_mtx_rd;
 
         bool m_bEnableWR;
-        char m_buff_WR[MAX_PORT_BUFF_WR];
+        //char m_buff_WR[MAX_PORT_BUFF_WR];
         pthread_mutex_t m_mtx_wr;
 
         //Work m_work_rd;

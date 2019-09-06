@@ -13,6 +13,11 @@
 
 #define SYS_CLASS_ANDUSB_STATE "/sys/class/android_usb/android0/state"
 
+static int wakeup_count_fd = -1;
+
+static pthread_t suspend_thread;
+static const char sys_power_wakeup_count[] = "/sys/power/wakeup_count";
+
 int ap_ds_usb_state(void) {
   int fd = -1;
   int ret = 0;
@@ -47,8 +52,10 @@ int ap_ds_usb_state(void) {
 void *ap_ds_thread_fastsleep(void *para) {
 
   int count;
+  ssize_t ret;
   int sleep = 0;
-  char cmd[] = {"echo mem > /sys/power/autosleep"};
+  char cmd[] = {"echo mem > /sys/power/state"};
+  char wakeup_count[32];
 
   ENG_LOG("[apdeepsleep]##: please plug out usb within 60s...\n");
   for (count = 0; count < 60*5; count ++) {
@@ -59,10 +66,29 @@ void *ap_ds_thread_fastsleep(void *para) {
     usleep(200*1000);
   }
   ENG_LOG("[apdeepsleep]##: sleep count=%d\n", count);
-  if (sleep) {
+  while (sleep) {
     ENG_LOG("[apdeepsleep]##: going to sleep mode!delay 3s\n");
     usleep(3000*1000);
-    system(cmd);
+	lseek(wakeup_count_fd, 0, SEEK_SET);
+
+	ret = read(wakeup_count_fd, &wakeup_count[0], sizeof(wakeup_count));
+	if (ret > 0)
+		ENG_LOG("%s read wakeup count success %s.\n", __FUNCTION__, wakeup_count);
+	else {
+		ENG_LOG("%s read wakeup count failed, ret = %d.\n", __FUNCTION__, ret);
+		continue;
+	}
+
+	ret = write(wakeup_count_fd, wakeup_count, sizeof(wakeup_count));
+	if (ret) {
+		ENG_LOG("%s enter suspend.\n", __FUNCTION__);
+		system(cmd);
+	}
+	else {
+		ENG_LOG("%s write wakeup count failed.\n", __FUNCTION__);
+		continue;
+	}
+	ENG_LOG("%s suspend success.\n", __FUNCTION__);
   }
 
   return NULL;
@@ -70,19 +96,27 @@ void *ap_ds_thread_fastsleep(void *para) {
 
 // return : rsp true length
 int ap_deep_sleep_handler(char *buf, int len, char *rsp, int rsplen){
-  pthread_t thread_id;
-  int ret;
-  ret = pthread_create(&thread_id, NULL, ap_ds_thread_fastsleep, NULL);
-  if (0 != ret) {
-    //ENG_LOG("%s: Can't create thread[thread_fastsleep]!\n", __FUNCTION__);
-  } else {
-    //ENG_LOG("%s: Create thread[thread_fastsleep] sucessfully!\n", __FUNCTION__);
+  int ret, fd;
+
+  wakeup_count_fd = open(sys_power_wakeup_count, O_RDWR);
+  if(fd < 0) {
+	  ENG_LOG("%s error open wakeup_count.\n", __FUNCTION__);
+	  goto err_open_wakeup_count;
   }
-   //deep sleep : rsp is not needed upon ap side
+  ENG_LOG("%s init wakeup_count success.\n", __FUNCTION__);
+
+  ret = pthread_create(&suspend_thread, NULL, ap_ds_thread_fastsleep, NULL);
+  if (0 != ret) {
+    ENG_LOG("%s: Can't create thread[thread_fastsleep]!\n", __FUNCTION__);
+	goto err_pthread_create;
+  }
    return 2;
+
+err_pthread_create:
+   close(wakeup_count_fd);
+err_open_wakeup_count:
+   return -1;
 }
-
-
 
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {

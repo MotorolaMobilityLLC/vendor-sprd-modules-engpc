@@ -37,7 +37,6 @@ int disconnect_vbus_charger(void) {
             return 0;
         }
         close(fd);
-        sleep(1);
     } else {
         ENG_LOG("%s open %s failed! \n", __func__, path);
         return 0;
@@ -67,7 +66,6 @@ int connect_vbus_charger(void) {
             return 0;
         }
         close(fd);
-        sleep(1);
     } else {
         ENG_LOG("%s open %s failed! \n", __func__, path);
         return 0;
@@ -138,9 +136,11 @@ int eng_usb_config(char* buff, int nlen){
 int usb_mode(const char* bootmode){
     ENG_LOG("usb_mode: %s", bootmode);
     if (strcasecmp(bootmode, BOOTMODE_CALI) == 0){
+        disconnect_vbus_charger();
         eng_usb_maximum_speed(USB_SPEED_FULL);
         usb_vser_enable(0);
     }else if (strcasecmp(bootmode, BOOTMODE_AUTOTEST) == 0){
+        disconnect_vbus_charger();
         eng_usb_maximum_speed(USB_SPEED_FULL);
         usb_vser_enable(0);
     }else{

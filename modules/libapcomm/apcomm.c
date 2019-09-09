@@ -64,7 +64,7 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
     if (NULL == buff)
     {
         ENG_LOG("%s,null pointer", __FUNCTION__);
-        sprintf(rsp, "\r\n%sERROR\r\n", AT_RSP);
+        sprintf(rsp, "ERROR\r\n");
         return rsp != NULL ? strlen(rsp) : 0;
     }
 
@@ -82,7 +82,6 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
         long szEmmc = 0;
         long szDDR = 0;
         char buff[32] = {0};
-        sprintf(rsp, "\r\n%s", AT_RSP);
 
         szEmmc = getSize(SIZE_EMMC);
         memset(buff, 0, sizeof(buff));
@@ -102,7 +101,7 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
         strcat(rsp, "\r\n");
 
     }else{
-        sprintf(rsp, "\r\n%sERROR\r\n", AT_RSP);
+        sprintf(rsp, "ERROR\r\n");
     }
 
     return strlen(rsp);

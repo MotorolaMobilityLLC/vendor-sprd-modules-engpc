@@ -156,6 +156,8 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                 if (notice_slogmodem(DISABLE_WCN_LOG_CMD) < 0) {
                     ret = -1;
                 } else {
+                    m_lpChnlMgr->resetWithDevName(DEV_WCN_NAME, true);
+                    m_lpChnlMgr->getModMgr()->bqb_vendor_open();
                     memset(bufLoc, 0, sizeof(bufLoc));
                     *bufLoc = LOG_LOCATION_PC;
                     sys_setlogdest(&log_type, bufLoc);
@@ -173,6 +175,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                 if (notice_slogmodem(ENABLE_WCN_LOG_CMD) < 0) {
                     ret = -1;
                 } else {
+                    m_lpChnlMgr->resetWithDevName(DEV_WCN_NAME, false);
                     memset(bufLoc, 0, sizeof(bufLoc));
                     *bufLoc = LOG_LOCATION_TCARD;
                     sys_setlogdest(&log_type, bufLoc);

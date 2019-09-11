@@ -53,6 +53,7 @@ class CModuleMgr{
 
         static void* m_libHdl;
         static void* m_libInterface;
+    public:
         int bqb_vendor_open();
 };
 

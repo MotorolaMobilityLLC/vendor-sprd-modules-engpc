@@ -136,7 +136,10 @@ int main(){
         logtype[0] = LOG_TYPE_NAME_WCN;
         sys_getlogdest(logtype, logdest);
         EngLog::info("wcn log dest: %s", logdest);
-        if (logdest[0] != LOG_LOCATION_PC){
+        if (logdest[0] == LOG_LOCATION_PC){
+            lpChnlMgr->resetWithDevName(DEV_WCN_NAME, true);
+            g_lpModMgr->bqb_vendor_open();
+        }else{
             lpChnlMgr->resetWithDevName(DEV_WCN_NAME, false);
         }
     }

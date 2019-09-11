@@ -168,25 +168,11 @@ static int reset_cmd_handle(char *buff, char *rsp)
         return rsp != NULL ? strlen(rsp) : 0;
     }
 
-    if(buff[0] == 0x7e)
-    {
-        ptr = buff + 1 + sizeof(MSG_HEAD_T);
-    }
-    else
-    {
-        ptr = strdup(buff);
-    }
-    ENG_LOG("%s ptr = %s", __FUNCTION__, ptr);
-
-    if (strncasecmp(ptr, AT_ETSRESET,strlen(AT_ETSRESET)) == 0){
-        pthread_attr_t attr;
-        pthread_t pthread;
-        pthread_attr_init(&attr);
-        pthread_create(&pthread, &attr, reset_cmd_thread, NULL);
-        sprintf(rsp, "\r\nOK\r\n");
-    }else{
-        sprintf(rsp, "\r\nERROR\r\n");
-    }
+    pthread_attr_t attr;
+    pthread_t pthread;
+    pthread_attr_init(&attr);
+    pthread_create(&pthread, &attr, reset_cmd_thread, NULL);
+    sprintf(rsp, "\r\nOK\r\n");
 
     return strlen(rsp);
 }

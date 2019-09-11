@@ -123,7 +123,7 @@ int main(){
     lpCpCtl->attach(lpChnlMgr);
     lpCpCtl->run();
 
-    //is modem to pc?
+    //is modem to pc? is wcn to pc?
     if (strcasecmp(bootmode, BOOTMODE_NORMAL) == 0 || strcasecmp(bootmode, BOOTMODE_NORMAL_LITE) == 0){
         char logdest[8] = {0};
         char logtype[8] = {0};
@@ -132,6 +132,12 @@ int main(){
         EngLog::info("modem log dest: %s", logdest);
         if (logdest[0] != LOG_LOCATION_PC){
             lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, false);
+        }
+        logtype[0] = LOG_TYPE_NAME_WCN;
+        sys_getlogdest(logtype, logdest);
+        EngLog::info("wcn log dest: %s", logdest);
+        if (logdest[0] != LOG_LOCATION_PC){
+            lpChnlMgr->resetWithDevName(DEV_WCN_NAME, false);
         }
     }
 

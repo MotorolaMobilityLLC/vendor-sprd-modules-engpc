@@ -48,8 +48,6 @@ int wait_for_usbenum_succ(int timeout, char *state);
 
 void OS_sys_getlogdest(char* log_type, char* location);
 void OS_sys_setlogdest(char* log_type, char* location);
-
-#define PROP_RESTART_SELF "vendor.flag.engpc.restart"
 void OS_sys_restart_self();
 int OS_sys_gettid();
 

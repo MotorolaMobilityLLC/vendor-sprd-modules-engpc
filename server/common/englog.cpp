@@ -3,6 +3,9 @@
 #include <log/log.h>
 
 #include "englog.h"
+#include "sprd_fts_log.h"
+#include "sprd_fts_type.h"
+#include "adapter.h"
 
 EngLog::EngLog(){
 
@@ -12,58 +15,125 @@ EngLog::~EngLog(){
 
 }
 
+#define AT_ENGPCLOGLEVEL "AT+SPENGPCLOGLEVEL"
+
+void EngLog::regCallBack(CModuleMgr* pModMgr){
+    struct eng_callback cb = {0};
+    sprintf(cb.at_cmd, "%s", AT_ENGPCLOGLEVEL);
+    cb.eng_linuxcmd_func = logLevelHandle;
+
+    pModMgr->internalRegCallBack(&cb, 1);
+}
+
+int EngLog::logLevelHandle(char* buff, char* rsp){
+    char *ptr = NULL;
+    char cmd_buf[256] = {0};
+    int ret = -1;
+    int nlen = 0;
+    if (NULL == buff)
+    {
+        sprintf(rsp, "\r\nERROR\r\n");
+        return rsp != NULL ? strlen(rsp) : 0;
+    }
+
+    if(buff[0] == 0x7e)
+    {
+        ptr = buff + 1 + sizeof(MSG_HEAD_T);
+    }
+    else
+    {
+        ptr = strdup(buff);
+    }
+
+    if (strncasecmp(ptr, AT_ENGPCLOGLEVEL,strlen(AT_ENGPCLOGLEVEL)) == 0){
+        char *ptrpara = ptr+strlen(AT_ENGPCLOGLEVEL);
+        if (ptrpara != NULL){
+            if (*ptrpara == '='){
+                ptrpara++;
+                if (*ptrpara != NULL){
+                    s_loglevel = (ENGPC_LOGLEVEL)(*ptrpara-'0');
+                    sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: %d\r\n", s_loglevel);
+                }else{
+                    sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: invalid param\r\n");
+                }
+            }else if (*ptrpara == '?'){
+                sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: %d\r\n", s_loglevel);
+            }else{
+                sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: unknown at\r\n");
+            }
+        }else{
+            sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: unknown at\r\n");
+        }
+    }else{
+        sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: unknown at\r\n");
+    }
+
+    return strlen(rsp);
+
+}
+
+
+ENGPC_LOGLEVEL EngLog::s_loglevel = LOG_INFO;
+
 #define LOG_BUF_SIZE 1024
-#define TAG "ENGPC"
 
 int EngLog::info(const char* fmt, ...){
     va_list ap;
     char buf[LOG_BUF_SIZE];
     time_t tm = {0};
-    
+
+    if(s_loglevel < LOG_INFO) return 0;
+
     va_start(ap, fmt);
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
     va_end(ap);
 
-    printf("%s\r\n", buf);
-    return __android_log_print(ANDROID_LOG_INFO, TAG, "%s\r\n", buf);
+    ENG_LOG(" [tid:%d]%s\r\n", sys_gettid(), buf);
+    return 0;
 }
 
 int EngLog::debug(const char* fmt, ...){
     va_list ap;
     char buf[LOG_BUF_SIZE];
     time_t tm = {0};
-    
+
+    if(s_loglevel < LOG_DEBUG) return 0;
+
     va_start(ap, fmt);
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
     va_end(ap);
 
-    printf("%s\r\n", buf);
-    return __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s\r\n", buf);
+    ENG_LOG("[tid:%d]%s\r\n", sys_gettid(), buf);
+    return 0;
 }
 
 int EngLog::warn(const char* fmt, ...){
     va_list ap;
     char buf[LOG_BUF_SIZE];
     time_t tm = {0};
-    
+
+    if(s_loglevel < LOG_WARN) return 0;
+
     va_start(ap, fmt);
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
     va_end(ap);
 
-    printf("%s\r\n", buf);
-    return __android_log_print(ANDROID_LOG_WARN, TAG, "%s\r\n", buf);
+    ENG_LOG("[tid:%d]%s\r\n", sys_gettid(), buf);
+    return 0;
 }
 
 int EngLog::error(const char* fmt, ...){
     va_list ap;
     char buf[LOG_BUF_SIZE];
     time_t tm = {0};
-    
+
+    if(s_loglevel < LOG_ERR) return 0;
+
     va_start(ap, fmt);
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
     va_end(ap);
 
-    printf("%s\r\n", buf);
-    return __android_log_print(ANDROID_LOG_ERROR, TAG, "%s\r\n", buf);
+    ENG_LOG("[tid:%d]%s\r\n", sys_gettid(), buf);
+    return 0;
 }
 

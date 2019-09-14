@@ -24,7 +24,6 @@
 
 #define SAFE_DELETE(s) {if (s != NULL) delete s;}
 
-void* eng_printlog_thread(void* x);
 int wait_for_modem_alive(int timeout);
 void wait_for_data_ready();
 void switchGidToRoot(void);
@@ -143,6 +142,9 @@ int main(){
             lpChnlMgr->resetWithDevName(DEV_WCN_NAME, false);
         }
     }
+
+    //internal reg callback
+    EngLog::regCallBack(g_lpModMgr);
 
     //work here
     EngLog::info("run...");

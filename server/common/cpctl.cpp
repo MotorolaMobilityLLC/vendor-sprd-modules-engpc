@@ -15,8 +15,6 @@
 #include "adapter.h"
 #include "sprd_fts_type.h"
 
-#define ENG_LOG EngLog::error
-
 extern int write_to_host_diag(char* buff, int len);
 extern int chnl_send_at_interface(char* buff, int len);
 #define AT_DIAG_OPEN    "AT+DIAGOPEN"
@@ -84,7 +82,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
         switch (location) {
         case LOG_LOCATION_PC: // pc
             // start cp log
-            ENG_LOG("%s: enable cp log\n", __FUNCTION__);
+            EngLog::info("%s: enable cp log\n", __FUNCTION__);
             if (LOG_LOCATION_PC != *bufLoc) { //2 to 1 , 0 to 1
                 if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0) {
                     ret = -1;
@@ -94,17 +92,17 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     *bufLoc = LOG_LOCATION_PC;
                     sys_setlogdest(&log_type, bufLoc);
                     if (notice_slogmodem(DISABLE_AGDSP_LOG_CMD) < 0) {
-                        ENG_LOG("notify slogmodem to disable agdsp log fail!");
+                        EngLog::error("notify slogmodem to disable agdsp log fail!");
                     }
                 }
             } else {
-                ENG_LOG("modem log already to pc!");
+                EngLog::warn("modem log already to pc!");
                 ret = -1;
             }
             break;
 
         case LOG_LOCATION_TCARD: // t card
-            ENG_LOG("%s: disable cp log\n", __FUNCTION__);
+            EngLog::info("%s: disable cp log\n", __FUNCTION__);
             if (LOG_LOCATION_TCARD != *bufLoc) { //1 to 2 , 0 to 2
                 if (notice_slogmodem(ENABLE_5MODE_LOG_CMD) < 0) {
                     ret = -1;
@@ -114,17 +112,17 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     *bufLoc = LOG_LOCATION_TCARD;
                     sys_setlogdest(&log_type, bufLoc);
                     if (notice_slogmodem(ENABLE_AGDSP_LOG_CMD) < 0) {
-                        ENG_LOG("notify slogmodem to enable agdsp log fail!");
+                        EngLog::error("notify slogmodem to enable agdsp log fail!");
                     }
                 }
             } else {
-                ENG_LOG("modem log already to t card!");
+                EngLog::warn("modem log already to t card!");
                 ret = -1;
             }
         break;
 
         case LOG_LOCATION_NONE: // no log
-            ENG_LOG("%s: no log case\n", __FUNCTION__);
+            EngLog::info("%s: no log case\n", __FUNCTION__);
             if (LOG_LOCATION_NONE != *bufLoc) { //1 to 0 , 2 to 0
                 if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0) {
                     ret = -1;
@@ -133,11 +131,11 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     *bufLoc = LOG_LOCATION_NONE;
                     sys_setlogdest(&log_type, bufLoc);
                     if (notice_slogmodem(DISABLE_AGDSP_LOG_CMD) < 0) {
-                        ENG_LOG("notify slogmodem to disable agdsp log fail!");
+                        EngLog::error("notify slogmodem to disable agdsp log fail!");
                     }
                 }
             } else {
-                ENG_LOG("modem log already to no log!");
+                EngLog::warn("modem log already to no log!");
                 ret = -1;
             }
         break;
@@ -164,7 +162,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     //system("start engpcclientwcn");
                 }
             } else {
-                ENG_LOG("wcn log already to pc!");
+                EngLog::warn("wcn log already to pc!");
                 ret = -1;
             }
         break;
@@ -182,7 +180,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     //system("stop engpcclientwcn");
                 }
             } else {
-                ENG_LOG("wcn log already to t card!");
+                EngLog::warn("wcn log already to t card!");
                 ret = -1;
             }
         break;
@@ -198,7 +196,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     sys_setlogdest(&log_type, bufLoc);
                 }
             } else {
-                ENG_LOG("wcn log already no log!");
+                EngLog::warn("wcn log already no log!");
                 ret = -1;
             }
         break;
@@ -229,7 +227,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
     }else{
     }
 
-    ENG_LOG("%s ret=%d", __FUNCTION__, ret);
+    EngLog::info("%s ret=%d", __FUNCTION__, ret);
     return ret;
 }
 
@@ -335,7 +333,7 @@ void* CCPCtl::timesync(void *arg){
     CCPCtl* lpCpCtl = (CCPCtl*)arg;
     fds_init(fds, FDS_SIZE);
 
-    ENG_LOG("eng_timesync thread start\n");
+    EngLog::info("eng_timesync thread start\n");
     while (1) {
         MODEM_TIMESTAMP_T time_stamp;
         TIME_SYNC_T time_sync;
@@ -360,7 +358,7 @@ void* CCPCtl::timesync(void *arg){
           try_connect(&refnotify_conn, fds, FDS_SIZE, &total_conn, TIME_SERVER_SOCK_NAME);
         }
 
-        ENG_LOG("%s: total_conn=%d\n", __FUNCTION__, total_conn);
+        EngLog::info("%s: total_conn=%d\n", __FUNCTION__, total_conn);
         // If not all connections are established, set a timeout.
         if (!total_conn) { // All connections failed
             // Sleep for a while and retry
@@ -380,27 +378,27 @@ void* CCPCtl::timesync(void *arg){
                     if (i == modemd_conn.index) {
                         mod_cnt = read(fds[i].fd, notify_buf, sizeof(notify_buf) - 1);
                         if (mod_cnt < 0) {
-                            ENG_LOG("%s: read error[%s], can't read time info\n", __FUNCTION__,
+                            EngLog::error("%s: read error[%s], can't read time info\n", __FUNCTION__,
                             strerror(errno));
                         } else if (mod_cnt == 0) {
                             modemd_conn.fd = -1;
                             fds[i].fd = -1;
                             --total_conn;
                             fds_collate_flag = 1;
-                            ENG_LOG("%s: modemd socket disconnect\n", __FUNCTION__);
+                            EngLog::error("%s: modemd socket disconnect\n", __FUNCTION__);
                         } else {
                             notify_buf[mod_cnt] = '\0';
-                            ENG_LOG("%s: notify_buf=%s\n", __FUNCTION__, notify_buf);
+                            EngLog::info("%s: notify_buf=%s\n", __FUNCTION__, notify_buf);
                             if(parse_cp_event_notify(notify_buf) == CE_RESET) {
                                 modem_reset_flag = 1;
                                 cp_event.subsys = SS_MODEM;
                                 cp_event.event = CE_RESET;
                                 ret = cp_event_notify_rsp_handle(&cp_event);
                                 if(ret == -1) {
-                                    ENG_LOG("%s: Modem Reset, notice pc tool Error[%s]\n", __FUNCTION__,
+                                    EngLog::error("%s: Modem Reset, notice pc tool Error[%s]\n", __FUNCTION__,
                                     strerror(errno));
                                 } else {
-                                    ENG_LOG("%s: Modem Reset, notice pc tool success\n", __FUNCTION__);
+                                    EngLog::info("%s: Modem Reset, notice pc tool success\n", __FUNCTION__);
                                 }
                             }
                         }
@@ -408,7 +406,7 @@ void* CCPCtl::timesync(void *arg){
                     } else if (i == refnotify_conn.index) {
                         ref_cnt = read(fds[i].fd, &time_sync, sizeof(TIME_SYNC_T));
                         if (ref_cnt < 0) {
-                            ENG_LOG("%s: read error[%s], can't read time info\n", __FUNCTION__,
+                            EngLog::error("%s: read error[%s], can't read time info\n", __FUNCTION__,
                             strerror(errno));
                             continue;
                         } else if (ref_cnt == 0) {
@@ -416,13 +414,13 @@ void* CCPCtl::timesync(void *arg){
                             fds[i].fd = -1;
                             --total_conn;
                             fds_collate_flag = 1;
-                            ENG_LOG("%s: refnotify socket disconnect\n", __FUNCTION__);
+                            EngLog::warn("%s: refnotify socket disconnect\n", __FUNCTION__);
                             continue;
                         } else if (ref_cnt != sizeof(TIME_SYNC_T)) {
-                            ENG_LOG("%s: read %d bytes, can't read time info\n", __FUNCTION__, ref_cnt);
+                            EngLog::error("%s: read %d bytes, can't read time info\n", __FUNCTION__, ref_cnt);
                             continue;
                         } else {
-                            ENG_LOG("%s: receive time sync data from refnotify\n", __FUNCTION__);
+                            EngLog::info("%s: receive time sync data from refnotify\n", __FUNCTION__);
                             pthread_mutex_lock(&(lpCpCtl->g_time_sync_lock));
                             memcpy(&g_time_sync, &time_sync, sizeof(TIME_SYNC_T));
                             pthread_mutex_unlock(&(lpCpCtl->g_time_sync_lock));
@@ -432,10 +430,10 @@ void* CCPCtl::timesync(void *arg){
                                 modem_reset_flag = 0;
                                 ret = time_sync_rsp_handle(&time_stamp);
                                 if(ret == -1) {
-                                    ENG_LOG("%s: Time sync, notice pc tool Error[%s]\n", __FUNCTION__,
+                                    EngLog::error("%s: Time sync, notice pc tool Error[%s]\n", __FUNCTION__,
                                     strerror(errno));
                                 } else {
-                                    ENG_LOG("%s: Time sync, notice pc tool success\n", __FUNCTION__);
+                                    EngLog::info("%s: Time sync, notice pc tool success\n", __FUNCTION__);
                                 }
                             }
                         }
@@ -446,7 +444,7 @@ void* CCPCtl::timesync(void *arg){
     }
 
 out:
-    ENG_LOG("eng_timesync thread end\n");
+    EngLog::info("eng_timesync thread end\n");
     if (modemd_conn.fd >= 0) close(modemd_conn.fd);
     if (refnotify_conn.fd >= 0) close(refnotify_conn.fd);
     pthread_mutex_destroy(&(lpCpCtl->g_time_sync_lock));
@@ -534,7 +532,7 @@ int CCPCtl::try_connect(struct SocketConnection* sock, struct pollfd* poll_array
   if (sock->fd >= 0) {
     // Add the connection to the polling array
     sock->index = add_connection(poll_array, len, poll_num, sock->fd);
-    ENG_LOG("%s: connect %s socket poll_num=%d, sock->fd=%d, sock->index=%d\n",
+    EngLog::info("%s: connect %s socket poll_num=%d, sock->fd=%d, sock->index=%d\n",
         __FUNCTION__, server_name, *poll_num, sock->fd, sock->index);
     // Reset the connection count
     sock->try_num = 0;
@@ -544,10 +542,10 @@ int CCPCtl::try_connect(struct SocketConnection* sock, struct pollfd* poll_array
   }
 
   if (ret < 0) {
-    ENG_LOG("%s: connect %s socket error(%s), try_num=%d\n", __FUNCTION__,
+    EngLog::error("%s: connect %s socket error(%s), try_num=%d\n", __FUNCTION__,
         server_name, strerror(errno), sock->try_num);
   } else {
-    ENG_LOG("%s: connect %s socket success, try_num=%d\n", __FUNCTION__,
+    EngLog::info("%s: connect %s socket success, try_num=%d\n", __FUNCTION__,
         server_name, sock->try_num);
   }
   return ret;
@@ -591,7 +589,7 @@ int CCPCtl::cp_event_notify_rsp_handle(CP_EVENT_NOTIFY_T *cp_event){
 
     ret = write_to_host_diag(rsp, rsp_len);
     if (ret <= 0) {
-        ENG_LOG("%s: eng_diag_write2pc ret=%d !\n", __FUNCTION__, ret);
+        EngLog::error("%s: eng_diag_write2pc ret=%d !\n", __FUNCTION__, ret);
         return -1;
     }
     return 0;
@@ -619,7 +617,7 @@ int CCPCtl::time_sync_rsp_handle(MODEM_TIMESTAMP_T *ts){
 
   ret = write_to_host_diag(rsp, rsp_len);
   if (ret <= 0) {
-    ENG_LOG("%s: eng_diag_write2pc ret=%d !\n", __FUNCTION__, ret);
+    EngLog::error("%s: eng_diag_write2pc ret=%d !\n", __FUNCTION__, ret);
     return -1;
   }
   return 0;
@@ -640,14 +638,14 @@ void CCPCtl::current_ap_time_stamp_handle(TIME_SYNC_T *time_sync, MODEM_TIMESTAM
 
     //add timezone
     time_stamp->tv_sec += get_timezone();
-    ENG_LOG("%s: [time_sync]:sys_cnt=%d, uptime=%d; "
+    EngLog::info("%s: [time_sync]:sys_cnt=%d, uptime=%d; "
             "[time_stamp]:tv_sec=%d, tv_usec=%d, sys_cnt=%d\n",
             __FUNCTION__, time_sync->sys_cnt, time_sync->uptime,
             time_stamp->tv_sec, time_stamp->tv_usec, time_stamp->sys_cnt);
 
     tmp = gmtime((const time_t*)(&time_stamp->tv_sec));
     strftime(strTime, 32, "%F %T", tmp);
-    ENG_LOG("%s: AP Time %s %d Micorseconds\n", __FUNCTION__, strTime, time_stamp->tv_usec);
+    EngLog::info("%s: AP Time %s %d Micorseconds\n", __FUNCTION__, strTime, time_stamp->tv_usec);
 
     return;
 }
@@ -679,11 +677,11 @@ int CCPCtl::get_response(int fd, size_t timeout) {
     
     ret = poll(&r_pollfd, 1, timeout);
     if(ret < 0) {
-        ENG_LOG("poll slogmodem fail\n");
+        EngLog::error("poll slogmodem fail\n");
     } else {
         if (r_pollfd.revents & POLLIN) {
             if ((read(fd, resp, MAXLENRESP)) < 3 || memcmp(resp, "OK\n", 3)) {
-                ENG_LOG("err response from slogmodem\n");
+                EngLog::error("err response from slogmodem\n");
             } else {
                 ret = 1;
             }
@@ -696,12 +694,12 @@ int CCPCtl::notice_slogmodem(char *cmd)
 {
     int ret = 0;
     int fd = -1;
-    ENG_LOG("notice_slogmodem: client connect...");
+    EngLog::info("notice_slogmodem: client connect...");
     fd = socket_local_client(SLOG_MODEM_SERVER_SOCK_NAME,
                              ANDROID_SOCKET_NAMESPACE_ABSTRACT, SOCK_STREAM);
-    ENG_LOG("notice_slogmodem: client connect succ!! fd = %d", fd);
+    EngLog::info("notice_slogmodem: client connect succ!! fd = %d", fd);
     if (fd < 0) {
-        ENG_LOG("can't connect to slogmodem server, ERROR:%s\n", strerror(errno));
+        EngLog::error("can't connect to slogmodem server, ERROR:%s\n", strerror(errno));
         return -1;
     }
     
@@ -709,7 +707,7 @@ int CCPCtl::notice_slogmodem(char *cmd)
     flags |= O_NONBLOCK;
     int err = fcntl(fd, F_SETFL, flags);
     if (-1 == err) {
-        ENG_LOG("set slogmodem socket to O_NONBLOCK error\n");
+        EngLog::error("set slogmodem socket to O_NONBLOCK error\n");
         ret = -1;
         close(fd);
         return ret;
@@ -717,7 +715,7 @@ int CCPCtl::notice_slogmodem(char *cmd)
 
     int len = write(fd, cmd, strlen(cmd));
     if (strlen(cmd) != len) {
-        ENG_LOG("FLUSH command write error, len=%d, ERROR:%s\n", len, strerror(errno));
+        EngLog::error("FLUSH command write error, len=%d, ERROR:%s\n", len, strerror(errno));
         ret = -1;
         close(fd);
         return ret;
@@ -726,7 +724,7 @@ int CCPCtl::notice_slogmodem(char *cmd)
     // Wait for the response for a while before failure.
     int result = get_response(fd, 3000);
     if (1 != result) {
-        ENG_LOG("ERROR: get response %d\n", result);
+        EngLog::error("ERROR: get response %d\n", result);
         ret = -1;
         close(fd);
         return ret;

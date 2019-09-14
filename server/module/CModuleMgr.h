@@ -35,6 +35,8 @@ class CModuleMgr{
         int processSmp(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_len, int& cp_process);
         int processWcnAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_len, int& cp_process);
 
+        void internalRegCallBack(struct eng_callback *p, int num);
+
         void regDiagHost(CPort *lpPort){m_lpHostDiagPort = lpPort;}
         void setPendingMark(){m_lpPendingCB = m_lpCurCB;}
         void clearPendingMark(){m_lpPendingCB = NULL;}

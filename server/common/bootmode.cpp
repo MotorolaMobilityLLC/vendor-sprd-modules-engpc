@@ -9,8 +9,6 @@
 #include "englog.h"
 #include "usb.h"
 
-#define ENG_LOG EngLog::info
-
 const char* initBootMode(){
     char buff[64] = {0};
     const char* bootmode = parseCmdline();
@@ -33,7 +31,7 @@ const char* parseCmdline(){
     int fd = open("/proc/cmdline", O_RDONLY);
     if (fd >= 0) {
         if ((ret = read(fd, cmdline, sizeof(cmdline) - 1)) > 0) {
-            ENG_LOG("eng_pcclient: cmdline %s", cmdline);
+            EngLog::debug("eng_pcclient: cmdline %s", cmdline);
 
             /*calibration*/
             str = strstr(cmdline, "androidboot.mode=cali");

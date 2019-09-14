@@ -176,3 +176,7 @@ void OS_sys_restart_self(){
     property_set(PROP_RESTART_SELF, "1");
     property_set(PROP_RESTART_SELF, "0");
 }
+
+int OS_sys_gettid(){
+    return 0;
+}

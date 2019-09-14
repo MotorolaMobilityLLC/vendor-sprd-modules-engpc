@@ -23,6 +23,7 @@ void sys_getlogdest(char* log_type, char* location);
 void sys_setlogdest(char* log_type, char* location);
 
 void sys_restart_self();
+int sys_gettid();
 
 #ifdef __cplusplus
 }

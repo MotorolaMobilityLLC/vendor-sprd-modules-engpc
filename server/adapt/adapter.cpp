@@ -47,3 +47,6 @@ void sys_restart_self(){
     OS_sys_restart_self();
 }
 
+int sys_gettid(){
+    return OS_sys_gettid();
+}

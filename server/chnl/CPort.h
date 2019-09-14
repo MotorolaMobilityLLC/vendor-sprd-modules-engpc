@@ -11,8 +11,9 @@
 #include "CTrans.h"
 
 #define MAX_VSER_BUFF_LEN (8*1024)
-#define MAX_PORT_BUFF_RD (MAX_VSER_BUFF_LEN*8)
-#define MAX_PORT_BUFF_WR (MAX_VSER_BUFF_LEN*8)
+//For save r/w time BUFF%64==0 maybe write twice.
+#define MAX_PORT_BUFF_RD (MAX_VSER_BUFF_LEN*8 - 16)
+#define MAX_PORT_BUFF_WR (MAX_VSER_BUFF_LEN*8 - 16)
 
 #define MAX_PORT_OPEN_TIMEOUT (5*60)
 

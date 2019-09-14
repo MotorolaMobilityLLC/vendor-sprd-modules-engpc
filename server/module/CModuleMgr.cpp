@@ -13,7 +13,6 @@
 #include "modules.h"
 #include "bqb.h"
 
-#define ENG_LOG EngLog::info
 
 extern CModuleMgr* g_lpModMgr;
 
@@ -23,7 +22,7 @@ int write_to_host_diag(char* buff, int len){
     if (g_lpModMgr != NULL && g_lpModMgr->m_lpHostDiagPort != NULL){
         return g_lpModMgr->m_lpHostDiagPort->write(buff, len);
     }else{
-        ENG_LOG("write_to_host_diag fail: g_lpModMgr = NULL or s_lpModMgr->m_lpHostDiagPort = NULL");
+        EngLog::error("write_to_host_diag fail: g_lpModMgr = NULL or s_lpModMgr->m_lpHostDiagPort = NULL");
     }
 
     return 0;
@@ -70,6 +69,7 @@ CModuleMgr::CModuleMgr(char* dir){
     m_isLoaded = false;
     m_lpPendingCB = NULL;
     m_lpCurCB = NULL;
+    INIT_LIST_HEAD(&m_listHead);
 }
 
 CModuleMgr::~CModuleMgr(){
@@ -113,7 +113,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
         m_lpCurCB = modules_list;
 
         if ((buf[7] == 0x68) && (0 != strlen(modules_list->callback.at_cmd)) && (strcasestr(buf+9, modules_list->callback.at_cmd)) != NULL) { // at command
-            ENG_LOG("%s: Dymic CMD=%s finded\n",__FUNCTION__,modules_list->callback.at_cmd);
+            EngLog::debug("%s: Dymic CMD=%s finded\n",__FUNCTION__,modules_list->callback.at_cmd);
             if (NULL != modules_list->callback.eng_linuxcmd_func) {
                 rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
 
@@ -125,16 +125,17 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
                 bProcess = 1;
                 break;
             } else {
-                ENG_LOG("%s: Dymic eng_linuxcmd_func == NULL\n",__FUNCTION__);
+                EngLog::debug("%s: Dymic eng_linuxcmd_func == NULL\n",__FUNCTION__);
                 break;
             }
         } else if ( (msg_head_ptr->type == modules_list->callback.type && msg_head_ptr->subtype == modules_list->callback.subtype) ||
                     (modules_list->callback.eng_cmd_match != NULL && modules_list->callback.eng_cmd_match(buf, len) == 0) )  {
+            EngLog::debug("%s: type = %d, subtype = %d", __FUNCTION__, msg_head_ptr->type, msg_head_ptr->subtype);
             // diag command: type(unsigned char) + sub_type(unsigned char) + data_cmd(unsigned int)
             if (0x5D == msg_head_ptr->type){
                 data_cmd = (unsigned int *)(buf + 1 + sizeof(MSG_HEAD_T));
                 if (*data_cmd != modules_list->callback.diag_ap_cmd) {
-                    ENG_LOG("%s data cmd is not matched!", __FUNCTION__);
+                    EngLog::debug("%s data cmd is not matched!", __FUNCTION__);
                     continue;
                 }
             }
@@ -143,7 +144,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
             if (0x62 == msg_head_ptr->type){//DIAG_CMD_APCALI
                 apcmd = (unsigned short *)(buf + 1 + sizeof(MSG_HEAD_T));
                 if (*apcmd != modules_list->callback.diag_ap_cmd) {
-                    ENG_LOG("%s apcmd->cmd is not matched!", __FUNCTION__);
+                    EngLog::debug("%s apcmd->cmd is not matched!", __FUNCTION__);
                     continue;
                 }
             }
@@ -152,7 +153,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
             if (0x38 == msg_head_ptr->type){
                 data = (byte *)(buf + 1 + sizeof(MSG_HEAD_T));
                 if (modules_list->callback.diag_ap_cmd != -1 && (int)(*data) != modules_list->callback.diag_ap_cmd)  {
-                    ENG_LOG("%s data is not matched!", __FUNCTION__);
+                    EngLog::debug("%s data is not matched!", __FUNCTION__);
                     continue;
                 }
             }
@@ -163,7 +164,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
                 }
                 rlen = modules_list->callback.eng_diag_func(buf, len, rsp, rsp_len);
                 if (rlen == ENG_DIAG_RET_UNSUPPORT){
-                    ENG_LOG("%s eng_diag_func return %d, continue find next callback func", __FUNCTION__, ENG_DIAG_RET_UNSUPPORT);
+                    EngLog::debug("%s eng_diag_func return %d, continue find next callback func", __FUNCTION__, ENG_DIAG_RET_UNSUPPORT);
                     continue;
                 }
 
@@ -175,7 +176,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
                 bProcess =1;
                 break;
             } else {
-                ENG_LOG("%s: Dymic eng_diag_func == NULL\n",__FUNCTION__);
+                EngLog::debug("%s: Dymic eng_diag_func == NULL\n",__FUNCTION__);
                 break;
             }
         } else {
@@ -185,7 +186,7 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
 
     //process pending at cmd
     if (bProcess == 0 && m_lpPendingCB != NULL && 0x68 == msg_head_ptr->type && strcasestr(buf + 9, "AT") == NULL){
-        ENG_LOG("%s: Dymic next_data_callback", __FUNCTION__);
+        EngLog::debug("%s: Dymic next_data_callback", __FUNCTION__);
         rlen = m_lpPendingCB->callback.eng_linuxcmd_func(buf, rsp);
     }else{
         m_lpPendingCB = NULL;
@@ -199,7 +200,7 @@ int CModuleMgr::processAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp
     eng_modules *modules_list = NULL;
     struct list_head *list_find;
 
-    ENG_LOG("%s: buf:%s len:%d rsp_len:%d", __FUNCTION__, buf, len, rsp_len);
+    EngLog::info("%s: buf:%s len:%d rsp_len:%d", __FUNCTION__, buf, len, rsp_len);
 
     list_for_each(list_find, &m_listHead) {
         modules_list = list_entry(list_find, eng_modules, node);
@@ -207,7 +208,7 @@ int CModuleMgr::processAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp
         if ((0 != strlen(modules_list->callback.at_cmd)) &&
             (0 == strncmp((const char *) buf, (const char *)(modules_list->callback.at_cmd),
             strlen(modules_list->callback.at_cmd)))) { // at command
-            ENG_LOG("%s: Dymic CMD=%s finded\n", __FUNCTION__, modules_list->callback.at_cmd);
+            EngLog::info("%s: Dymic CMD=%s finded\n", __FUNCTION__, modules_list->callback.at_cmd);
             if (NULL != modules_list->callback.eng_linuxcmd_func) {
                 rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
 
@@ -218,7 +219,7 @@ int CModuleMgr::processAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp
 
                 break;
             } else {
-              ENG_LOG("%s: Dymic eng_linuxcmd_func == NULL\n", __FUNCTION__);
+              EngLog::info("%s: Dymic eng_linuxcmd_func == NULL\n", __FUNCTION__);
               break;
             }
         }else {
@@ -250,7 +251,7 @@ int CModuleMgr::processWcnAT(DATA_TYPE type, char *buf, int len, char *rsp, int 
             pIf->eng_send_data(buf, len);
         }
     }else{
-        ENG_LOG("m_libInterface is NULL!");
+        EngLog::error("m_libInterface is NULL!");
     }
 
     return ENG_DIAG_NO_RESPONSE;
@@ -259,13 +260,13 @@ int CModuleMgr::processWcnAT(DATA_TYPE type, char *buf, int len, char *rsp, int 
 int CModuleMgr::bqb_vendor_open(){
     m_libHdl = dlopen(VENDOR_LIBRARY_NAME, RTLD_NOW);
     if (!m_libHdl) {
-        ENG_LOG("unable to open %s: %s", VENDOR_LIBRARY_NAME, dlerror());
+        EngLog::error("unable to open %s: %s", VENDOR_LIBRARY_NAME, dlerror());
         goto error;
     }
 
     m_libInterface = (bt_bqb_interface_t *)dlsym(m_libHdl, VENDOR_LIBRARY_SYMBOL_NAME);
     if (!m_libInterface) {
-        ENG_LOG("unable to find symbol %s in %s: %s", VENDOR_LIBRARY_SYMBOL_NAME, VENDOR_LIBRARY_NAME, dlerror());
+        EngLog::error("unable to find symbol %s in %s: %s", VENDOR_LIBRARY_SYMBOL_NAME, VENDOR_LIBRARY_NAME, dlerror());
         goto error;
     }
     ((bt_bqb_interface_t *)m_libInterface)->init();
@@ -282,11 +283,10 @@ error:
 }
 
 eng_modules* CModuleMgr::get_eng_modules(struct eng_callback p){
-    //ENG_LOG("%s",__FUNCTION__);
     eng_modules *modules = (eng_modules*)malloc(sizeof(eng_modules));
     if (modules == NULL)
     {
-        ENG_LOG("%s malloc fail...",__FUNCTION__);
+        EngLog::error("%s malloc fail...",__FUNCTION__);
         return NULL;
     }
     memset(modules,0,sizeof(eng_modules));
@@ -320,30 +320,29 @@ int CModuleMgr::eng_modules_load(){
     struct dirent *ptr;
     void *handler = NULL;
 
-    ENG_LOG("%s",__FUNCTION__);
+    EngLog::info("%s",__FUNCTION__);
 
-    INIT_LIST_HEAD(&m_listHead);
     if ((dir = opendir(m_path)) == NULL)
     {
-        ENG_LOG("Open %s error...%s",m_path,dlerror());
+        EngLog::error("Open %s error...%s",m_path,dlerror());
         return 0;
     }
 
     while ((ptr = readdir(dir)) != NULL)
     {
         if (ptr->d_type == 8 || ptr->d_type == 10) { /// file  , 10 == DT_LNK
-            ENG_LOG("d_name:%s/%s", m_path, ptr->d_name);
+            EngLog::info("d_name:%s/%s", m_path, ptr->d_name);
             snprintf(path, sizeof(path), "%s/%s", m_path, ptr->d_name);
-            ENG_LOG("find lib path: %s", path);
+            EngLog::info("find lib path: %s", path);
 
             if (ptr->d_type == 10) //DT_LNK
             {
                 memset(lnk_path,0,sizeof(lnk_path));
                 readsize = readlink(path, lnk_path, sizeof(lnk_path));
-                ENG_LOG("%s readsize:%d lnk_path:%s \n", path ,readsize, lnk_path);
+                EngLog::info("%s readsize:%d lnk_path:%s \n", path ,readsize, lnk_path);
 
                 if(readsize == -1) {
-                    ENG_LOG("ERROR! Fail to readlink!\n");
+                    EngLog::error("ERROR! Fail to readlink!\n");
                     continue;
                 }
 
@@ -354,7 +353,7 @@ int CModuleMgr::eng_modules_load(){
             if (access(path, R_OK) == 0) {
                 handler = dlopen(path, RTLD_LAZY);
                 if (handler == NULL) {
-                    ENG_LOG("%s dlopen fail! %s \n", path, dlerror());
+                    EngLog::error("%s dlopen fail! %s \n", path, dlerror());
                 } else {
                     eng_register_func = (REGISTER_FUNC)dlsym(handler, "register_this_module");
                     if (eng_register_func != NULL) {
@@ -364,12 +363,12 @@ int CModuleMgr::eng_modules_load(){
                         register_callback.type = 0xFF;
                         register_callback.subtype = 0xFF;
                         eng_register_func(&register_callback);
-                        ENG_LOG("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
+                        EngLog::info("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
                         register_callback.type, register_callback.subtype,
                         register_callback.diag_ap_cmd, register_callback.at_cmd);
                         modules = get_eng_modules(register_callback);
                         if (modules == NULL) {
-                            ENG_LOG("%s modules == NULL\n", __FUNCTION__);
+                            EngLog::error("%s modules == NULL\n", __FUNCTION__);
                             continue;
                         }
                         list_add_tail(&modules->node, &m_listHead);
@@ -385,15 +384,15 @@ int CModuleMgr::eng_modules_load(){
                             register_arr[i].subtype = 0xFF;
                         }
                         eng_register_ext_func(register_arr_ptr, &register_num);
-                        ENG_LOG("register_num:%d",register_num);
+                        EngLog::info("register_num:%d",register_num);
 
                         for (i = 0; i < register_num; i++) {
-                            ENG_LOG("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
+                            EngLog::info("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
                             register_arr[i].type, register_arr[i].subtype,
                             register_arr[i].diag_ap_cmd, register_arr[i].at_cmd);
                             modules = get_eng_modules(register_arr[i]);
                             if (modules == NULL) {
-                                ENG_LOG("%s modules == NULL\n", __FUNCTION__);
+                                EngLog::error("%s modules == NULL\n", __FUNCTION__);
                                 continue;
                             }
                             list_add_tail(&modules->node, &m_listHead);
@@ -401,18 +400,32 @@ int CModuleMgr::eng_modules_load(){
                     }
                     if (eng_register_func == NULL && eng_register_ext_func == NULL) {
                         dlclose(handler);
-                        ENG_LOG("%s dlsym fail! %s\n", path, dlerror());
+                        EngLog::error("%s dlsym fail! %s\n", path, dlerror());
                         continue;
                     }
                 }
             } else {
-                ENG_LOG("%s is not allow to read!\n", path);
+                EngLog::error("%s is not allow to read!\n", path);
             }
         }
     }
 
     closedir(dir);
     return 0;
+}
+
+void CModuleMgr::internalRegCallBack(struct eng_callback *p, int num){
+    for (int i = 0; i < num; i++){
+        EngLog::info("%d:type:%d subtype:%d data_cmd:%d at_cmd:%s", i,
+                     p[i].type, p[i].subtype, p[i].diag_ap_cmd, p[i].at_cmd);
+
+        eng_modules *modules = get_eng_modules(p[i]);
+        if (modules == NULL) {
+            EngLog::error("%s modules == NULL\n", __FUNCTION__);
+            continue;
+        }
+        list_add_tail(&modules->node, &m_listHead);
+    }
 }
 
 void CModuleMgr::print(){

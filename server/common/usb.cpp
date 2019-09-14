@@ -14,31 +14,29 @@
 #include "bootmode.h"
 #include "CDevMgr.h"
 
-#define ENG_LOG EngLog::info
-
 int disconnect_vbus_charger(void) {
     int fd;
     int ret = -1;
 
     const char* path = getChargeStopPath();
     if (path == NULL) {
-        ENG_LOG("invalid charge stop path.");
+        EngLog::error("invalid charge stop path.");
         return 1;
     }
 
-    ENG_LOG("charge stop path: %s", path);
+    EngLog::info("charge stop path: %s", path);
 
     fd = open(path, O_WRONLY);
     if (fd >= 0) {
         ret = write(fd, "1", 2);
         if (ret < 0) {
-            ENG_LOG("%s write %s failed! \n", __func__, path);
+            EngLog::error("%s write %s failed! \n", __func__, path);
             close(fd);
             return 0;
         }
         close(fd);
     } else {
-        ENG_LOG("%s open %s failed! \n", __func__, path);
+        EngLog::error("%s open %s failed! \n", __func__, path);
         return 0;
     }
 
@@ -51,23 +49,23 @@ int connect_vbus_charger(void) {
 
     const char* path = getChargeStopPath();
     if (path == NULL) {
-        ENG_LOG("invalid charge stop path.");
+        EngLog::error("invalid charge stop path.");
         return 1;
     }
 
-    ENG_LOG("charge stop path: %s", path);
+    EngLog::info("charge stop path: %s", path);
 
     fd = open(path, O_WRONLY);
     if (fd >= 0) {
         ret = write(fd, "0", 2);
         if (ret < 0) {
-            ENG_LOG("%s write %s failed! \n", __func__, path);
+            EngLog::error("%s write %s failed! \n", __func__, path);
             close(fd);
             return 0;
         }
         close(fd);
     } else {
-        ENG_LOG("%s open %s failed! \n", __func__, path);
+        EngLog::error("%s open %s failed! \n", __func__, path);
         return 0;
     }
 
@@ -81,19 +79,19 @@ void eng_usb_maximum_speed(USB_DEVICE_SPEED_ENUM speed) {
 
     const char* path = usb_getMaxSpeedPath();
     if (path == NULL) {
-        ENG_LOG("invalid usb max speed path.");
+        EngLog::error("invalid usb max speed path.");
         return ;
     }
 
-    ENG_LOG("usb max speed: %d", speed);
+    EngLog::info("usb max speed: %d", speed);
     sprintf(speed_str, "%d", speed);    
     fd = open(path, O_WRONLY);
     if (fd >= 0){
         ret = write(fd, speed_str, strlen(speed_str));
-        ENG_LOG("%s: Write usb speed=%s success!\n", __FUNCTION__, speed_str);
+        EngLog::info("%s: Write usb speed=%s success!\n", __FUNCTION__, speed_str);
         close(fd);
     }else{
-        ENG_LOG("fail to open %s", path);
+        EngLog::error("fail to open %s", path);
     }
 }
 
@@ -104,7 +102,7 @@ int eng_usb_state(void) {
 
     const char* path = usb_getStatePath();
     if (path == NULL) {
-        ENG_LOG("invalid usb state path.");
+        EngLog::error("invalid usb state path.");
         return 1;
     }
 
@@ -116,14 +114,14 @@ int eng_usb_state(void) {
                 || 0 == strncmp(usb_state, "CONNECTED", 9)) {
                 ret = 1;
             } else {
-                ENG_LOG("%s: usb state: %s\n", __FUNCTION__, usb_state);
+                EngLog::info("%s: usb state: %s\n", __FUNCTION__, usb_state);
                 ret = 0;
             }
         }
         close(fd);
     } else {
         ret = 0;
-        ENG_LOG("%s: Read sys class androidusb state file failed, read:%d\n",__FUNCTION__, ret);
+        EngLog::error("%s: Read sys class androidusb state file failed, read:%d\n",__FUNCTION__, ret);
     }
 
     return ret;
@@ -134,7 +132,7 @@ int eng_usb_config(char* buff, int nlen){
 }
 
 int usb_mode(const char* bootmode){
-    ENG_LOG("usb_mode: %s", bootmode);
+    EngLog::info("usb_mode: %s", bootmode);
     if (strcasecmp(bootmode, BOOTMODE_CALI) == 0){
         disconnect_vbus_charger();
         eng_usb_maximum_speed(USB_SPEED_FULL);
@@ -157,11 +155,11 @@ void usb_monitor(uevent_notify ptrNotify){
     pthread_attr_t attr;
     pthread_attr_init(&attr);
 
-    ENG_LOG("usb_monitor: ptf = %x", ptrNotify);
+    EngLog::info("usb_monitor: ptf = %x", ptrNotify);
     s_ptrNotify = ptrNotify;
 
     if (0 != pthread_create(&t, &attr, eng_uevt_thread, NULL)){
-        ENG_LOG("usb monitor fail.");
+        EngLog::error("usb monitor fail.");
     }
 }
 
@@ -185,7 +183,7 @@ void parse_event(const char *msg, struct uevent *uevent) {
             msg += 10;
             uevent->usb_connect = msg;
 
-            ENG_LOG("%s: event { '%s', '%s', '%s', '%s' }\n", __FUNCTION__,
+            EngLog::info("%s: event { '%s', '%s', '%s', '%s' }\n", __FUNCTION__,
                     uevent->action, uevent->path, uevent->subsystem, uevent->usb_connect);
         }
         
@@ -200,13 +198,13 @@ extern CDevMgr* g_lpDevMgr;
 void handle_device_event(struct uevent *uevent) {
     if (0 == strncmp(uevent->usb_connect, "CONFIGURED", 10)) {
         // start cp log
-        ENG_LOG("%s: enable arm log\n", __FUNCTION__);
+        EngLog::info("%s: enable arm log\n", __FUNCTION__);
         if (s_ptrNotify != NULL){
             s_ptrNotify(USB_CONNECT, (void*)g_lpDevMgr);
         }
     } else if (0 == strncmp(uevent->usb_connect, "DISCONNECTED", 12)) {
         // stop cp log
-        ENG_LOG("%s: disable arm log\n", __FUNCTION__);
+        EngLog::info("%s: disable arm log\n", __FUNCTION__);
         if (s_ptrNotify != NULL){
             s_ptrNotify(USB_DISCONNECT, (void*)g_lpDevMgr);
         }
@@ -236,7 +234,7 @@ void *eng_uevt_thread(void *x) {
 
     sock = uevent_open_socket(256 * 1024, true);
     if (-1 == sock) {
-        ENG_LOG("%s: socket init failed !\n", __FUNCTION__);
+        EngLog::error("%s: socket init failed !\n", __FUNCTION__);
         return 0;
     }
 

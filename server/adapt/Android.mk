@@ -3,6 +3,7 @@ include $(CLEAR_VARS)
 
 LOCAL_32_BIT_ONLY := true
 
+#STD_OS_DEFINE := OS_MINIAP
 STD_OS_DEFINE := OS_ANDROID
 #STD_OS_DEFINE := OS_YUN
 #STD_OS_DEFINE := OS_KAI
@@ -15,6 +16,8 @@ else ifeq ($(STD_OS_DEFINE), OS_YUN)
 include $(LOCAL_PATH)/yunos/include.mk
 else ifeq ($(STD_OS_DEFINE), OS_KAI)
 include $(LOCAL_PATH)/kaios/include.mk
+else ifeq ($(STD_OS_DEFINE), OS_MINIAP)
+include $(LOCAL_PATH)/miniap/include.mk
 else
 include $(LOCAL_PATH)/android/include.mk
 endif

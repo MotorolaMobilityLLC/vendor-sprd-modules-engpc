@@ -10,6 +10,8 @@ extern "C" {
 #define SPRD_FTS_LOG_TAG "sprd_fts:"
 #define SPRD_ENGPC_LOG_TAG "ENGPC:"
 
+#include "sprd_fts_log_inc.h"
+
 #define SPRD_FTS_TRACE
 
 #ifdef SPRD_FTS_TRACE

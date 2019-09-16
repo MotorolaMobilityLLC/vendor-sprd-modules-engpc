@@ -65,7 +65,7 @@ static int MultTimes(int base, int n)
 	return mt; 
 }
 
-static void parse_panelsize(char *data,uint32_t count,DUT_INFO_T  *dut_info_t)
+static void parse_panelsize(char *data, int count, DUT_INFO_T  *dut_info_t)
 {
 	unsigned char i;
 	unsigned char j;
@@ -240,7 +240,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	uint32_t rsp_len = 0;
 	char info[1024] = {0};
 	char backlight[10] = {0};
-	uint32_t sizes = 0;
+	int sizes = 0;
 	int fd;
 	int fd1;
 	int fd2;
@@ -278,6 +278,10 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 
 	dut_info =  (DUT_INFO_T  *)malloc(sizeof(DUT_INFO_T));
 	if(!dut_info) {
+		close(fd);
+		close(fd1);
+		close(fd2);
+		close(fd3);
 		printf("PQ dut info alloc fail\n");
 		return -1;
 	}
@@ -300,12 +304,32 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	memset(dut_info, 0, sizeof(DUT_INFO_T));
 	sizes = read(fd1, info, 1024);
+	if (sizes < 0) {
+		close(fd);
+		close(fd1);
+		close(fd2);
+		close(fd3);
+		free(dut_info);
+		return -1;
+	}
 	pchar = strstr(info, "androidboot.hardware");
-	if (pchar == NULL)
+	if (pchar == NULL) {
+		close(fd);
+		close(fd1);
+		close(fd2);
+		close(fd3);
+		free(dut_info);
 		return -1;
+	}
 	pchar = strstr(pchar, "=");
-	if (pchar == NULL)
+	if (pchar == NULL) {
+		close(fd);
+		close(fd1);
+		close(fd2);
+		close(fd3);
+		free(dut_info);
 		return -1;
+	}
 	ptemp = strchr(pchar + 1, ' ');
 	sizes = ptemp - pchar - 1;
 	tune_version_copy(version, dut_info->szModelName);
@@ -316,6 +340,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 		close(fd1);
 		close(fd2);
 		close(fd3);
+		free(dut_info);
 		return -1;
         }
 	parse_panelsize(info, sizes , dut_info);

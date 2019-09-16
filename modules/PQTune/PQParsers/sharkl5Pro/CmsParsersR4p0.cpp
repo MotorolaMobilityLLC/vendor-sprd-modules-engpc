@@ -457,34 +457,56 @@ static int parse_cms_config_table(cms_common_sharkl5Pro *cms, xmlNodePtr curNode
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
 			szPropity = xmlGetProp(subNode, (const xmlChar*)"mode");
-			if(!xmlStrcmp(szPropity, (const xmlChar *) "cold"))
+			if(!xmlStrcmp(szPropity, (const xmlChar *) "cold")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if (!xmlStrcmp(szPropity, (const xmlChar *) "warm"))
+			}
+			else if (!xmlStrcmp(szPropity, (const xmlChar *) "warm")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
+			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "0")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
 				ALOGD("PQ auto_auto read 0 \n");
 			}
 			else if(!xmlStrcmp(szPropity, (const xmlChar *) "1")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
 				ALOGD("PQ auto_auto 1 read \n");
 			}
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "2"))
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "2")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "3"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "3")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "4"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "4")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "5"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "5")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "6"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "6")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "7"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "7")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "8"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "8")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
-			else if(!xmlStrcmp(szPropity, (const xmlChar *) "9"))
+			}
+			else if(!xmlStrcmp(szPropity, (const xmlChar *) "9")) {
+				xmlFree(szPropity);
 				PARSE_CMS_CM_CFG_ARRAYS(i);
+			}
 		}
 		i++;
 		subNode = subNode->next;

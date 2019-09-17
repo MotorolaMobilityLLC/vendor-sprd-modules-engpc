@@ -16,22 +16,70 @@
 
 #include "miscdata.h"
 
-#define MAX_CMDLIEN_LEN 1024
-#define MAX_PROP_LEN    1024
+#define MAX_CMDLIEN_LEN 3096
 
-#define MODE_CALI           "+TESTMODE: \"cali\""
-#define MODE_POST_CALI      "+TESTMODE: \"post cali\""
-#define MODE_AUTOTEST       "+TESTMODE: \"autotest\""
-#define MODE_NORMAL         "+TESTMODE: \"normal\""
-#define MODE_UNKNOWN        "+TESTMODE: \"unknown\""
-
+#define AT_CMD_GETTESTMODE "AT+GETTESTMODE?"
+#define AT_CMD_SETTESTMODE "AT+SETTESTMODE="
 
 #define TESTMODE_OFFSET (9*1024+32)
-
 #define UBOOT_TESTMOD_CHECKSUM 0x53464d00
+#define CMDLINE_MODE_FLAG "first_mode="
+
+typedef struct _MODEID_NAME{
+    unsigned int id;
+    char name[64];
+}MODE_ID_NAME;
+
+MODE_ID_NAME id_name[]= {
+    {0x00, "NORMAL"},
+    {0x01, "GSMCAL"},
+    {0x02, "GSMFT"},
+    {0x03, "WCDMACAL"},
+    {0x04, "WCDMAFT"},
+    {0x05, "TDSCAL"},
+    {0x06, "TDSFT"},
+    {0x07, "LTECAL"},
+    {0x08, "LTEFT"},
+    {0x0B, "NRCAL"},
+    {0x0C, "NRFT"},
+    {0x0D, "NRMMWCAL"},
+    {0x0E, "NRMMWFT"},
+    {0x0F, "C2KCAL"},
+    {0x10, "C2KFT"},
+    {0x11, "BBAT"},
+    {0x12, "NATIVEMMI"},
+    {0x13, "APKMMI"},
+    {0x14, "NBIOTCAL"},
+    {0x15, "NBIOTFT"},
+    {0x16, "UPT"}
+};
 
 static char testmode_rsp[]={0x7E, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0xFE, 0xFF, 0x7E};
 
+unsigned int  findIdWithName(char* name){
+    if (name == NULL) return 0xFF;
+    ENG_LOG("name: %s", name);
+
+    for(int i = 0; i < sizeof(id_name)/sizeof(MODE_ID_NAME); i++){
+        if (strcasecmp(id_name[i].name, name) == 0){
+            return id_name[i].id;
+        }
+    }
+
+    return 0xFF;
+}
+
+char* findNameWithId(int id){
+    ENG_LOG("id: 0x%x", id);
+
+    for(int i = 0; i < sizeof(id_name)/sizeof(MODE_ID_NAME); i++){
+        if (id_name[i].id == id){
+            return id_name[i].name;
+        }
+    }
+
+    return NULL;
+}
 
 int isspace(char c){
     if (c == '\r' || c == '\n' || c == ' '){
@@ -57,92 +105,76 @@ char* trim(char *str){
     return sp;
 }
 
-/* Parse one parameter which is before a special char for string.
- * buf:[IN], string data to be parsed.
- * gap:[IN], char, get value before this charater.
- * value:[OUT] parameter value
- * return length of parameter
- */
-int cali_parse_one_para(char* buf, char gap, int* value) {
+int parse_key_value(char* buf, char* key) {
     int len = 0;
-    char* ch = NULL;
-    char str[10] = {0};
+    char value[8] = "FF";
+    char* str = NULL;
 
-    if (buf != NULL && value != NULL) {
-        ch = strchr(buf, gap);
-        if (ch != NULL) {
-            len = ch - buf;
-            strncpy(str, buf, len);
-            *value = atoi(str);
+    str = strstr(buf, key);
+    if (str != NULL){
+        str = strchr(str, '=');
+        if (str != NULL){
+            str++;
+            if (str != NULL){
+                char* gap = strchr(str, ' ');
+                if (gap != NULL){
+                    len = gap - str;
+                }else{
+                    len = 2;
+                }
+                strncpy(value, str, len);
+            }
         }
     }
 
-    return len;
+    return strtol(value, NULL, 16);
 }
 
 int getTestMode(char *req, char *rsp){
     int fd = 0, ret = 0, len = 0;
     char cmdline[MAX_CMDLIEN_LEN] = {0};
-    char prop[MAX_PROP_LEN] = {0};
-    int mode = 0;
-    int freq = 0;
-    int device = 0;
+    unsigned int value = 0xFF;
     char* str = NULL;
+    char* mode = 0;
 
-    ENG_LOG("%s begin", __FUNCTION__);
-
-    strcpy(rsp, MODE_NORMAL);
+    ENG_LOG("%s ", __FUNCTION__);
 
     fd = open("/proc/cmdline", O_RDONLY);
     if (fd >= 0) {
         if ((ret = read(fd, cmdline, sizeof(cmdline) - 1)) > 0) {
-            ENG_LOG("eng_pcclient: cmdline %s\n", cmdline);
-            /*cali or post cali*/
-            str = strstr(cmdline, "calibration=");
-            if (str != NULL) {
-                str = strchr(str, '=');
-                if (str != NULL) {
-                    str++;
-                    /*get calibration mode*/
-                    len = cali_parse_one_para(str, ',', &mode);
-                    if (len > 0) {
-                        str = str + len + 1;
-                        /*get calibration freq*/
-                        len = cali_parse_one_para(str, ',', &freq);
-                        /*get calibration device*/
-                        str = str + len + 1;
-                        len = cali_parse_one_para(str, ' ', &device);
-
-                        if (freq != 0) {
-                            strcpy(rsp, MODE_POST_CALI);
-                        }else{
-                            strcpy(rsp, MODE_CALI);
-                        }
-                    }
-                }
-            }
-
-            //autotest
-            str = strstr(cmdline, "androidboot.mode=autotest");
-            ENG_LOG("%s: str: %s", __FUNCTION__, str);
-            if (str != NULL) {
-                strcpy(rsp, MODE_AUTOTEST);
-            }
+            ENG_LOG("cmdline %s\n", cmdline);
+            /*like this first_mode=11*/
+            value = parse_key_value(cmdline, CMDLINE_MODE_FLAG);
         }
         close(fd);
+    }
+
+    mode = findNameWithId(value);
+    if (mode == NULL){
+        sprintf(rsp, "+GETTESTMODE:0x%X\r\nOK\r\n", value);
+    }else{
+        sprintf(rsp, "+GETTESTMODE:%s\r\nOK\r\n", mode);
     }
 
     return strlen(rsp);
 }
 
-bool isdigitstr(char *str)
-{
-    return strspn(str, "0123456789")==strlen(str);
+bool isdigitstr(char *str){
+    return strspn(str, "0123456789AaBbCcDdEeFfXx")==strlen(str);
+}
+
+bool isHexstr(char* str){
+    if (strlen(str) > 2 && strcasestr(str, "0x") != NULL){
+        return true;
+    }
+
+    return false;
 }
 
 int setTestMode(char *req, char *rsp){
     int ret = 0;
     char* ptr = NULL;
+    char* ptrTmp = NULL;
     char* strNum = NULL;
     int len = 0;
     if(req[0] == 0x7e)
@@ -154,30 +186,41 @@ int setTestMode(char *req, char *rsp){
     else
     {
         ptr = strdup(req);
-        len = strlen(req);
     }
+
+    ptrTmp = ptr;
     ENG_LOG("%s: ptr = %s", __FUNCTION__, ptr);
-    ptr = ptr+strlen("AT+SETTESTMODE=");
-    strNum = trim(ptr);
-    if (strNum != NULL && isdigitstr(strNum)){
-        int val = atoi(strNum);
-        if (val < 0 || val > 0xFF){
-            ret = -2;
-        }else{
-            val += UBOOT_TESTMOD_CHECKSUM;
-            if (0 != eng_write_miscdata_with_offset(TESTMODE_OFFSET, &val, 4)){
-                ret = -3;
-                ENG_LOG("write offset fail");
+    ptrTmp = ptrTmp+strlen(AT_CMD_SETTESTMODE);
+    if (ptrTmp != NULL && (strNum = trim(ptrTmp)) != NULL){
+        unsigned int val = 0;
+        if ( isdigitstr(strNum) ){
+            if (isHexstr(strNum)){
+                val = strtol(strNum, NULL, 16);
+            }else{
+                val = strtol(strNum, NULL, 10);
             }
+        }else{
+            val = findIdWithName(strNum);
+        }
+
+        ENG_LOG("%s: val = 0x%X", __FUNCTION__, val);
+        val += UBOOT_TESTMOD_CHECKSUM;
+        if (0 != eng_write_miscdata_with_offset(TESTMODE_OFFSET, &val, 4)){
+            ret = -3;
+            ENG_LOG("write offset fail");
         }
     }else{
         ret = -1;
     }
 
     if (ret == 0){
-        sprintf(rsp, "+TESTMODE: OK");
+        sprintf(rsp, "+SETTESTMODE: \r\nOK\r\n");
     }else{
-        sprintf(rsp, "+TESTMODE: ERROR %d", ret);
+        sprintf(rsp, "+SETTESTMODE: ERROR %d\r\n", ret);
+    }
+
+    if (req[0] != 0x7e && ptrTmp != NULL){
+        free(ptrTmp);
     }
 
     return strlen(rsp);
@@ -188,26 +231,31 @@ int testmodeRsp(char *buf, int len, char *rsp, int rsplen){
     return sizeof(testmode_rsp);
 }
 
+int modeRsp_match(char* buff, int len){
+    if (buff[7] == 0xFE && buff[8] >= 0x80 && buff[8] <= 0x9F){
+        return 0;
+    }else{
+        return -1;
+    }
+}
+
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {
     int i = 0;
     int moudles_num = 0;
     ENG_LOG("register_this_module_ext :libftmode");
 
-    sprintf(reg->at_cmd, "%s", "AT+GETTESTMODE?");
+    sprintf(reg->at_cmd, "%s", AT_CMD_GETTESTMODE);
     reg->eng_linuxcmd_func = getTestMode;
     moudles_num++;
 
-    sprintf((reg+moudles_num)->at_cmd, "%s", "AT+SETTESTMODE=");
+    sprintf((reg+moudles_num)->at_cmd, "%s", AT_CMD_SETTESTMODE);
     (reg+moudles_num)->eng_linuxcmd_func = setTestMode;
     moudles_num++;
 
-    for(i = 0x80; i < 0x9F; i++){
-        (reg+moudles_num)->type = 0xFE;
-        (reg+moudles_num)->subtype = i;
-        (reg+moudles_num)->eng_diag_func = testmodeRsp;
-        moudles_num++;
-    }
+    (reg+moudles_num)->eng_diag_func = testmodeRsp;
+    (reg+moudles_num)->eng_cmd_match = modeRsp_match;
+     moudles_num++;
 
     *num = moudles_num;
     ENG_LOG("register_this_module_ext: %d - %d",*num, moudles_num);

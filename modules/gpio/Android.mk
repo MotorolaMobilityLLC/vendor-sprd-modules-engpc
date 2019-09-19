@@ -30,7 +30,7 @@ else ifneq (,$(findstring 8781, $(TARGET_BOARD_PLATFORM)))
 PLATFORM := isharkl2
 else ifneq (,$(findstring ums312, $(TARGET_BOARD_PLATFORM)))
 PLATFORM := sharkl5
-else ifneq (,$(findstring ums518, $(TARGET_BOARD_PLATFORM)))
+else ifneq (,$(findstring ums512, $(TARGET_BOARD_PLATFORM)))
 PLATFORM := sharkl5Pro
 else ifneq (,$(findstring ud710, $(TARGET_BOARD_PLATFORM)))
 PLATFORM := roc1

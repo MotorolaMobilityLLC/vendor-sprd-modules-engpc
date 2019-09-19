@@ -17,7 +17,7 @@
 
 #define ENG_RAWDATA_FILE   "/mnt/vendor/productinfo/wcn/tsx_bt_data.txt"
 #define ENG_TXDATA_FILE    "/mnt/vendor/txdata.txt"
-#define ENG_TXDATA_BK_FILE    "/mnt/vendor/txdata.dat"
+#define ENG_TXDATA_BK_FILE    "/mnt/vendor/tsx.dat"
 
 int translate_packet(char *dest, char *src, int size) {
 

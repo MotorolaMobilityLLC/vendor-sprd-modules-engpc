@@ -11,9 +11,12 @@
 #include <sys/types.h>
 #include <sys/reboot.h>
 #include <cutils/android_reboot.h>
+#include <cutils/properties.h>
 
 #include "sprd_fts_type.h"
 #include "sprd_fts_log.h"
+
+#define SPRD_VERS "ro.build.description"
 
 #define AT_EMMCDDRSIZE "AT+EMMCDDRSIZE"
 #define AT_RSP "+EMMCDDRSIZE: "
@@ -107,6 +110,24 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
     return strlen(rsp);
 }
 
+static int ap_version_handler(char *buf, int len, char *rsp, int rsplen){
+    char sprdver[256] = {0};
+    int rlen = 0;
+
+    memcpy(rsp, buf, sizeof(MSG_HEAD_T)+1);
+
+    memset(sprdver, 0, sizeof(sprdver));
+    property_get(SPRD_VERS, sprdver, "UNKNOWN VERSION");
+    ENG_LOG("%s: %s", __FUNCTION__, sprdver);
+
+    sprintf(rsp+sizeof(MSG_HEAD_T)+1, "%s", sprdver);
+    rlen = strlen(sprdver)+1;
+    rsp[rlen+sizeof(MSG_HEAD_T)+1] = 0x7e;
+
+    ENG_LOG("%s:rlen=%d; %s", __FUNCTION__, rlen, rsp);
+    return rlen+sizeof(MSG_HEAD_T)+2;
+}
+
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {
     int moudles_num = 0;
@@ -114,6 +135,11 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
     sprintf((reg + moudles_num)->at_cmd, "%s", AT_EMMCDDRSIZE);
     (reg + moudles_num)->eng_linuxcmd_func = getEmmcDDRSize_handle;
+    moudles_num++;
+
+    (reg+moudles_num)->type = 0x00; //main cmd 
+    (reg+moudles_num)->subtype = 0x02; //sub cmd
+    (reg+moudles_num)->eng_diag_func = ap_version_handler; // rsp function ptr
     moudles_num++;
 
     *num = moudles_num;

@@ -66,6 +66,7 @@ void* CModuleMgr::m_libInterface = NULL;
 CModuleMgr::CModuleMgr(char* dir){
     memcpy(m_path, dir, strlen(dir));
     m_lpHostDiagPort = NULL;
+    m_lpHostWcnATPort = NULL;
     m_isLoaded = false;
     m_lpPendingCB = NULL;
     m_lpCurCB = NULL;
@@ -244,8 +245,10 @@ int CModuleMgr::processWcnAT(DATA_TYPE type, char *buf, int len, char *rsp, int 
 
     if(m_libInterface != NULL ){
         bt_bqb_interface_t* pIf = (bt_bqb_interface_t *)m_libInterface;
-        pIf->set_fd(m_lpHostDiagPort->getFD());
-        rlen = pIf->check_received_str(m_lpHostDiagPort->getFD(), buf, len);
+        if (m_lpHostWcnATPort != NULL){
+            pIf->set_fd(m_lpHostWcnATPort->getFD());
+            rlen = pIf->check_received_str(m_lpHostWcnATPort->getFD(), buf, len);
+        }
 
         if (0 == rlen && pIf->get_bqb_state() == BQB_OPENED){
             pIf->eng_send_data(buf, len);

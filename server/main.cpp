@@ -86,12 +86,21 @@ int main(){
     lpChnlMgr->enable(bootmode, true);
     EngLog::info("active mode");
     g_lpDevMgr->activeMode((char* )bootmode);
+
+    // register diag port&wcn at port
     EngLog::info("set host dev diag port");
     CDev* lpDev = g_lpDevMgr->find(DEV_HOST_NAME);
     if (lpDev != NULL){
         g_lpModMgr->regDiagHost(lpDev->find(DEV_HOST_DIAG_NAME));
     }else{
         EngLog::info("can not find host dev diag port.");
+    }
+    EngLog::info("set host dev wcn at port");
+    lpDev = g_lpDevMgr->find(DEV_HOST_NAME);
+    if (lpDev != NULL){
+        g_lpModMgr->regWcnATHost(lpDev->find(DEV_HOST_WCN_AT_NAME));
+    }else{
+        EngLog::info("can not find host wcn at port.");
     }
 
 #ifndef ENGPC_AP_CALI

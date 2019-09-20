@@ -16,6 +16,7 @@ typedef void (*REGISTER_EXT_FUNC)(struct eng_callback *reg, int *num);
 class CModuleMgr{
     public:
         CPort* m_lpHostDiagPort;
+        CPort* m_lpHostWcnATPort;
 
         virtual ~CModuleMgr();
 
@@ -38,6 +39,7 @@ class CModuleMgr{
         void internalRegCallBack(struct eng_callback *p, int num);
 
         void regDiagHost(CPort *lpPort){m_lpHostDiagPort = lpPort;}
+        void regWcnATHost(CPort *lpPort){m_lpHostWcnATPort = lpPort;}
         void setPendingMark(){m_lpPendingCB = m_lpCurCB;}
         void clearPendingMark(){m_lpPendingCB = NULL;}
         void print();

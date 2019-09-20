@@ -15,6 +15,7 @@
 
 #define DEV_HOST_NAME "pc"
 #define DEV_HOST_DIAG_NAME "COM_CP_DIAG"
+#define DEV_HOST_WCN_AT_NAME "COM_WCN_AT"
 
 #define DEV_MODEM_NAME "cp"
 #define DEV_MODEM_DIAG_NAME "COM_DIAG"
@@ -22,6 +23,8 @@
 
 #define DEV_WCN_NAME "wcn"
 #define DEV_WCN_DIAG_NAME "COM_DIAG"
+
+#define DEV_AGDSP_NAME "agdsp"
 
 typedef enum {
     DATA_AT,

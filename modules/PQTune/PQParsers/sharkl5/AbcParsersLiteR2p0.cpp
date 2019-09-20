@@ -419,7 +419,7 @@ static int update_slp_items_xml(xmlNodePtr curNode, int wrItemnums, int Itemnums
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ALOGD("vvvvvvitem wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
+	ALOGD("item wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
 	propNode = curNode;
 	if (Itemnums < wrItemnums) {
 		for(; Itemnums < wrItemnums; Itemnums++) {
@@ -454,7 +454,7 @@ static int update_slp_mapping_items_child_xml(xmlNodePtr curNode, int wrItemnums
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ALOGD("vvvvvvitemsssss wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
+	ALOGD("itemsssss wrItemnums =  %d, Itemnums = %d \n", wrItemnums, Itemnums);
 	subNode = curNode;
 	if (Itemnums < wrItemnums) {
 		for(; Itemnums < wrItemnums; Itemnums++) {
@@ -526,7 +526,6 @@ static int update_slp_mapping_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr 
 	char numStr[10];
 	slp_mapping_table_item *item;
 
-	ALOGD("vvvvvv %s in \n", __func__);
 	wrIndexnums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	Indexnums = 0;
@@ -552,7 +551,7 @@ static int update_slp_mapping_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr 
 			break;
 		}
 	}
-	ALOGD("vvvvvv %s out \n", __func__);
+
 	return 0;
 }
 
@@ -569,7 +568,6 @@ static int update_slp_mapping_child_table(abc_common_sharkl5 *abc, xmlNodePtr cu
 	int index_nums, item_nums;
 	char numStr[10];
 
-	ALOGD("vvvvvv %s in \n", __func__);
 	index_nums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	while(NULL != subNode) {
@@ -593,7 +591,7 @@ static int update_slp_mapping_child_table(abc_common_sharkl5 *abc, xmlNodePtr cu
 		j++;
 		subNode = subNode->next;
 	}
-	ALOGD("vvvvvv %s out \n", __func__);
+
 	return 0;
 }
 
@@ -608,7 +606,6 @@ static int update_slp_mapping_table(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 	xmlChar* szPropity;
 	char numStr[10];
 
-	ALOGD("vvvvvv update_slp_mapping_table in \n");
 	subNode = curNode->children;//table normal
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
@@ -628,7 +625,6 @@ static int update_slp_mapping_table(abc_common_sharkl5 *abc, xmlNodePtr curNode)
 		subNode = subNode->next;
 	}
 
-	ALOGD("vvvvvv update_slp_mapping_table out \n");
 	return 0;
 }
 
@@ -833,7 +829,6 @@ static int update_epf_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr c
 	char numStr[10];
 	slp_mapping_table_item *item;
 
-	ALOGD("vvvvvv %s in \n", __func__);
 	wrIndexnums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	Indexnums = 0;
@@ -846,7 +841,7 @@ static int update_epf_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr c
 			break;
 		}
 	}
-	ALOGD("vvvvvv %s out \n", __func__);
+
 	return 0;
 }
 
@@ -987,7 +982,6 @@ static int update_slp_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr c
 	char numStr[10];
 	slp_mapping_table_item *item;
 
-	ALOGD("vvvvvv %s in \n", __func__);
 	wrIndexnums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	Indexnums = 0;
@@ -1000,7 +994,7 @@ static int update_slp_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr c
 			break;
 		}
 	}
-	ALOGD("vvvvvv %s out \n", __func__);
+
 	return 0;
 }
 #endif
@@ -1142,7 +1136,6 @@ static int update_ltm_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr c
 	char numStr[10];
 	slp_mapping_table_item *item;
 
-	ALOGD("vvvvvv %s in \n", __func__);
 	wrIndexnums = abc->sceneTable[i].num;
 	subNode = curNode->children;//number index
 	Indexnums = 0;
@@ -1155,7 +1148,7 @@ static int update_ltm_config_indexs_arrays(abc_common_sharkl5 *abc, xmlNodePtr c
 			break;
 		}
 	}
-	ALOGD("vvvvvv %s out \n", __func__);
+
 	return 0;
 }
 #endif

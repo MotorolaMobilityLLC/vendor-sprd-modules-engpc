@@ -832,31 +832,26 @@ int PQTuneCore::tune_rd_tuning_xml(char *buf, int len, char *rsp, int rsplen)
 		case PQ_GAMMA:
 			gamma->parse_xml(ctx);
 			sizes = gamma_size;
-			ALOGD("version11 %d gamma_size %d\n", version, gamma_size);
 			memcpy(pdata, ctx + sizeof(mainversion), sizes);
 			break;
 		case PQ_BLD:
 			bld->parse_xml(ctx);
 			sizes = bld_size;
-			ALOGD("version11 %d bld_size %d\n", version, bld_size);
 			memcpy(pdata, ctx + gamma_size + sizeof(mainversion), sizes);
 			break;
 		case PQ_CMS:
 			cms->parse_xml(ctx);
 			sizes = cms_size;
-			ALOGD("version11 %d cms_size %d %d\n", version, cms_size);
 			memcpy(pdata, ctx + gamma_size + bld_size + sizeof(mainversion), sizes);
 			break;
 		case PQ_ABC:
 			abc->parse_xml(ctx);
 			sizes = abc_size;
-			ALOGD("version11 %d abc_size %d\n", version, abc_size);
 			memcpy(pdata, ctx + gamma_size + bld_size + cms_size + sizeof(mainversion), sizes);
 			break;
 		case PQ_HSV:
 			hsv->parse_xml(ctx);
 			sizes = hsv_size;
-			ALOGD("version11 %d abc_size %d\n", version, abc_size);
 			memcpy(pdata, ctx + gamma_size + bld_size + cms_size + abc_size + sizeof(mainversion), sizes);
 			break;
 		default:
@@ -959,8 +954,9 @@ int PQTuneCore::tune_rd_ambient(char *buf, int len, char *rsp, int rsplen)
 	}
 
 	ret = read(fd, tbuf, sizeof(tbuf));
-	if (ret == -1) {
+	if (ret < 0) {
 		printf("PQ read Ambient Light value Fail\n");
+		close(fd);
 		return -1;
 	} else if (ret == 0) {
 			 ALOGD("PQ read Ambient Light ret 0\n");

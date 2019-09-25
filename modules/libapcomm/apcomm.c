@@ -18,6 +18,8 @@
 
 #define SPRD_VERS "ro.build.description"
 
+#define AT_GETPROP "AT+PROP="
+
 #define AT_EMMCDDRSIZE "AT+EMMCDDRSIZE"
 #define AT_RSP "+EMMCDDRSIZE: "
 
@@ -128,6 +130,69 @@ static int ap_version_handler(char *buf, int len, char *rsp, int rsplen){
     return rlen+sizeof(MSG_HEAD_T)+2;
 }
 
+#define ENG_STREND "\r\n"
+
+static int getProp_handle(char *buff, char *rsp){
+    char ptr_cmd[1];
+    char *ptr_key, *ptr_val, *req;
+    char buf[PROPERTY_VALUE_MAX] = {0};
+
+    char *ptr = NULL;
+    char cmd_buf[256] = {0};
+    int ret = -1;
+
+    if (NULL == buff)
+    {
+        ENG_LOG("%s,null pointer", __FUNCTION__);
+        sprintf(rsp, "ERROR\r\n");
+        return rsp != NULL ? strlen(rsp) : 0;
+    }
+
+    if(buff[0] == 0x7e)
+    {
+        ptr = buff + 1 + sizeof(MSG_HEAD_T);
+    }
+    else
+    {
+        ptr = strdup(buff);
+    }
+
+    req = strchr(ptr, '=');
+    req++;
+    ptr_cmd[0] = *req;
+    req = strchr(req, ',');
+    req++;
+    if (*req != '[') {
+    return -1;
+    }
+    req++;
+    ptr_key = req;
+    req = strchr(req, ']');
+    *req = '\0';
+
+    if (ptr_cmd[0] == '0') {
+        property_get(ptr_key, buf, "NOT FOUND");
+        if (!strncmp(buf, "NOT FOUND", sizeof("NOT FOUND") - 1)) {
+            sprintf(rsp, "%s%s%s", ENG_STREND, buf, ENG_STREND);
+        } else {
+            sprintf(rsp, "%s%s%s%s%s", ENG_STREND, "[", buf, "]", ENG_STREND);
+        }
+    } else if (ptr_cmd[0] == '1') {
+        req++;
+        if (*req != '[') {
+            sprintf(rsp, "%s%s%s", ENG_STREND, "ERROR", ENG_STREND);
+        }
+        req++;
+        ptr_val = req;
+        req = strchr(req, ']');
+        *req = '\0';
+        property_set(ptr_key, ptr_val);
+        sprintf(rsp, "%s%s%s%s%s%s%s", ENG_STREND, "[", ptr_key, "][", ptr_val, "]", ENG_STREND);
+    }
+
+    return 0;
+}
+
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {
     int moudles_num = 0;
@@ -135,6 +200,10 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
     sprintf((reg + moudles_num)->at_cmd, "%s", AT_EMMCDDRSIZE);
     (reg + moudles_num)->eng_linuxcmd_func = getEmmcDDRSize_handle;
+    moudles_num++;
+
+    sprintf((reg + moudles_num)->at_cmd, "%s", AT_GETPROP);
+    (reg + moudles_num)->eng_linuxcmd_func = getProp_handle;
     moudles_num++;
 
     (reg+moudles_num)->type = 0x00; //main cmd 

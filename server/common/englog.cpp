@@ -67,7 +67,11 @@ int EngLog::logLevelHandle(char* buff, char* rsp){
     }else{
         sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: unknown at\r\n");
     }
-    free(ptr);
+
+    if(buff[0] != 0x7e){
+        free(ptr);
+    }
+
     return strlen(rsp);
 
 }

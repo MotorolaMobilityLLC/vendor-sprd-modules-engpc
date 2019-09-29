@@ -321,12 +321,13 @@ static int TestMakeCall (char *req, char *rsp) {
 
     //stop call
     if (0 == operate) {
+#if defined(AUDIO_WHALE_HAL)
         if (g_func[WRITE_TO_NPISO_AT] != NULL) {
             char req_open[] = "AT+AUDIOPIPE=set_mode=0";
             ALOGD("enter: send at %s to audio", req_open);
             g_func[WRITE_TO_NPISO_AT](req_open, sizeof(req_open));
         }
-
+#endif
         sendATCmd(fdCall, "ATH", NULL, 0, 0);//hang up
         sendATCmd(fdCall, "AT", NULL, 0, 0);
         close(fdCall);
@@ -395,13 +396,19 @@ static int TestMakeCall (char *req, char *rsp) {
     ret = sendATCmd(fdCall, cmd, NULL,0, 0);  //call 112
     ALOGD("tel send at return: %d", ret);
     usleep(200 * 1000);
+
+    //open speaker
+#if defined(AUDIO_WHALE_HAL)
     if (g_func[WRITE_TO_NPISO_AT] != NULL) {
         char req_open[] = "AT+AUDIOPIPE=test_out_stream_route=2;set_mode=2";
         ALOGD("enter: send at %s to audio", req_open);
         g_func[WRITE_TO_NPISO_AT](req_open, sizeof(req_open));
     }
-    sleep(5);
+#else
+    sendATCmd(fdCall, "AT+SSAM=1", NULL, 0, 0);
+#endif
 
+    sleep(5);
     close(fdCall);
     return ret;
 }

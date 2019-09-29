@@ -19,6 +19,10 @@ include $(CLEAR_VARS)
 
 LOCAL_CFLAGS := -D_POSIX_SOURCE -Wno-multichar -g
 
+ifeq ($(strip $(USE_AUDIO_WHALE_HAL)),true)
+LOCAL_CFLAGS += -DAUDIO_WHALE_HAL
+endif
+
 LOCAL_SRC_FILES := factorytest_radio.c \
                    at_tok.c
 

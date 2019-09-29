@@ -69,8 +69,11 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
     if (NULL == buff)
     {
         ENG_LOG("%s,null pointer", __FUNCTION__);
+        if(NULL == rsp){
+            return 0;
+        }
         sprintf(rsp, "ERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+        return strlen(rsp);
     }
 
     if(buff[0] == 0x7e)
@@ -118,20 +121,26 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
 
 static int ap_version_handler(char *buf, int len, char *rsp, int rsplen){
     char sprdver[256] = {0};
+    MSG_HEAD_T *msg_head_ptr;
     int rlen = 0;
 
     memcpy(rsp, buf, sizeof(MSG_HEAD_T)+1);
+    msg_head_ptr = (MSG_HEAD_T *)(rsp + 1);
+    msg_head_ptr->len = sizeof(MSG_HEAD_T);
 
     memset(sprdver, 0, sizeof(sprdver));
     property_get(SPRD_VERS, sprdver, "UNKNOWN VERSION");
     ENG_LOG("%s: %s", __FUNCTION__, sprdver);
 
-    sprintf(rsp+sizeof(MSG_HEAD_T)+1, "%s", sprdver);
     rlen = strlen(sprdver)+1;
-    rsp[rlen+sizeof(MSG_HEAD_T)+1] = 0x7e;
+    msg_head_ptr->len+=rlen;
+
+    char* data = (char*)msg_head_ptr + sizeof(MSG_HEAD_T);
+    sprintf(data, "%s", sprdver);
+    data[rlen] = 0x7e;
 
     ENG_LOG("%s:rlen=%d; %s", __FUNCTION__, rlen, rsp);
-    return rlen+sizeof(MSG_HEAD_T)+2;
+    return msg_head_ptr->len+2;
 }
 
 #define ENG_STREND "\r\n"

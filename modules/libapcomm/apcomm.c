@@ -109,6 +109,10 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
         sprintf(rsp, "ERROR\r\n");
     }
 
+    if(buff[0] != 0x7e){
+        free(ptr);
+    }
+
     return strlen(rsp);
 }
 

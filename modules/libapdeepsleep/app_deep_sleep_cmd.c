@@ -96,10 +96,10 @@ void *ap_ds_thread_fastsleep(void *para) {
 
 // return : rsp true length
 int ap_deep_sleep_handler(char *buf, int len, char *rsp, int rsplen){
-  int ret, fd;
+  int ret;
 
   wakeup_count_fd = open(sys_power_wakeup_count, O_RDWR);
-  if(fd < 0) {
+  if(wakeup_count_fd < 0) {
 	  ENG_LOG("%s error open wakeup_count.\n", __FUNCTION__);
 	  goto err_open_wakeup_count;
   }

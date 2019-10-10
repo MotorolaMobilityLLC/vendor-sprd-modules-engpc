@@ -10,7 +10,7 @@ on property:vendor.ro.bootmode=cali
 on property:vendor.ro.bootmode=autotest
     start vendor.dcxsrv
 
-on property:vendor.ro.bootmode=factorytest
+on property:ro.bootmode=factorytest
     start vendor.dcxsrv
 
 on cali-fs

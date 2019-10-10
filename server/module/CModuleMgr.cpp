@@ -30,7 +30,18 @@ int write_to_host_diag(char* buff, int len){
         int retlen = CProtolDiag::translate_packet(dst, buff+1, len-2);
         retlen = g_lpModMgr->m_lpHostDiagPort->write(dst, retlen);
         free(dst);
+
         return retlen;
+    }else{
+        EngLog::error("write_to_host_diag fail: g_lpModMgr = NULL or s_lpModMgr->m_lpHostDiagPort = NULL");
+    }
+
+    return 0;
+}
+
+int write_to_host_diag_origin(char* buff, int len){
+    if (g_lpModMgr != NULL && g_lpModMgr->m_lpHostDiagPort != NULL){
+        return g_lpModMgr->m_lpHostDiagPort->write(buff, len);
     }else{
         EngLog::error("write_to_host_diag fail: g_lpModMgr = NULL or s_lpModMgr->m_lpHostDiagPort = NULL");
     }
@@ -64,7 +75,8 @@ DYMIC_WRITETOPC_FUNC write_interface[WRITE_TO_MAX] = {
     chnl_send_diag_interface,
     NULL,
     chnl_send_at_interface,/*send cmd so to so*/
-    NULL,NULL,NULL,NULL,NULL,NULL
+    write_to_host_diag_origin,/*send with raw data*/
+    NULL,NULL,NULL,NULL,NULL
 };
 
 static const char *VENDOR_LIBRARY_NAME = "libbqbbt.so";

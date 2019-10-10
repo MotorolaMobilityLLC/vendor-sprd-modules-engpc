@@ -38,6 +38,7 @@ common_engpc_modules_dirs := charge \
                              libapcomm \
                              libtouchscreen \
                              libylogtopc \
-                             libpartinfo
+                             libpartinfo \
+                             libetb
 
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

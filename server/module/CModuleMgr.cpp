@@ -428,7 +428,6 @@ void CModuleMgr::internalRegCallBack(struct eng_callback *p, int num){
             continue;
         }
         list_add_tail(&modules->node, &m_listHead);
-        free(modules);
     }
 }
 

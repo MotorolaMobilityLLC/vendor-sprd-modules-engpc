@@ -34,6 +34,11 @@ char g_lte_normal_at_channel[MAX_PHONE_MUM][MAX_AT_CHANNEL_NAME_LENGHT] = {
     "/dev/stty_lte4",
 };
 
+char g_nr_normal_at_channel[MAX_PHONE_MUM][MAX_AT_CHANNEL_NAME_LENGHT] = {
+    "/dev/stty_nr1",
+    "/dev/stty_nr4",
+};
+
 /* static report_ptr g_func; */
 int send_at_to_engpc(DYMIC_WRITETOPC_FUNC * write_interface_ptr) {
     bool flag = false;
@@ -64,6 +69,18 @@ bool isLteOnly(int phoneId) {
     } else {
         return (testmode[2] == '3');
     }
+}
+
+bool isNrMode() {
+    char modemtype[PROPERTY_VALUE_MAX + 1];
+    property_get("ro.vendor.radio.modemtype", modemtype, "");
+    ALOGD("isNrMode: ro.vendor.radio.modemtype = %s\n", modemtype);
+
+    if (strcmp(modemtype, "nr")) {
+        return false;
+    }
+
+    return true;
 }
 
 static char * findNextEOL(char *cur) {
@@ -244,8 +261,13 @@ void *readURCThread() {
     int count = 0;
     int ret = -1;
 
-    fd0 = open("/dev/stty_lte0", O_RDWR | O_NONBLOCK);
-    fd3 = open("/dev/stty_lte3", O_RDWR | O_NONBLOCK);
+    if (isNrMode()) {
+        fd0 = open("/dev/stty_nr0", O_RDWR | O_NONBLOCK);
+        fd3 = open("/dev/stty_nr3", O_RDWR | O_NONBLOCK);
+    } else {
+        fd0 = open("/dev/stty_lte0", O_RDWR | O_NONBLOCK);
+        fd3 = open("/dev/stty_lte3", O_RDWR | O_NONBLOCK);
+    }
     ALOGD("read urc fd0 = %d, fd3 = %d", fd0, fd3);
 
     FD_ZERO(&readfs);
@@ -315,7 +337,12 @@ static int TestMakeCall (char *req, char *rsp) {
         return -1;
     }
 
-    path = g_lte_normal_at_channel[simNum - 1];
+    if (isNrMode()) {
+        path = g_nr_normal_at_channel[simNum - 1];
+    } else {
+        path = g_lte_normal_at_channel[simNum - 1];
+    }
+
     ALOGD("path = %s\n", path);
     fdCall = open(path, O_RDWR | O_NONBLOCK);
 
@@ -437,9 +464,13 @@ static int TestCheckSIM (char *req, char *rsp) {
         return -1;
     }
 
-    path = g_lte_normal_at_channel[simNum - 1];
-    fd = open(path, O_RDWR | O_NONBLOCK);
+    if (isNrMode()) {
+        path = g_nr_normal_at_channel[simNum - 1];
+    } else {
+        path = g_lte_normal_at_channel[simNum - 1];
+    }
 
+    fd = open(path, O_RDWR | O_NONBLOCK);
     ALOGD("sendATCmd: simNum = %d, cmd = %s, path = %s", simNum, cmd, path);
 
     if (sendATCmd(fd, cmd, tmp, sizeof(tmp), 0) < 0) {

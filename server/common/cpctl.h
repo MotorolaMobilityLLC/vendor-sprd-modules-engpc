@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include "CChnlMgr.h"
+#include "../module/CModuleMgr.h"
 
 //cp log ctrl
 #define SOCK_CPLOGCTL_NAME "engpc_soc.l"
@@ -99,6 +100,8 @@ class CCPCtl {
         void run();
 
         static int logLocation(char log_type, char location, int diagportswitch);
+        static void regCallBack(CModuleMgr* pModMgr);
+        static int CpCtlHandle(char* buff, char* rsp);
 
     private:
         static CChnlMgr* m_lpChnlMgr;

@@ -31,6 +31,11 @@ void switchGidToRoot(void);
 CModuleMgr* g_lpModMgr = NULL;
 CDevMgr* g_lpDevMgr = NULL;
 
+void internalRegCallback(){
+    EngLog::regCallBack(g_lpModMgr);
+    CCPCtl::regCallBack(g_lpModMgr);
+}
+
 int main(){
 
     EngLog::info("main...");
@@ -153,7 +158,7 @@ int main(){
     }
 
     //internal reg callback
-    EngLog::regCallBack(g_lpModMgr);
+    internalRegCallback();
 
     //work here
     EngLog::info("run...");

@@ -207,7 +207,7 @@ int CModuleMgr::processAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp
         modules_list = list_entry(list_find, eng_modules, node);
 
         if ((0 != strlen(modules_list->callback.at_cmd)) &&
-            (0 == strncmp((const char *) buf, (const char *)(modules_list->callback.at_cmd),
+            (0 == strncasecmp((const char *) buf, (const char *)(modules_list->callback.at_cmd),
             strlen(modules_list->callback.at_cmd)))) { // at command
             EngLog::info("%s: Dymic CMD=%s finded\n", __FUNCTION__, modules_list->callback.at_cmd);
             if (NULL != modules_list->callback.eng_linuxcmd_func) {

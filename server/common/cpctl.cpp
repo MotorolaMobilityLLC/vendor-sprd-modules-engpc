@@ -70,6 +70,107 @@ void CCPCtl::run(){
     }
 }
 
+#define AT_SPATCPLOG "AT+SPATCPLOG"
+#define AT_SPATCPLOG_TAG "+SPATCPLOG:"
+void CCPCtl::regCallBack(CModuleMgr* pModMgr){
+    struct eng_callback cb = {0};
+    sprintf(cb.at_cmd, "%s", AT_SPATCPLOG);
+    cb.eng_linuxcmd_func = CpCtlHandle;
+
+    pModMgr->internalRegCallBack(&cb, 1);
+}
+
+int CCPCtl::CpCtlHandle(char* req, char* rsp){
+    char *ptr = NULL;
+    char cmd_buf[256] = {0};
+    int ret = -1;
+    int nlen = 0;
+    if (NULL == req)
+    {
+        sprintf(rsp, "\r\nERROR\r\n");
+        return rsp != NULL ? strlen(rsp) : 0;
+    }
+
+    if(req[0] == 0x7e)
+    {
+        ptr = req + 1 + sizeof(MSG_HEAD_T);
+    }
+    else
+    {
+        ptr = strdup(req);
+    }
+
+    if (strncasecmp(ptr, AT_SPATCPLOG,strlen(AT_SPATCPLOG)) == 0){
+        char *type;
+        char log_type_cmd[2] = {0, 0};
+        char log_dest_cmd[2] = {0, 0};
+        int ret = 0;
+        char modem_log_dest[8] = {0};
+        char modem_log_type = LOG_TYPE_NAME_MODEM;
+        char wcn_log_dest[8] = {0};
+        char wcn_log_type = LOG_TYPE_NAME_WCN;
+        int iDiagPortSwitch = 0;
+
+        sys_getlogdest(&modem_log_type, modem_log_dest);
+        sys_getlogdest(&wcn_log_type, wcn_log_dest);
+
+        if (strchr(ptr, '?') != NULL) {
+            if (strstr(ptr, "=1?")!=NULL) { // modem log_dest req
+                sprintf(rsp, "%s MODEMLOG=%d\r\n", AT_SPATCPLOG_TAG, atoi(modem_log_dest));
+            } else if (strstr(ptr, "=2?")!=NULL) {  // wcn log_dest req
+                sprintf(rsp, "%s WCNLOG=%d\r\n", AT_SPATCPLOG_TAG, atoi(wcn_log_dest));
+            } else {
+                EngLog::error("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+                sprintf(rsp, "%s ERROR PARAM\r\n", AT_SPATCPLOG_TAG);
+                goto out;
+            }
+        }else{
+            ptr = strchr(ptr, '=');
+            if(NULL == ptr || NULL == ptr + 1) {
+                sprintf(rsp, "%s ERROR PARAM\r\n", AT_SPATCPLOG_TAG);
+                EngLog::error("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+                goto out;
+            }
+            ptr++;
+            log_type_cmd[0] = *ptr;
+            ptr = strchr(ptr, ',');
+            if(NULL == ptr || NULL == ptr + 1) {
+                sprintf(rsp, "%s ERROR PARAM\r\n", AT_SPATCPLOG_TAG);
+                EngLog::error("%s: ERROR: invalid cmmond\n", __FUNCTION__);
+                goto out;
+            }
+            ptr++;
+            log_dest_cmd[0] = *ptr;
+            EngLog::info("%s: %d %d\n", __FUNCTION__,log_type_cmd[0], log_dest_cmd[0]);
+
+            ptr = strchr(ptr, ',');
+            if(NULL != ptr && NULL != ptr+1) {
+                ptr++;
+                iDiagPortSwitch = *ptr-'0';
+                EngLog::info("%s: iDiagSwitch = %d\n", __FUNCTION__, iDiagPortSwitch);
+            }
+
+            ret = logLocation(log_type_cmd[0], log_dest_cmd[0], iDiagPortSwitch);
+            if(ret == -1) {
+                sprintf(rsp, "%s error %d\r\n", AT_SPATCPLOG_TAG, ret);
+                EngLog::error("%s: logLocation return %d\n", __FUNCTION__, ret);
+                goto out;
+            }
+
+            sprintf(rsp, "OK\r\n");
+        }
+    }else{
+        sprintf(rsp, "%s unknown at\r\n", AT_SPATCPLOG_TAG);
+    }
+
+out:
+    if(req[0] != 0x7e){
+        free(ptr);
+    }
+
+    return strlen(rsp);
+}
+
 int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
     int ret = 0;
     char bufLoc[8] = {0};

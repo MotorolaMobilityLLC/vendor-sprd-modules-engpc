@@ -176,6 +176,9 @@ static int getProp_handle(char *buff, char *rsp){
     req = strchr(req, ',');
     req++;
     if (*req != '[') {
+        if(buff[0] != 0x7e){   //AT is correct that not free,and will be used later
+            free(ptr);
+        }
     return -1;
     }
     req++;
@@ -203,6 +206,9 @@ static int getProp_handle(char *buff, char *rsp){
         sprintf(rsp, "%s%s%s%s%s%s%s", ENG_STREND, "[", ptr_key, "][", ptr_val, "]", ENG_STREND);
     }
 
+    if(buff[0] != 0x7e){  //AT is correct that not free,and will be used later
+        free(ptr);
+    }
     return 0;
 }
 

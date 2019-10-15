@@ -20,9 +20,11 @@
     }
 
 //#define Info info
-#define STRNCPY(d,s,dlen) { if ((void*)(s) != NULL) \
-                              strncpy((char*)(d), (char*)(s), strlen(s)>=(dlen-1)?(dlen-1):(strlen(s))); \
-                          }
+
+#define ZEROMEM(d,len) memset((void*)(d), 0, (len))
+#define MEMCPY(d,s) { if ((void*)(s) != NULL) \
+                          memcpy((void*)(d), (void*)(s), strlen(s)>=(sizeof(d)-1)?(sizeof(d)-1):(strlen(s))); \
+                    }
 
 
 CPort::CPort(char* devname, LPDEV_PORT lpDevPort){
@@ -45,15 +47,17 @@ void CPort::init(char* devname, char* name, PORT_TYPE porttype, char* path, DATA
         return;
     }
 
-    memset((char *)&m_port, 0, sizeof(m_port));
+    ZEROMEM(&m_port, sizeof(m_port));
+    ZEROMEM(m_devName, sizeof(m_devName));
 
-    STRNCPY(m_devName, devname, DEV_NAME_LEN);
-    STRNCPY(m_port.portName, name, PORT_NAME_LEN);
+    MEMCPY(m_devName, devname);
+    MEMCPY(m_port.portName, name);
     m_port.portType = porttype;
-    STRNCPY(m_port.portPath, path, PORT_PATH_LEN);
+    MEMCPY(m_port.portPath, path);
     m_port.dataType = datatype;
-    STRNCPY(m_port.reserved, reserved, PORT_RESERVED_LEN);
-    STRNCPY(m_port.desc, desc, PORT_DESC_LEN);
+    MEMCPY(m_port.reserved, reserved);
+
+    MEMCPY(m_port.desc, desc);
 
     m_nClient = 0;
     m_bEnableRD = true;

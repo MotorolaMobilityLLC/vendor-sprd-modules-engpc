@@ -74,6 +74,9 @@ void CCPCtl::run(){
 #define AT_SPATCPLOG_TAG "+SPATCPLOG:"
 void CCPCtl::regCallBack(CModuleMgr* pModMgr){
     struct eng_callback cb = {0};
+    cb.diag_ap_cmd = -1;
+    cb.type = 0xFF;
+    cb.subtype = 0xFF;
     sprintf(cb.at_cmd, "%s", AT_SPATCPLOG);
     cb.eng_linuxcmd_func = CpCtlHandle;
 

@@ -19,8 +19,6 @@ class CProtolDiag:public CProtol{
 
         bool checkPending(char*rsp, int nlen);
         void setPendingMark(bool bPending){m_bPending = bPending;}
-
-        static int translate_packet(char *dest, char *src, int size);
     public:
         int m_nDiagAT;
         bool m_bPending;

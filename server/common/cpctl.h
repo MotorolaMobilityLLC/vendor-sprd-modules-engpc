@@ -58,8 +58,8 @@ struct SocketConnection {
 
 typedef struct cp_event_notify
 {
-  uint8_t subsys; // 0,事件涉及整个手机系统或多个子系统;1,3G/4G MOOEM;2,WCN;3,GNSS;4,PM和Sensor Hub;>4,reserve;
-  uint8_t event; // 0,启动成功;1,发生assert;2,发生重启;3,发生BLOCK;>3,reserve;
+  uint8_t subsys; // 0,浜嬩欢娑夊強鏁翠釜鎵嬫満绯荤粺鎴栧涓瓙绯荤粺;1,3G/4G MOOEM;2,WCN;3,GNSS;4,PM鍜孲ensor Hub;>4,reserve;
+  uint8_t event; // 0,鍚姩鎴愬姛;1,鍙戠敓assert;2,鍙戠敓閲嶅惎;3,鍙戠敓BLOCK;>3,reserve;
 }__attribute__((packed))CP_EVENT_NOTIFY_T;
 
 #define TIME_SERVER_SOCK_NAME "cp_time_sync_server"
@@ -84,8 +84,6 @@ typedef struct cp_event_notify
 
 class CCPCtl {
     public:
-        pthread_t m_idTdLogCtl;
-        pthread_t m_idTdTimeSync;
         pthread_mutex_t g_time_sync_lock;
         int m_fdSockSrv;
 

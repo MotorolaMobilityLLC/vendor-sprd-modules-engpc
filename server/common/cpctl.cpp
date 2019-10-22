@@ -59,6 +59,8 @@ void CCPCtl::attach(CChnlMgr* lpChnlMgr){
 }
 
 void CCPCtl::run(){
+    pthread_t m_idTdLogCtl;
+    pthread_t m_idTdTimeSync;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
 
@@ -90,8 +92,11 @@ int CCPCtl::CpCtlHandle(char* req, char* rsp){
     int nlen = 0;
     if (NULL == req)
     {
-        sprintf(rsp, "\r\nERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+        if(NULL == rsp){
+            return 0;
+        }else{
+            return sprintf(rsp, "\r\nERROR\r\n");
+        }
     }
 
     if(req[0] == 0x7e)
@@ -128,28 +133,29 @@ int CCPCtl::CpCtlHandle(char* req, char* rsp){
                 goto out;
             }
         }else{
-            ptr = strchr(ptr, '=');
-            if(NULL == ptr || NULL == ptr + 1) {
+            char *temp = NULL;
+            temp = strchr(ptr, '=');
+            if(NULL == temp || NULL == temp + 1) {
                 sprintf(rsp, "%s ERROR PARAM\r\n", AT_SPATCPLOG_TAG);
                 EngLog::error("%s: ERROR: invalid cmmond\n", __FUNCTION__);
                 goto out;
             }
-            ptr++;
-            log_type_cmd[0] = *ptr;
-            ptr = strchr(ptr, ',');
-            if(NULL == ptr || NULL == ptr + 1) {
+            temp++;
+            log_type_cmd[0] = *temp;
+            temp = strchr(temp, ',');
+            if(NULL == temp || NULL == temp + 1) {
                 sprintf(rsp, "%s ERROR PARAM\r\n", AT_SPATCPLOG_TAG);
                 EngLog::error("%s: ERROR: invalid cmmond\n", __FUNCTION__);
                 goto out;
             }
-            ptr++;
-            log_dest_cmd[0] = *ptr;
+            temp++;
+            log_dest_cmd[0] = *temp;
             EngLog::info("%s: %d %d\n", __FUNCTION__,log_type_cmd[0], log_dest_cmd[0]);
 
-            ptr = strchr(ptr, ',');
-            if(NULL != ptr && NULL != ptr+1) {
-                ptr++;
-                iDiagPortSwitch = *ptr-'0';
+            temp = strchr(temp, ',');
+            if(NULL != temp && NULL != temp+1) {
+                temp++;
+                iDiagPortSwitch = *temp-'0';
                 EngLog::info("%s: iDiagSwitch = %d\n", __FUNCTION__, iDiagPortSwitch);
             }
 

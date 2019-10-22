@@ -25,6 +25,7 @@ common_engpc_modules_dirs := charge \
                              libdialppp \
                              libFactoryRadioTest\
                              libftmode \
+                             libgetswpac \
                              libmiscdata \
                              libnpipropsrv \
                              libreboot_cmd \

@@ -39,7 +39,7 @@ int bt_wifi_mac_handler(char *buff, int len, char *rsp, int rsplen){
 
     retLen = btwifiimei(buff, len, rsp, rsplen, ret==2?1:0, 0);
     if (retLen > 0 && g_func[WRITE_TO_HOST_DIAG] != NULL){
-        g_func[WRITE_TO_HOST_DIAG](rsp, rsplen);
+        g_func[WRITE_TO_HOST_DIAG](rsp, retLen);
     }
 
     if (ret == 1){ // only write bt wifi mac address

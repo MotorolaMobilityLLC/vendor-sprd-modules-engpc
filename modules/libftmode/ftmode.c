@@ -214,7 +214,7 @@ int setTestMode(char *req, char *rsp){
     }
 
     if (ret == 0){
-        sprintf(rsp, "+SETTESTMODE: \r\nOK\r\n");
+        sprintf(rsp, "+SETTESTMODE:OK \r\nOK\r\n");
     }else{
         sprintf(rsp, "+SETTESTMODE: ERROR %d\r\n", ret);
     }

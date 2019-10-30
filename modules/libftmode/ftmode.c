@@ -133,7 +133,7 @@ int parse_key_value(char* buf, char* key) {
 int getTestMode(char *req, char *rsp){
     int fd = 0, ret = 0, len = 0;
     char cmdline[MAX_CMDLIEN_LEN] = {0};
-    unsigned int value = 0xFF;
+    unsigned int value = 0x00;
     char* str = NULL;
     char* mode = 0;
 

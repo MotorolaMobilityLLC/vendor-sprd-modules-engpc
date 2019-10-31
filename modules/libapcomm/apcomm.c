@@ -87,11 +87,11 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
 
     ENG_LOG("%s ptr = %s", __FUNCTION__, ptr);
     if (strncasecmp(ptr, AT_EMMCDDRSIZE,strlen(AT_EMMCDDRSIZE)) == 0){
-        long szEmmc = 0;
+        double szEmmc = 0;
         long szDDR = 0;
         char buff[32] = {0};
 
-        szEmmc = getSize(SIZE_EMMC);
+        szEmmc = (double)getSize(SIZE_EMMC);
         memset(buff, 0, sizeof(buff));
         sprintf(buff, "%4.2f GB", ceil(szEmmc/2/1024/1024));
         strcat(rsp, buff);
@@ -157,8 +157,10 @@ static int getProp_handle(char *buff, char *rsp){
     if (NULL == buff)
     {
         ENG_LOG("%s,null pointer", __FUNCTION__);
-        sprintf(rsp, "ERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+        if(NULL == rsp){
+          return 0;
+        }
+        return sprintf(rsp, "ERROR\r\n");
     }
 
     if(buff[0] == 0x7e)
@@ -212,6 +214,26 @@ static int getProp_handle(char *buff, char *rsp){
     return 0;
 }
 
+int eng_diag_bootreset(unsigned char *buf, int len, char *rsp)
+{
+    MSG_HEAD_T *msg_head_ptr;
+    int rlen = 0;
+    char *data="OK";
+
+    memcpy(rsp, buf, sizeof(MSG_HEAD_T)+1);
+    msg_head_ptr = (MSG_HEAD_T *)(rsp + 1);
+    rlen = strlen(data)+1;
+    msg_head_ptr->len = sizeof(MSG_HEAD_T)+rlen;
+
+    char *temp= (char*)msg_head_ptr + sizeof(MSG_HEAD_T);
+    sprintf(temp, "%s", data);
+    temp[rlen] = 0x7e;
+
+    ENG_LOG("%s:rlen=%d; %s", __FUNCTION__, rlen, rsp);
+    return msg_head_ptr->len+2;
+  }
+
+
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {
     int moudles_num = 0;
@@ -225,9 +247,14 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
     (reg + moudles_num)->eng_linuxcmd_func = getProp_handle;
     moudles_num++;
 
-    (reg+moudles_num)->type = 0x00; //main cmd 
+    (reg+moudles_num)->type = 0x00; //main cmd
     (reg+moudles_num)->subtype = 0x02; //sub cmd
     (reg+moudles_num)->eng_diag_func = ap_version_handler; // rsp function ptr
+    moudles_num++;
+
+    (reg+moudles_num)->type = 0x0c; //main cmd
+    (reg+moudles_num)->subtype = 0x08; //sub cmd
+    (reg+moudles_num)->eng_diag_func = eng_diag_bootreset; // rsp function ptr
     moudles_num++;
 
     *num = moudles_num;

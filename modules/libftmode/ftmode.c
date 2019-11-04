@@ -107,7 +107,7 @@ char* trim(char *str){
 
 int parse_key_value(char* buf, char* key) {
     int len = 0;
-    char value[8] = "FF";
+    char value[8] = "00";
     char* str = NULL;
 
     str = strstr(buf, key);

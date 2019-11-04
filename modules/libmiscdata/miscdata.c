@@ -204,7 +204,7 @@ int eng_write_miscdata_with_offset(int offset, char *databuf, int data_len) {
   }else{
     ret = -4;
   }
-
+  free(buff);
   return ret;
 
 #else

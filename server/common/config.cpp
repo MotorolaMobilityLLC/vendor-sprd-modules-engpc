@@ -68,6 +68,7 @@ EngVector<char*>* EngConf::parse_line(char* buf, int line_num){
             break;
         }
         if ('#' == *t1) {
+            delete vt;
             return NULL;
         }
 

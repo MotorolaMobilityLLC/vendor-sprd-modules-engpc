@@ -28,6 +28,9 @@
 //reboot to factory reset
 #define AT_ETSRESET         "AT+ETSRESET"
 
+//Power off after USB_DISCONNECT
+#define USB_STATE_PAT  "/sys/class/android_usb/android0/state"
+
 static char reboot_cmd_param[64] = {0};
 
 void* autodloader_thread(void* arg) {
@@ -84,8 +87,12 @@ static int dloader_handle(char *buff, char *rsp)
     if (NULL == buff)
     {
         ALOGE("%s,null pointer", __FUNCTION__);
-        sprintf(rsp, "\r\nERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+        if(rsp != NULL){
+            sprintf(rsp, "\r\nERROR\r\n");
+            return strlen(rsp);
+        }else{
+            return 0;
+        }
     }
 
     if(buff[0] == 0x7e)
@@ -122,8 +129,12 @@ static int reboot_cmd_handle(char *buff, char *rsp)
     if (NULL == buff)
     {
         ALOGE("%s,null pointer", __FUNCTION__);
-        sprintf(rsp, "\r\nERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+        if(rsp != NULL){
+            sprintf(rsp, "\r\nERROR\r\n");
+            return strlen(rsp);
+        }else{
+            return 0;
+        }
     }
 
     if(buff[0] == 0x7e)
@@ -164,8 +175,12 @@ static int reset_cmd_handle(char *buff, char *rsp)
     if (NULL == buff)
     {
         ALOGE("%s,null pointer", __FUNCTION__);
-        sprintf(rsp, "\r\nERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+        if(rsp != NULL){
+            sprintf(rsp, "\r\nERROR\r\n");
+            return strlen(rsp);
+        }else{
+            return 0;
+        }
     }
 
     pthread_attr_t attr;
@@ -175,6 +190,74 @@ static int reset_cmd_handle(char *buff, char *rsp)
     sprintf(rsp, "\r\nOK\r\n");
 
     return strlen(rsp);
+}
+
+int eng_usb_state(void) {
+    int fd = -1;
+    int ret = 0;
+    char usb_state[32] = {0};
+    fd = open(USB_STATE_PAT, O_RDONLY);
+    if (fd >= 0) {
+        ret = read(fd, usb_state, 32);
+        if (ret > 0) {
+            if (0 == strncmp(usb_state, "CONFIGURED", 10)
+                || 0 == strncmp(usb_state, "CONNECTED", 9)) {
+                ret = 1;
+            } else {
+                ret = 0;
+            }
+        }
+        close(fd);
+    } else {
+        ret = 0;
+    }
+    return ret;
+}
+
+static int phone_poweroff(void)
+{
+    ENG_LOG("==== phone_poweroff enter ====\n");
+    sync();
+    android_reboot(ANDROID_RB_POWEROFF, 0, 0);
+    return 0;
+}
+
+void *eng_power_off_thread(void *x) {
+    while(1){
+        int usb_plugin = eng_usb_state();
+        if(!usb_plugin){
+            //Do power off work while USB_DISCONNECT
+            phone_poweroff();
+            break;
+        }
+        usleep(100 * 1000);
+    }
+    return 0;
+}
+int eng_diag_poweroff(char *buf, int len, char *rsp, int rsp_len)
+{
+    MSG_HEAD_T *msg_head_ptr;
+    int rlen = 0;
+
+    memcpy(rsp, buf, sizeof(MSG_HEAD_T)+1);
+    msg_head_ptr = (MSG_HEAD_T *)(rsp + 1);
+    msg_head_ptr->len = sizeof(MSG_HEAD_T);
+    msg_head_ptr->subtype = 0;
+
+    char boot_mode[PROPERTY_VALUE_MAX] = {'\0'};
+    property_get("ro.bootmode", boot_mode, NULL);
+    ENG_LOG("%s boot_mode = %s", __FUNCTION__, boot_mode);
+    if (!strcmp(boot_mode, "cali")){
+        pthread_attr_t attr;
+        pthread_t pthread;
+        pthread_attr_init(&attr);
+        pthread_create(&pthread, &attr, eng_power_off_thread, NULL);
+    }else{
+        phone_poweroff();
+    }
+
+    rsp[msg_head_ptr->len+1] = 0x7e;
+    return msg_head_ptr->len+2;
 }
 
 #ifdef __cplusplus
@@ -196,6 +279,11 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
     sprintf((reg + moudles_num)->at_cmd, "%s", AT_ETSRESET);
     (reg + moudles_num)->eng_linuxcmd_func = reset_cmd_handle;
+    moudles_num++;
+
+    (reg+moudles_num)->type = 0x11;
+    (reg+moudles_num)->subtype = 0x0E;
+    (reg+moudles_num)->eng_diag_func = eng_diag_poweroff;
     moudles_num++;
 
     *num = moudles_num;

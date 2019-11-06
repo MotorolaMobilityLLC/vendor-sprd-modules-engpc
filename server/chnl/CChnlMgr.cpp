@@ -167,10 +167,10 @@ void CChnlMgr::resetWithDevName(const char* devname, bool enable){
     if (lpDev != NULL){
         lpDev->enablePortRD(enable);
         lpDev->enablePortWR(enable);
+        lpDev->enablePort(DEV_MODEM_AT_NAME, true, true);
     }
-    //cp com at alway enable true
-    lpDev->enablePort(DEV_MODEM_AT_NAME, true, true);
 
+    //cp com at alway enable true
     m_lpChnlThreadMgr->restartWithDev(devname);
 }
 

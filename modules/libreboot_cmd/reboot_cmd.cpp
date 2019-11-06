@@ -107,7 +107,7 @@ static int dloader_handle(char *buff, char *rsp)
 
     if (strncasecmp(ptr, AT_AUTODLOADER,strlen(AT_AUTODLOADER)) == 0){
         //android_reboot(ANDROID_RB_RESTART2, 0, "autodloader");
-        
+
         pthread_attr_t attr;
         pthread_t pthread;
         pthread_attr_init(&attr);
@@ -116,7 +116,9 @@ static int dloader_handle(char *buff, char *rsp)
     }else{
         sprintf(rsp, "\r\nERROR\r\n");
     }
-
+    if(buff[0] != 0x7e){
+        free(ptr);
+    }
     return strlen(rsp);
 }
 

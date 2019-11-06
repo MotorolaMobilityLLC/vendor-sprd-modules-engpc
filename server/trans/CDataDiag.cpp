@@ -27,6 +27,9 @@ int CDataDiag::process(char* req, int reqlen, char* rsp, int rsplen, int& retlen
         ret = DYMIC_RET_ALSO_NEED_TO_CP;
     }
 
+    if (m_lpModMgr == NULL){
+        return ret;
+    }
     if (checkPending(rsp, rsplen)){
         m_lpModMgr->setPendingMark();
         setPendingMark(true);

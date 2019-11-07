@@ -10,6 +10,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/reboot.h>
+#include <unistd.h>
 #include <cutils/android_reboot.h>
 #include <cutils/properties.h>
 
@@ -228,8 +229,10 @@ int eng_diag_bootreset(unsigned char *buf, int len, char *rsp)
     char *temp= (char*)msg_head_ptr + sizeof(MSG_HEAD_T);
     sprintf(temp, "%s", data);
     temp[rlen] = 0x7e;
-
     ENG_LOG("%s:rlen=%d; %s", __FUNCTION__, rlen, rsp);
+
+    sync();
+    android_reboot(ANDROID_RB_RESTART2, 0, "cftreboot");
     return msg_head_ptr->len+2;
   }
 

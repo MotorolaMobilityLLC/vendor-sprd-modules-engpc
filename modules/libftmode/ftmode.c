@@ -23,14 +23,13 @@
 
 #define TESTMODE_OFFSET (9*1024+32)
 #define UBOOT_TESTMOD_CHECKSUM 0x53464d00
-#define CMDLINE_MODE_FLAG "first_mode="
 
 typedef struct _MODEID_NAME{
     unsigned int id;
     char name[64];
 }MODE_ID_NAME;
 
-MODE_ID_NAME id_name[]= {
+MODE_ID_NAME id_first_mode[]= {
     {0x00, "NORMAL"},
     {0x01, "GSMCAL"},
     {0x02, "GSMFT"},
@@ -54,27 +53,51 @@ MODE_ID_NAME id_name[]= {
     {0x16, "UPT"}
 };
 
+MODE_ID_NAME id_cali_mode[]= {
+    {0x00, "NORMAL"},
+    {0x01, "GSMCAL"},
+    {0x05, "GSMFT"},
+    {0x07, "TDSCAL"},
+    {0x08, "TDSFT"},
+    {0x0B, "WCDMACAL"},
+    {0x0C, "WCDMAFT"},
+    {0x10, "LTECAL"},
+    {0x11, "LTEFT"},
+    {0x12, "C2KCAL"},
+    {0x13, "C2KFT"},
+    {0x18, "NRCAL"},
+    {0x19, "NRFT"},
+};
+
 static char testmode_rsp[]={0x7E, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0xFE, 0xFF, 0x7E};
 
-unsigned int  findIdWithName(char* name){
+unsigned int findIdWithName(char* name){
     if (name == NULL) return 0xFF;
     ENG_LOG("name: %s", name);
 
-    for(int i = 0; i < sizeof(id_name)/sizeof(MODE_ID_NAME); i++){
-        if (strcasecmp(id_name[i].name, name) == 0){
-            return id_name[i].id;
+    for(int i = 0; i < sizeof(id_first_mode)/sizeof(MODE_ID_NAME); i++){
+        if (strcasecmp(id_first_mode[i].name, name) == 0){
+            return id_first_mode[i].id;
         }
     }
 
     return 0xFF;
 }
 
-char* findNameWithId(int id){
+char* findNameWithId(int id, int modeFlag){
     ENG_LOG("id: 0x%x", id);
+    int mode_num[] = {sizeof(id_first_mode)/sizeof(MODE_ID_NAME),
+                      sizeof(id_cali_mode)/sizeof(MODE_ID_NAME)};
+    MODE_ID_NAME* idName;
+    if(modeFlag == 0){
+      idName = id_first_mode;
+    }else if(modeFlag == 1){
+      idName = id_cali_mode;
+    }
 
-    for(int i = 0; i < sizeof(id_name)/sizeof(MODE_ID_NAME); i++){
-        if (id_name[i].id == id){
-            return id_name[i].name;
+    for(int i = 0; i < mode_num[modeFlag]; i++){
+        if (idName[i].id == id){
+            return idName[i].name;
         }
     }
 
@@ -136,6 +159,8 @@ int getTestMode(char *req, char *rsp){
     unsigned int value = 0x00;
     char* str = NULL;
     char* mode = 0;
+    char* cmdline_mode_flag[] = {"first_mode=","cali_mode="};
+    int mode_flag = 0;
 
     ENG_LOG("%s ", __FUNCTION__);
 
@@ -144,12 +169,20 @@ int getTestMode(char *req, char *rsp){
         if ((ret = read(fd, cmdline, sizeof(cmdline) - 1)) > 0) {
             ENG_LOG("cmdline %s\n", cmdline);
             /*like this first_mode=11*/
-            value = parse_key_value(cmdline, CMDLINE_MODE_FLAG);
+            int mode_flag_num = sizeof(cmdline_mode_flag)/sizeof(cmdline_mode_flag[0]);
+            for(int i = 0; i < mode_flag_num; i++){
+                if(strstr(cmdline, cmdline_mode_flag[i])){
+                    value = parse_key_value(cmdline, cmdline_mode_flag[i]);
+                    mode_flag=i;
+                    break;
+                }
+            }
+
         }
         close(fd);
     }
 
-    mode = findNameWithId(value);
+    mode = findNameWithId(value, mode_flag);
     if (mode == NULL){
         sprintf(rsp, "+GETTESTMODE:0x%X\r\nOK\r\n", value);
     }else{

@@ -103,7 +103,7 @@ int CModuleMgr::process(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_l
         return processWcnAT(type, buf, len, rsp, rsp_len, cp_process);
     if (type == DATA_DIAG)
         return processDiag(type, buf, len, rsp, rsp_len, cp_process);
-    if (type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG||type == DATA_AGDSP_LOG)
+    if (type == DATA_AGDSP_LOG||type == DATA_AGDSP_MEM||type == DATA_AGDSP_PCM)
         return processSmp(type, buf, len, rsp, rsp_len, cp_process);
 
     return 0;

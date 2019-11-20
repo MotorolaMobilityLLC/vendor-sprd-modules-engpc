@@ -153,7 +153,7 @@ CPort* CPort::find(char* name){
 }
 
 int CPort::open(){
-    if(!m_bEnableRD && !m_bEnableRD){
+    if(!m_bEnableRD){
         error("enable is false.");
         return -1;
     }

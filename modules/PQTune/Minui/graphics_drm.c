@@ -325,6 +325,9 @@ static void DisableNonMainCrtcs(int fd, drmModeRes* resources, drmModeCrtc* main
   for (int i = 0; i < resources->count_connectors; i++) {
     drmModeConnector* connector = drmModeGetConnector(fd, resources->connectors[i]);
     drmModeCrtc* crtc = find_crtc_for_connector(fd, resources, connector);
+
+    if (!crtc) return;
+
     if (crtc->crtc_id != main_crtc->crtc_id) {
       DrmDisableCrtc(fd, crtc);
     }

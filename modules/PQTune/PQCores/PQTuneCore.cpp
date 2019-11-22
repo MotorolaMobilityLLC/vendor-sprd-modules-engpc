@@ -200,12 +200,32 @@ PQTuneCore::PQTuneCore(int ver)
 
 	version = ver;
 	abc = new AbcParser();
+	if (!abc) {
+		ALOGD("%s abc create fail\n", __func__);
+		return;
+	}
 	cms = new CmsParser();
+	if (!cms) {
+		ALOGD("%s cms create fail\n", __func__);
+		return;
+	}
 	bld = new BldParser();
+	if (!bld) {
+		ALOGD("%s bld create fail\n", __func__);
+		return;
+	}
 	gamma = new GammaParser();
+	if (!gamma) {
+		ALOGD("%s gamma create fail\n", __func__);
+		return;
+	}
 	hsv = NULL;
 	hsv_size = 0;
 	ctx = (uint08_t *)malloc(sizeof(pq_tuning_parm));
+	if (!ctx) {
+		ALOGD("%s ctx create fail\n", __func__);
+		return;
+	}
 	tune_sizes = sizeof(pq_tuning_parm);
 	gamma_size = sizeof(gamma_common);
 	bld_size = sizeof(bld_common);
@@ -218,11 +238,16 @@ PQTuneCore::PQTuneCore(int ver)
 
 PQTuneCore:: ~PQTuneCore()
 {
-	delete abc;
-	delete cms;
-	delete bld;
-	delete gamma;
-	free(ctx);
+	if (abc)
+		delete abc;
+	if (cms)
+		delete cms;
+	if (bld)
+		delete bld;
+	if (gamma)
+		delete gamma;
+	if (ctx)
+		free(ctx);
 }
 
 int  PQTuneCore::tune_version()

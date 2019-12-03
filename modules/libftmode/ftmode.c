@@ -23,6 +23,8 @@
 
 #define TESTMODE_OFFSET (9*1024+32)
 #define UBOOT_TESTMOD_CHECKSUM 0x53464d00
+#define CMDLINE_FIRST_MODE_FLAG "first_mode="
+#define CMDLINE_CALI_MODE_FLAG "calibration="
 
 typedef struct _MODEID_NAME{
     unsigned int id;
@@ -54,19 +56,19 @@ MODE_ID_NAME id_first_mode[]= {
 };
 
 MODE_ID_NAME id_cali_mode[]= {
-    {0x00, "NORMAL"},
-    {0x01, "GSMCAL"},
-    {0x05, "GSMFT"},
-    {0x07, "TDSCAL"},
-    {0x08, "TDSFT"},
-    {0x0B, "WCDMACAL"},
-    {0x0C, "WCDMAFT"},
-    {0x10, "LTECAL"},
-    {0x11, "LTEFT"},
-    {0x12, "C2KCAL"},
-    {0x13, "C2KFT"},
-    {0x18, "NRCAL"},
-    {0x19, "NRFT"},
+    {0, "NORMAL"},
+    {1, "GSMCAL"},
+    {5, "GSMFT"},
+    {7, "TDSCAL"},
+    {8, "TDSFT"},
+    {11, "WCDMACAL"},
+    {12, "WCDMAFT"},
+    {16, "LTECAL"},
+    {17, "LTEFT"},
+    {18, "C2KCAL"},
+    {19, "C2KFT"},
+    {24, "NRCAL"},
+    {25, "NRFT"},
 };
 
 static char testmode_rsp[]={0x7E, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0xFE, 0xFF, 0x7E};
@@ -128,10 +130,11 @@ char* trim(char *str){
     return sp;
 }
 
-int parse_key_value(char* buf, char* key) {
+int parse_key_value(char* buf, char* key, int flag_mode) {
     int len = 0;
-    char value[8] = "00";
+    char value[8] = {0};
     char* str = NULL;
+    char* gap = NULL;
 
     str = strstr(buf, key);
     if (str != NULL){
@@ -139,7 +142,11 @@ int parse_key_value(char* buf, char* key) {
         if (str != NULL){
             str++;
             if (str != NULL){
-                char* gap = strchr(str, ' ');
+                if(flag_mode == 0){
+                    gap=strchr(str, ' ');
+                }else{
+                    gap=strchr(str, ',');
+                }
                 if (gap != NULL){
                     len = gap - str;
                 }else{
@@ -149,8 +156,9 @@ int parse_key_value(char* buf, char* key) {
             }
         }
     }
-
-    return strtol(value, NULL, 16);
+   
+    return strtol(value, NULL, flag_mode == 1 ? 10 : 16);
+    
 }
 
 int getTestMode(char *req, char *rsp){
@@ -159,26 +167,25 @@ int getTestMode(char *req, char *rsp){
     unsigned int value = 0x00;
     char* str = NULL;
     char* mode = 0;
-    char* cmdline_mode_flag[] = {"first_mode=","cali_mode="};
     int mode_flag = 0;
 
     ENG_LOG("%s ", __FUNCTION__);
 
     fd = open("/proc/cmdline", O_RDONLY);
+
     if (fd >= 0) {
         if ((ret = read(fd, cmdline, sizeof(cmdline) - 1)) > 0) {
             ENG_LOG("cmdline %s\n", cmdline);
-            /*like this first_mode=11*/
-            int mode_flag_num = sizeof(cmdline_mode_flag)/sizeof(cmdline_mode_flag[0]);
-            for(int i = 0; i < mode_flag_num; i++){
-                if(strstr(cmdline, cmdline_mode_flag[i])){
-                    value = parse_key_value(cmdline, cmdline_mode_flag[i]);
-                    mode_flag=i;
-                    break;
-                }
-            }
 
+            /*like this first_mode=11*/
+            if(strstr(cmdline, CMDLINE_FIRST_MODE_FLAG)){
+                value = parse_key_value(cmdline, CMDLINE_FIRST_MODE_FLAG, mode_flag);
+            }else if(strstr(cmdline, CMDLINE_CALI_MODE_FLAG)){
+                mode_flag=1;
+                value = parse_key_value(cmdline, CMDLINE_CALI_MODE_FLAG, mode_flag);
+            }
         }
+
         close(fd);
     }
 

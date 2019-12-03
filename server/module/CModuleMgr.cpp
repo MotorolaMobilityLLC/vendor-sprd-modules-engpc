@@ -128,6 +128,11 @@ int CModuleMgr::processDiag(DATA_TYPE type, char *buf, int len, char *rsp, int r
             if (NULL != modules_list->callback.eng_linuxcmd_func) {
                 rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
 
+                //if lib*.so return not support, then continue
+                if (rlen == ENG_DIAG_RET_UNSUPPORT){
+                    EngLog::debug("%s eng_diag_func return %d, continue find next callback func", __FUNCTION__, ENG_DIAG_RET_UNSUPPORT);
+                    continue;
+                }
                 //for case :need to ap & cp
                 if (modules_list->callback.also_need_to_cp) {
                     cp_process = 1;
@@ -223,6 +228,11 @@ int CModuleMgr::processAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp
             if (NULL != modules_list->callback.eng_linuxcmd_func) {
                 rlen = modules_list->callback.eng_linuxcmd_func(buf, rsp);
 
+                //if lib*.so return not support, then continue
+                if (rlen == ENG_DIAG_RET_UNSUPPORT){
+                    EngLog::info("%s: eng_at_dymic_hdlr return ENG_DIAG_RET_UNSUPPORT, continue", __FUNCTION__);
+                    continue;
+                }
                 //for case :need to ap & cp
                 if (modules_list->callback.also_need_to_cp) {
                     cp_process = 1;

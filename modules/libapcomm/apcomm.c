@@ -101,7 +101,7 @@ static int getEmmcDDRSize_handle(char *buff, char *rsp)
 
         szDDR = getSize(SIZE_DDR);
         memset(buff, 0, sizeof(buff));
-        if (szDDR > 1024){
+        if (szDDR >= 1024){
             sprintf(buff, "%4.2f GB", ((float)szDDR)/1024);
         }else{
             sprintf(buff, "%4.2f MB", ((float)szDDR));

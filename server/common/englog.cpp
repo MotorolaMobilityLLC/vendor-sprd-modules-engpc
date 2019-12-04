@@ -33,10 +33,10 @@ int EngLog::logLevelHandle(char* buff, char* rsp){
     char cmd_buf[256] = {0};
     int ret = -1;
     int nlen = 0;
-    if (NULL == buff)
-    {
-        sprintf(rsp, "\r\nERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+    if(NULL == rsp){
+        return 0;
+    }else if(NULL == buff){
+        return sprintf(rsp, "\r\nERROR\r\n");
     }
 
     if(buff[0] == 0x7e)
@@ -64,8 +64,6 @@ int EngLog::logLevelHandle(char* buff, char* rsp){
             }else{
                 sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: unknown at\r\n");
             }
-        }else{
-            sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: unknown at\r\n");
         }
     }else{
         sprintf(rsp, "\r\n+SPENGPCLOGLEVEL: unknown at\r\n");

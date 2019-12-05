@@ -34,35 +34,33 @@
 int exec_time;
 
 /* function prototypes */
-void benchmark(void* arg)
+static void benchmark(void* arg)
 {
 	/* Math module parameters in this version */
 	long I;
 	long N1, N2, N3, N4, N6, N7, N8, N9, N10, N11;
 	double X1, X2, X3, X4, X, Y, Z, T, T1, T2, E1[5];
 	long LOOP;
-	int i, J, K, L, II, JJ, loopstart;
+	int J, K, L, II, JJ, loopstart;
 	int timeout = exec_time?exec_time:10;
 
 	/* Time parameter */
 	struct timeval start,end;
 	double timeuse,alltime;
 	float KIPS;
-
-	int cpu_number = sysconf(_SC_NPROCESSORS_CONF);
-	cpu_set_t get;
+	/*CPU affinity*/
 	cpu_set_t mask;
 	int *a = (int *)arg;
 
 	CPU_ZERO(&mask);
 	CPU_SET(*a,&mask);
 
-	//set thread affinity
 	if (sched_setaffinity(0, sizeof(mask), &mask) == -1) {
 		ENG_LOG("Ucpubench warning: could not set CPU affinity, continuing...\n");
 	}
 
 	loopstart = 10000;	  /* see the note about LOOP below */
+	alltime = 0;
 
 LCONT:
 	//Start benchmark timing at this point.
@@ -241,7 +239,7 @@ C--------------------------------------------------------------------
 	else
 		ENG_LOG("BENCH-ucpubench: %.1f KIPS\n", KIPS);
 }
-int function_test (char *req, char *rsp)
+static int benchmark_test (char *req, char *rsp)
 {
 	int ret, ret_thrd;
 	void *retval;
@@ -250,6 +248,7 @@ int function_test (char *req, char *rsp)
 	int tid[THREAD_MAX_NUM];
 	char *ptr = NULL;
 	int nlen = 0;
+	bool is_at_cmd = true;
 	int i,j;
 
 	if (NULL == req) {
@@ -264,6 +263,7 @@ int function_test (char *req, char *rsp)
 
 	if (req[0] == 0x7e) {
 		ptr = req + 1 + sizeof(MSG_HEAD_T);
+		is_at_cmd = false;
 	} else {
 		ptr = strdup(req);
 	}
@@ -271,12 +271,12 @@ int function_test (char *req, char *rsp)
 	exec_time = 0;
 	if (strncasecmp(ptr, AT_BENCHMARK, strlen(AT_BENCHMARK)) == 0) {
 		nlen = strlen(ptr) - strlen(AT_BENCHMARK);
-		ptr = ptr + strlen(AT_BENCHMARK);
+		char *ptrpara = ptr + strlen(AT_BENCHMARK);
 		for (i = 0; i < nlen; i++) {
-			if (ptr[i] == 't' || ptr[i] == 'T') {
+			if (ptrpara[i] == 't' || ptrpara[i] == 'T') {
 				for (j=1; j < nlen; j++) {
-					if (ptr[i+j] >= '0' && ptr[i+j] <= '9') {
-						exec_time = exec_time*10 + (ptr[i+j] - '0');
+					if (ptrpara[i+j] >= '0' && ptrpara[i+j] <= '9') {
+						exec_time = exec_time*10 + (ptrpara[i+j] - '0');
 					}
 					else
 						break;
@@ -285,10 +285,12 @@ int function_test (char *req, char *rsp)
 		}
 	}
 
-	ENG_LOG("ucpubench benchmark test :enter function test :AT+BENCHMARK!");
-	ENG_LOG("Ucpubench benchmark test will execution time: %d second!", __FUNCTION__, exec_time?exec_time:10);
-	ENG_LOG("Ucpubench Create %d thread for benchmark test!\n", cpu_number);
+	if (is_at_cmd && ptr != NULL) {
+		free(ptr);
+	}
 
+	ENG_LOG("ucpubench benchmark test :enter function test :AT+BENCHMARK!");
+	ENG_LOG("Ucpubench Create %d thread for benchmark test!\n", cpu_number);
 	sprintf(rsp, "%s", "AT+BENCHMARK rsp");
 	memset(tid, -1, sizeof(tid));
 	thread = (pthread_t *)malloc(sizeof(pthread_t)*cpu_number);
@@ -319,7 +321,7 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
 	//1st command
 	sprintf(reg->at_cmd, "%s", AT_BENCHMARK);
-	reg->eng_linuxcmd_func = function_test;
+	reg->eng_linuxcmd_func = benchmark_test;
 	moudles_num++;
 
 	*num = moudles_num;

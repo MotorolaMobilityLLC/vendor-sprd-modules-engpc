@@ -32,6 +32,7 @@
 
 #define AT_BENCHMARK "AT+BENCHMARK="
 int exec_time;
+float ucpubench_result[10];
 
 /* function prototypes */
 static void benchmark(void* arg)
@@ -56,7 +57,7 @@ static void benchmark(void* arg)
 	CPU_SET(*a,&mask);
 
 	if (sched_setaffinity(0, sizeof(mask), &mask) == -1) {
-		ENG_LOG("Ucpubench warning: could not set CPU affinity, continuing...\n");
+		ENG_LOG("Ucpubench warning: could not set CPU%d affinity, continuing...\n", (int) *a+1);
 	}
 
 	loopstart = 10000;	  /* see the note about LOOP below */
@@ -225,20 +226,31 @@ C--------------------------------------------------------------------
 	if (alltime <= timeout)
 		goto LCONT;
 
-	ENG_LOG("Ucpubench Loops: %ld, Iterations: %d, Duration: %lf sec.\n",
-			LOOP, II, alltime);
+	ENG_LOG("CPU%d Ucpubench Loops: %ld, Iterations: %d, Duration: %lf sec.\n",
+			 (int)*a+1, LOOP, II, alltime);
 
 	KIPS = (100.0*LOOP*II)/(float)(timeuse);
-	if (KIPS >= 1000.0)
-		ENG_LOG("C Converted Double Precision ucpubenchs: %.1f MIPS\n", KIPS/1000.0);
-	else
-		ENG_LOG("C Converted Double Precision ucpubenchs: %.1f KIPS\n", KIPS);
-
-	if (KIPS >= 1000.0)
-		ENG_LOG("BENCH-ucpubench: %.1f MIPS\n", KIPS/1000.0);
-	else
-		ENG_LOG("BENCH-ucpubench: %.1f KIPS\n", KIPS);
+	ENG_LOG("CPU%d BENCH-ucpubench: %.1f MIPS\n", (int)*a+1, KIPS/1000.0);
+	ucpubench_result[(int)*a] = KIPS/1000.0;
 }
+
+#define DIV_UCPUBENCH(a,b) fabs(a-b) / (a>b?a:b)
+static int ucpubench_result_check(int cpu_num, int diff)
+{
+	int i, j;
+	float tmp;
+	for (i = 0; i < cpu_num-1; i++) {
+		for (j = i + 1; j < cpu_num; j++)
+			if(ucpubench_result[i] && ucpubench_result[j]) {
+				tmp = DIV_UCPUBENCH(ucpubench_result[i], ucpubench_result[j]);
+				if (tmp*100 > diff) {
+					return ucpubench_result[i] > ucpubench_result[j]?(j+1):(i+1);
+				}
+			}
+	}
+	return 0;
+}
+
 static int benchmark_test (char *req, char *rsp)
 {
 	int ret, ret_thrd;
@@ -246,9 +258,13 @@ static int benchmark_test (char *req, char *rsp)
 	int cpu_number = sysconf(_SC_NPROCESSORS_CONF);
 	pthread_t *thread;
 	int tid[THREAD_MAX_NUM];
+	char buff[256];
+	int buff_offset;
 	char *ptr = NULL;
 	int nlen = 0;
 	bool is_at_cmd = true;
+	bool pthread_flag = true;
+	int diff_value, abnormal_cpu;
 	int i,j;
 
 	if (NULL == req) {
@@ -269,6 +285,9 @@ static int benchmark_test (char *req, char *rsp)
 	}
 
 	exec_time = 0;
+	diff_value = 0;
+	abnormal_cpu = 0;
+	memset(&ucpubench_result, 0 ,sizeof(int));
 	if (strncasecmp(ptr, AT_BENCHMARK, strlen(AT_BENCHMARK)) == 0) {
 		nlen = strlen(ptr) - strlen(AT_BENCHMARK);
 		char *ptrpara = ptr + strlen(AT_BENCHMARK);
@@ -282,16 +301,25 @@ static int benchmark_test (char *req, char *rsp)
 						break;
 				}
 			}
+			if (ptrpara[i] == 'd' || ptrpara[i] == 'D') {
+				for (j=1; j < nlen; j++) {
+					if (ptrpara[i+j] >= '0' && ptrpara[i+j] <= '9') {
+						diff_value = diff_value*10 + (ptrpara[i+j] - '0');
+					}
+					else
+						break;
+				}
+			}
 		}
 	}
 
+	diff_value = diff_value?diff_value:5;
 	if (is_at_cmd && ptr != NULL) {
 		free(ptr);
 	}
 
 	ENG_LOG("ucpubench benchmark test :enter function test :AT+BENCHMARK!");
 	ENG_LOG("Ucpubench Create %d thread for benchmark test!\n", cpu_number);
-	sprintf(rsp, "%s", "AT+BENCHMARK rsp");
 	memset(tid, -1, sizeof(tid));
 	thread = (pthread_t *)malloc(sizeof(pthread_t)*cpu_number);
 	for (i = 0; i < cpu_number; i++)
@@ -299,6 +327,7 @@ static int benchmark_test (char *req, char *rsp)
 		tid[i] = i;
 		ret_thrd = pthread_create(&thread[i], NULL, (void *)&benchmark, (void *) &tid[i]);
 		if (ret_thrd == 1) {
+			pthread_flag = false;
 			ENG_LOG("Ucpubench thread%d create failed!\n", i);
 			exit(1);
 		}
@@ -306,12 +335,40 @@ static int benchmark_test (char *req, char *rsp)
 
 	for (i = 0; i < cpu_number; i++) {
 		ret = pthread_join(thread[i], &retval);
-		//ENG_LOG("ucpubench%d return value(retval) is %d\n", i, (int)retval);
-		if (ret != 0)
+		if (ret != 0) {
+			pthread_flag = false;
 			ENG_LOG("ucpubench%d failed return value(ret) is %d\n", i, ret);
+		}
 	}
-	ENG_LOG("Ucpubench Benchmark test %dsec end!\n", exec_time?exec_time:10);
 
+	if (!pthread_flag) {
+		sprintf(rsp, "%s", "BENCHMARK create or run failed!Please check logcat in details.\n");
+		ENG_LOG("Ucpubench Benchmark test failed!\n");
+	} else {
+		memset(buff, 0, sizeof(buff));
+		sprintf(buff, "%s", "Ucpubench score:\n");
+		strcat(rsp, buff);
+		memset(buff, 0, sizeof(buff));
+		buff_offset = 0;
+
+		for (i = 0; i < cpu_number; i++) {
+			sprintf(buff + buff_offset, "CPU%d: {%.1f};\n", i+1, ucpubench_result[i]);
+			buff_offset = strlen(buff);
+		}
+
+		strcat(rsp, buff);
+		strcat(rsp, "\r\n");
+		abnormal_cpu = ucpubench_result_check(cpu_number, diff_value);
+		memset(buff, 0, sizeof(buff));
+		if (abnormal_cpu == 0) {
+			sprintf(buff, "Ucpubench Benchmark test Pass. \r\n");
+			ENG_LOG("Ucpubench Benchmark test %d seconds end!\n", exec_time?exec_time:10);
+		} else {
+			sprintf(buff, "Ucpubench Benchmark CPU%d failed. \n", abnormal_cpu);
+			ENG_LOG("Ucpubench Benchmark test Failed.\r\n");
+		}
+		strcat(rsp, buff);
+	}
 	return strlen(rsp);;
 }
 void register_this_module_ext(struct eng_callback *reg, int *num)

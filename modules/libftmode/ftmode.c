@@ -191,9 +191,9 @@ int getTestMode(char *req, char *rsp){
 
     mode = findNameWithId(value, mode_flag);
     if (mode == NULL){
-        sprintf(rsp, "+GETTESTMODE:0x%X\r\nOK\r\n", value);
+        sprintf(rsp, "+GETTESTMODE:0x%X", value);
     }else{
-        sprintf(rsp, "+GETTESTMODE:%s\r\nOK\r\n", mode);
+        sprintf(rsp, "+GETTESTMODE:%s", mode);
     }
 
     return strlen(rsp);
@@ -254,9 +254,9 @@ int setTestMode(char *req, char *rsp){
     }
 
     if (ret == 0){
-        sprintf(rsp, "+SETTESTMODE:OK \r\nOK\r\n");
+        sprintf(rsp, "+SETTESTMODE:OK");
     }else{
-        sprintf(rsp, "+SETTESTMODE: ERROR %d\r\n", ret);
+        sprintf(rsp, "+SETTESTMODE: ERROR %d", ret);
     }
 
     if (req[0] != 0x7e && ptrTmp != NULL){

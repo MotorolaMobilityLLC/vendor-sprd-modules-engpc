@@ -13,7 +13,6 @@ LOCAL_C_INCLUDES:= \
     $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc \
     $(TOP)/vendor/sprd/modules/libatci
 
-LOCAL_SHARED_LIBRARIES := libcutils libutils liblog libhidlbase libhidltransport libhwbinder vendor.sprd.hardware.radio@1.0
-LOCAL_STATIC_LIBRARIES += libatci
+LOCAL_SHARED_LIBRARIES := libcutils libutils liblog libhidlbase libhidltransport libhwbinder libatci
 
 include $(BUILD_SHARED_LIBRARY)

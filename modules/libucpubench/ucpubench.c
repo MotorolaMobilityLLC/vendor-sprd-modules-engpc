@@ -10,14 +10,14 @@
 #include <sys/types.h>
 
 #include "sprd_fts_type.h"
- #include "sprd_fts_log.h"
+#include "sprd_fts_log.h"
 
 #define __USE_GNU
 #define _GNU_SOURCE
 #include <math.h>
 #include "unistd.h"
 #include <pthread.h>
-#include<sched.h>
+#include <sched.h>
 
 /* map the FORTRAN math functions, etc. to the C versions */
 #define DSIN    sin

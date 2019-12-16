@@ -34,6 +34,7 @@ common_engpc_modules_dirs := charge \
                              PQTune \
                              tsensor \
                              libnefuse \
+                             libucpubench \
                              libapcomm
 
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

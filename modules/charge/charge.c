@@ -373,7 +373,7 @@ static int calibration_diag_control_charge(char *buf, int len, char *rsp, int rs
 	ENGPC_CHARGER_SWITCH_STATUS_RSP *rtstatus;
 	TOOLS_DIAG_AP_CHARGE_CMD *charge;
 
-	if (NULL == buf && NULL == rsp) {
+	if (NULL == buf || NULL == rsp) {
 		ENG_LOG("%s,null pointer", __FUNCTION__);
 		return 0;
 	}

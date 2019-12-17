@@ -461,7 +461,11 @@ static int parse_cms_config_table(cms_common_sharkl5 *cms, xmlNodePtr curNode)
 
 	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
-	propNode = subNode->children;
+
+	if (NULL != subNode)
+		propNode = subNode->children;
+	else
+		propNode = NULL;
 
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {
@@ -742,7 +746,11 @@ static int update_cms_config_table(cms_common_sharkl5 *cms, xmlNodePtr curNode)
 
 	ALOGD("curNode name %s \n",curNode->name);
 	subNode = curNode->children; //subNode table
-	propNode = subNode->children;
+
+	if (NULL != subNode)
+		propNode = subNode->children;
+	else
+		propNode = NULL;
 
 	while(NULL != subNode) {
 		if(xmlHasProp(subNode, BAD_CAST "mode")) {

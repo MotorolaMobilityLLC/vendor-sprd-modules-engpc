@@ -56,6 +56,7 @@ static int hw_chipid_get(char *req, char *rsp)
     unsigned int sizes;
     char *pchar;
     char *ptemp;
+    char *ptail;
     char cmdline[4096] = {0};
     char rsptemp[10] = {0};
 
@@ -76,7 +77,11 @@ static int hw_chipid_get(char *req, char *rsp)
 
     pchar = strstr(pchar, "=");
     ptemp = strchr(pchar + 1, '_');
-    sizes = ptemp - pchar - 1;
+    ptail = strchr(pchar + 1, ' ');
+    if (ptail < ptemp || !ptemp)
+	sizes = ptail - pchar - 1;
+    else
+	sizes = ptemp - pchar - 1;
     strncpy(rsptemp, pchar + 1, sizes);
     sprintf(rsp,"%s%s","BB:",rsptemp);
     ENG_LOG("AT+CHIPID=BB is %s",rsp);

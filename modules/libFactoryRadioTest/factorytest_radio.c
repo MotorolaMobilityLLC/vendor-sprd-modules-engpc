@@ -327,6 +327,7 @@ static int TestMakeCall (char *req, char *rsp) {
     at_tok_nextint(&ptr, &operate);
     at_tok_nextint(&ptr, &simNum);
     at_tok_nextstr(&ptr, &number);
+    free(ptr);
 
     ALOGD("operate = %d\n", operate);
     ALOGD("SIM num = %d\n", simNum);
@@ -456,6 +457,7 @@ static int TestCheckSIM (char *req, char *rsp) {
     ptr = strdup(req) ;
     ret = at_tok_flag_start(&ptr, '=');
     ret = at_tok_nextint(&ptr, &simNum);
+    free(ptr);
 
     ALOGD("SIM num = %d\n", simNum);
 

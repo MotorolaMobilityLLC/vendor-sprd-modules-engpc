@@ -259,6 +259,11 @@ int CModuleMgr::processSmp(DATA_TYPE type, char *buf, int len, char *rsp, int rs
 int CModuleMgr::processWcnAT(DATA_TYPE type, char *buf, int len, char *rsp, int rsp_len, int& cp_process){
     int rlen = 0;
 
+    rlen = processAT(type, buf, len, rsp, rsp_len, cp_process);
+    if (rlen > 0 || strlen(rsp) > 0){
+        return rlen;
+    }
+
     if (m_libHdl == NULL){
         bqb_vendor_open();
     }

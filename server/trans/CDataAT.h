@@ -1,10 +1,10 @@
 #ifndef __CDATA_AT_H__
 #define __CDATA_AT_H__
 
-#include "CProtol.h"
+#include "CProtolAT.h"
 #include "../module/CModuleMgr.h"
 
-class CDataAT:public CProtol{
+class CDataAT:public CProtolAT{
     public:
         CDataAT(CModuleMgr *lpModMgr);
         virtual ~CDataAT();

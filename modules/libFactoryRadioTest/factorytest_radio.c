@@ -327,7 +327,6 @@ static int TestMakeCall (char *req, char *rsp) {
     at_tok_nextint(&ptr, &operate);
     at_tok_nextint(&ptr, &simNum);
     at_tok_nextstr(&ptr, &number);
-    free(ptr);
 
     ALOGD("operate = %d\n", operate);
     ALOGD("SIM num = %d\n", simNum);
@@ -335,6 +334,7 @@ static int TestMakeCall (char *req, char *rsp) {
 
     if ((simNum < 1) || (simNum > 2) || (operate < 0) || (operate > 1)) {
         ALOGE("SIM num = %d error or operate = %d error!\n", simNum, operate);
+        free(ptr);
         return -1;
     }
 
@@ -359,6 +359,7 @@ static int TestMakeCall (char *req, char *rsp) {
         sendATCmd(fdCall, "ATH", NULL, 0, 0);//hang up
         sendATCmd(fdCall, "AT", NULL, 0, 0);
         close(fdCall);
+        free(ptr);
         return 0;
     }
 
@@ -369,9 +370,11 @@ static int TestMakeCall (char *req, char *rsp) {
     } else {
         ALOGE("number = %s error!\n", number);
         close(fdCall);
+        free(ptr);
         return -1;
     }
 
+    free(ptr);
     sendATCmd(fdCall, "AT+SFUN=5", NULL, 0, 0);     //close protocol
     usleep(3000 * 1000);
 

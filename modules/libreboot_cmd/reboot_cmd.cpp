@@ -165,6 +165,11 @@ static int reboot_cmd_handle(char *buff, char *rsp)
         sprintf(rsp, "\r\nERROR\r\n");
     }
 
+    if(buff[0] != 0x7e){
+        free(ptr);
+        ptr = NULL;
+    }
+
     return strlen(rsp);
 }
 

@@ -35,6 +35,7 @@ common_engpc_modules_dirs := charge \
                              tsensor \
                              libnefuse \
                              libucpubench \
-                             libapcomm
+                             libapcomm \
+                             libtouchscreen
 
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

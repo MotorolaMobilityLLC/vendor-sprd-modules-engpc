@@ -24,6 +24,7 @@ LOCAL_C_INCLUDES += \
         $(TOP)/vendor/sprd/proprietories-source/engpc/server/chnl \
         $(TOP)/vendor/sprd/proprietories-source/engpc/server/trans \
         $(TOP)/vendor/sprd/proprietories-source/engpc/server/common \
+        $(TOP)/vendor/sprd/proprietories-source/engpc/server/module \
         $(TOP)/vendor/sprd/proprietories-source/engpc/server/adapt \
         vendor/sprd/modules/wcn/bt/libbqbbt/include/ \
 

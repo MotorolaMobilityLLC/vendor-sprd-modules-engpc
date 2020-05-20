@@ -3,10 +3,11 @@
 
 #include <stdio.h>
 
+#include "CBase.h"
 #include "channel.h"
 #include "CChnlThreadMgr.h"
-#include "../module/CModuleMgr.h"
-#include "CBase.h"
+#include "CModuleMgr.h"
+#include "CDevMgr.h"
 
 class CChnl:public CBase{
     public:

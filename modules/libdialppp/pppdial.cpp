@@ -73,19 +73,24 @@ extern "C" void register_this_module_ext(struct eng_callback *reg, int *num)
     (reg + moudles_num)->eng_linuxcmd_func = dialPPP;
     moudles_num++;
 
-    //2st command
+    //2nd command
     sprintf((reg + moudles_num)->at_cmd, "%s", "AT\r");
     (reg + moudles_num)->eng_linuxcmd_func = beforeDialHandle;
     moudles_num++;
 
-    //2st command
+    //3rd command
     sprintf((reg + moudles_num)->at_cmd, "%s", "ATE0V1\r");
     (reg + moudles_num)->eng_linuxcmd_func = beforeDialHandle;
     moudles_num++;
 
-    //4st command
+    //4th command
     sprintf((reg + moudles_num)->at_cmd, "%s", "ATH E1\r");
     (reg + moudles_num)->eng_linuxcmd_func = HuangupHandle;
+    moudles_num++;
+
+    //5th command
+    sprintf((reg + moudles_num)->at_cmd, "%s", "ATD#777\r");
+    (reg + moudles_num)->eng_linuxcmd_func = dialPPP;
     moudles_num++;
 
     *num = moudles_num;

@@ -12,6 +12,7 @@
 
 #include "CPort.h"
 #include "frame.h"
+#include "CTrans.h"
 
 #define Info(fmt, args...) {\
         if (m_port.dataType != DATA_LOG) { \
@@ -246,9 +247,8 @@ int CPort::start(){
 }
 
 int CPort::stop(){
-    if(m_bEnableRD){
-    }
-    if(m_bEnableWR){
+    if (m_bSuspend){
+        notify(MSG_NOTIFY_EXIT, strlen(MSG_NOTIFY_EXIT));
     }
 
     return 0;
@@ -316,14 +316,14 @@ int CPort::internal_read(char* buff, int nLen){
         int ret = 0;
         int max_fd =0;
         FD_ZERO(&readfd);
-        FD_SET(m_fd,&readfd);
+        FD_SET(getFD(),&readfd);
         if (m_pipeMonitor >= 0){
             FD_SET(m_pipeMonitor, &readfd);
         }
 
         m_bSuspend = true;
         Info("read select...m_fd = %d, m_pipeMonitor = %d", m_fd, m_pipeMonitor);
-        max_fd = m_fd>m_pipeMonitor?m_fd:m_pipeMonitor;
+        max_fd = getFD()>m_pipeMonitor?getFD():m_pipeMonitor;
         ret = select(max_fd+1,&readfd,NULL,NULL,NULL);
         //Info("select return = %d", ret);
         if(ret == -1){
@@ -334,14 +334,20 @@ int CPort::internal_read(char* buff, int nLen){
             error("select time out");
         }else{
             if (FD_ISSET(m_pipeMonitor, &readfd)){
+                char msg[MAX_MSG_LEN] = {0};
                 Info("read notify...");
-                r_cnt = ::read(m_pipeMonitor, buff, rdSize);
-                Info("msg = %s", buff);
-                continue;
-            }else if(FD_ISSET(m_fd,&readfd)){// read
+                r_cnt = ::read(m_pipeMonitor, msg, sizeof(msg));
+                Info("msg = %s", msg);
+                if (strcasecmp(msg, MSG_NOTIFY_EXIT) == 0){
+                    offset = 0;
+                    break;
+                }else{
+                    continue;
+                }
+            }else if(FD_ISSET(getFD(),&readfd)){// read
                 int tmpOffset = 0;
                 Info("read...");
-                r_cnt = ::read(m_fd, buff+offset, rdSize);
+                r_cnt = ::read(getFD(), buff+offset, rdSize);
                 Info("===> recv size = %d", r_cnt);
                 printData(buff, r_cnt, 20, 1);
 
@@ -350,7 +356,7 @@ int CPort::internal_read(char* buff, int nLen){
                     if (errno == EBUSY) {
                         usleep(59000);
                         continue;
-                    } 
+                    }
                     if (0 == reopen(MAX_PORT_OPEN_TIMEOUT)){
                         Info("reopen succ");
                         continue;
@@ -359,7 +365,6 @@ int CPort::internal_read(char* buff, int nLen){
                         break;
                     }
                 }
-
                 offset += r_cnt;
 
                 // complete frame
@@ -421,10 +426,10 @@ int CPort::internal_write(char* buff, int nLen){
         int ret = 0;
         int max_fd = 0;
         FD_ZERO(&writefd);
-        FD_SET(m_fd,&writefd);
+        FD_SET(getFD(),&writefd);
 
         Info("write select...m_fd = %d", m_fd);
-        ret = select(m_fd+1,NULL,&writefd,NULL,NULL);
+        ret = select(getFD()+1,NULL,&writefd,NULL,NULL);
         Info("select return = %d", ret);
         if(ret == -1){
             error("select error");
@@ -433,22 +438,21 @@ int CPort::internal_write(char* buff, int nLen){
         }else if(ret == 0){
             error("select time out");
         }else{
-            if(FD_ISSET(m_fd,&writefd)){// write
+            if(FD_ISSET(getFD(),&writefd)){// write
 
                 Info("<=== send size = %d", nLen);
                 printData(buff, nLen, 20, 1);
                 if (bsplite)
-                    w_cnt = ::write(m_fd, buff+offset, nLen - 32);
+                    w_cnt = ::write(getFD(), buff+offset, nLen - 32);
                 else
-                    w_cnt = ::write(m_fd, buff+offset, nLen);
+                    w_cnt = ::write(getFD(), buff+offset, nLen);
                 Info("write w_cnt = %d", w_cnt);
-        
                 if (w_cnt < 0) {
                     error("write fail: %s", strerror(errno));
                     if (errno == EBUSY) {
                         usleep(59000);
                         continue;
-                    } 
+                    }
                     if (0 == reopen(MAX_PORT_OPEN_TIMEOUT)){
                         warn("reopen succ");
                         continue;

@@ -3,13 +3,13 @@
 
 #include <stdio.h>
 
-#include "CPort.h"
 #include "channel.h"
 #include "frame.h"
 
 #define MAX_CHNL_BUFF  (64*1024)
 
 class CPort;
+class CChnlThread;
 
 class  CTrans{
     public:
@@ -43,6 +43,8 @@ class  CTrans{
         CPort* getPortSrc(){return m_lpPortSrc;}
         CPort* getPortDst(){return m_lpPortDst;}
         int getApProcess() {return m_apProcess;}
+        void attach(CChnlThread* lptd){ m_lpChnlThread = lptd; }
+        void updatePortDst(CPort* lpDst) { m_lpPortDst = lpDst; }
         int error(const char* fmt, ...);
         int info(const char* fmt, ...);
         int warn(const char* fmt, ...);
@@ -61,6 +63,10 @@ class  CTrans{
         int m_nLenRsp;
         char m_chnl_buff_rsp[MAX_CHNL_BUFF];
         char m_chnl_buff_req_bk[MAX_CHNL_BUFF];
+
+        CChnlThread* m_lpChnlThread;
+
+        void activeOtherChnlDstPort();
 };
 
 

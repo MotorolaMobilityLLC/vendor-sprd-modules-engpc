@@ -42,7 +42,7 @@ int CChnlMgr::load(char* dirpath){
             EngConf *lpCnf = new EngConf();
             snprintf(path, sizeof(path), "%s/%s", dirpath, ptr->d_name);
             if (0 == lpCnf->parse(EngConf::CONF_CHNL, path)){
-                char chnlName[64] = {0};
+                char chnlName[BOOTMODE_NAME_LEN] = {0};
                 CChnl *lpChnl = NULL;
                 char* name=NULL, *sDev=NULL, *sPort=NULL, *dDev=NULL, *dPort=NULL;
                 char* act=NULL, *datatype=NULL, *enable=NULL, *ap_process=NULL, *reserved=NULL, *desc=NULL;

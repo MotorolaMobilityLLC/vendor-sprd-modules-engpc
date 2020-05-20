@@ -55,8 +55,8 @@ typedef struct {
 
 typedef struct {
 	unsigned short stu;
-	unsigned short cmd;
-	unsigned int reserved;
+	unsigned short value;
+	unsigned int cmd;
 } TOOLS_DIAG_AP_FGU_RESERVED;
 
 typedef struct {
@@ -451,12 +451,17 @@ static int eng_diag_read_fgu_voltage(char *buf, int len, char *rsp, int rsplen)
 	}
 
 	memcpy(rsp, buf, 1 + len);
-	TOOLS_DIAG_AP_FGU_RESERVED *cmd =
-			(TOOLS_DIAG_AP_FGU_RESERVED *)(rsp + 1 + sizeof(MSG_HEAD_T));
-	TOOLS_DIAG_AP_FGU_VOLTAGE *charge =
+	TOOLS_DIAG_AP_FGU_RESERVED *charge =
+			(TOOLS_DIAG_AP_FGU_RESERVED *)(buf + 1 + sizeof(MSG_HEAD_T));
+	TOOLS_DIAG_AP_FGU_VOLTAGE *aprsp =
 			(TOOLS_DIAG_AP_FGU_VOLTAGE *)(rsp + 1 + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_FGU_RESERVED));
-	charge->value = ap_get_fgu_voltage();
-	cmd->stu = 0x0;
+	if (0x06 == charge->cmd) {
+		aprsp->value = ap_get_fgu_voltage();
+	} else if (0x07 == charge->cmd) {
+		aprsp->value = ap_get_charge_current();
+	}
+
+	rsp[9] = 0x0;
 
 	return len ;
 }
@@ -544,8 +549,8 @@ static int ap_set_charge_current(int cur)
 }
 
 /*
- * send: 7E 05 00 00 00 10 00 62 00 22 00 04 00 F4 01 00 00 7E
- * ack:  7E 05 00 00 00 0C 00 62 00 00 00 02 00 7E
+ * send: 7E 05 00 00 00 10 00 62 00 /22 00 04 00 F4 01 00 00 7E
+ * ack:  7E 05 00 00 00 0C 00 62 00/ 00 00 02 00 7E
  */
 static int eng_diag_set_charge_current(char *buf, int len, char *rsp, int rsplen)
 {

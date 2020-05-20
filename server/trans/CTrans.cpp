@@ -6,6 +6,9 @@
 
 
 #include "CTrans.h"
+#include "CPort.h"
+#include "CChnlThread.h"
+#include "CChnlThreadMgr.h"
 #include "englog.h"
 #include "modules.h"
 
@@ -14,7 +17,6 @@
             info(fmt, ##args); \
         } \
     }
-
 
 CTrans::CTrans(){
 }
@@ -32,6 +34,20 @@ void CTrans::init(char* name, CPort* lpSrc, CPort* lpDst, int dataType, int apPr
     m_frameType = FRAME_COMPLETE;
     lpSrc->attach(this);
     lpDst->attach(this);
+}
+
+void CTrans::activeOtherChnlDstPort(){
+    info("activeOtherChnlDstPort: dev:%s, port: %s", m_lpPortSrc->getDevName(), m_lpPortSrc->getname());
+    if(m_lpChnlThread != NULL){
+        CChnlThreadMgr* mgr = m_lpChnlThread->getChnlThreadMgr();
+        if (mgr != NULL){
+            CChnlThread* lpChnlThread = mgr->findSameDstPort(m_lpPortSrc);
+            if ( lpChnlThread != NULL){
+                info("chnl thread: %s", lpChnlThread->getName());
+                lpChnlThread->activeDstPort(m_lpPortSrc);
+            }
+        }
+    }
 }
 
 int CTrans::pre_read(char* buff, int nlen){
@@ -111,6 +127,7 @@ int CTrans::trans(){
         CTrans* ptr = m_lpPortSrc->attach(this);
         r_cnt = m_lpPortSrc->read(m_chnl_buff_req, sizeof(m_chnl_buff_req));
         m_lpPortSrc->attach(ptr);
+        activeOtherChnlDstPort();
         Info("r_cnt = %d", r_cnt);
         
         //info("post read");

@@ -8,7 +8,6 @@
 
 #include "dev.h"
 #include "CBase.h"
-#include "CTrans.h"
 
 #define MAX_VSER_BUFF_LEN (8*1024)
 //For save r/w time BUFF%64==0 maybe write twice.
@@ -16,6 +15,8 @@
 #define MAX_PORT_BUFF_WR (MAX_VSER_BUFF_LEN*8 - 16)
 
 #define MAX_PORT_OPEN_TIMEOUT (5*60)
+
+#define MAX_MSG_LEN 256
 
 class CTrans;
 
@@ -66,7 +67,12 @@ class CPort:public CBase{
         const char* getname() { return m_port.portName; }
         const char* getpath() { return m_port.portPath; }
         const char* getDevName() { return m_devName; }
-        int getFD() {return m_fd;}
+        int getFD() {
+            pthread_mutex_lock(&m_mtx);
+            int fd = m_fd;
+            pthread_mutex_unlock(&m_mtx);
+            return fd;
+        }
         int getPortType() {return m_port.portType;}
         char* getPortTypeStr() {return PortType2str(m_port.portType);}
         CTrans* attach(CTrans* lpTrans);

@@ -4,7 +4,7 @@
 #include "CChnl.h"
 #include "CChnlThreadMgr.h"
 #include "CBase.h"
-#include "../module/CModuleMgr.h"
+#include "CModuleMgr.h"
 
 class CChnlMgr:public CBase{
     public:
@@ -25,7 +25,8 @@ class CChnlMgr:public CBase{
         void resetWithPortName(const char* devname, const char* portname);
 
         bool enable(const char *bootmode, bool enable);
-        CModuleMgr *getModMgr(){ return m_lpModMgr;}
+        CModuleMgr *getModMgr(){ return m_lpModMgr; }
+        CChnlThreadMgr *getChnlThreadMgr() { return m_lpChnlThreadMgr; }
 
         void print();
 

@@ -156,18 +156,33 @@ bool CChnl::runInThread(CHNL_PROP *lpChnlProp){
         info("name = %s, src = %s, dst = %s, dataType = %s, ap_process = %d", 
              lpChnlProp->name, lpSrcPort->getname(), lpDstPort->getname(), DataType2str(lpChnlProp->dataType), lpChnlProp->ap_process);
 
+
         int ap_process = (lpChnlProp->ap_process == 1) || (lpChnlProp->ap_process == 3)?1:0;
-        CChnlThread *td = new CChnlThread(m_lpModMgr, lpChnlProp->name, lpSrcPort, lpDstPort, lpChnlProp->dataType, ap_process);
-        td->run();
-        m_lpChnlThreadMgr->add(td);
+        CChnlThread *td = m_lpChnlThreadMgr->findSameSrcPort(lpSrcPort);
+        if ( td != NULL){
+            info("%s: add dest port", td->getName());
+            td->addDstPort(lpDstPort);
+        }else{
+            td = new CChnlThread(m_lpModMgr, lpChnlProp->name, lpSrcPort, lpDstPort, lpChnlProp->enable, lpChnlProp->dataType, ap_process);
+            td->addDstPort(lpDstPort);
+            td->run();
+            m_lpChnlThreadMgr->add(td);
+        }
 
         if (WORK_MODE_F == lpChnlProp->act){
             char buff[CHNL_NAME_LEN+2] = "0";
             sprintf(buff, "%s-R", lpChnlProp->name);
             ap_process = (lpChnlProp->ap_process == 2) || (lpChnlProp->ap_process == 3)?1:0;
-            CChnlThread *tdF = new CChnlThread(m_lpModMgr, buff, lpDstPort, lpSrcPort, lpChnlProp->dataType, ap_process);
-            tdF->run();
-            m_lpChnlThreadMgr->add(tdF);
+            CChnlThread *tdF = m_lpChnlThreadMgr->findSameSrcPort(lpDstPort);
+            if (tdF != NULL){
+                info("%s: add dest port", td->getName());
+                tdF->addDstPort(lpSrcPort);
+            }else{
+                tdF = new CChnlThread(m_lpModMgr, buff, lpDstPort, lpSrcPort, lpChnlProp->enable, lpChnlProp->dataType, ap_process);
+                tdF->addDstPort(lpSrcPort);
+                tdF->run();
+                m_lpChnlThreadMgr->add(tdF);
+            }
         }
 
     }else{

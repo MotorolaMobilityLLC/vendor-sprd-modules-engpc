@@ -2,7 +2,7 @@
 #define __CDATA_AGDSP_H__
 
 #include "CProtolSmp.h"
-#include "../module/CModuleMgr.h"
+#include "CModuleMgr.h"
 
 class CDataAgdsp:public CProtolSmp{
     public:

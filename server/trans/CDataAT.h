@@ -2,7 +2,7 @@
 #define __CDATA_AT_H__
 
 #include "CProtolAT.h"
-#include "../module/CModuleMgr.h"
+#include "CModuleMgr.h"
 
 class CDataAT:public CProtolAT{
     public:

@@ -9,7 +9,7 @@
 #include <sys/types.h>
 
 #include "CModuleMgr.h"
-#include "../common/englog.h"
+#include "englog.h"
 #include "modules.h"
 #include "bqb.h"
 #include "CProtolDiag.h"

@@ -6,7 +6,7 @@
 #define PORT_PROP_LEN       64
 #define PORT_RESERVED_LEN   128
 #define PORT_DESC_LEN       128
-#define BOOTMODE_NAME_LEN   32
+#define BOOTMODE_NAME_LEN   64
 #define DEV_NAME_LEN        32
 #define MAX_PORT_NUM        64
 #define MAX_MODE_NUM        16

@@ -64,7 +64,7 @@ int CDevMgr::load(char* dirpath){
             snprintf(path, sizeof(path), "%s/%s", dirpath, ptr->d_name);
             if (0 == lpCnf->parse(EngConf::CONF_DEV, path)){
                 char* bootmode=NULL,*name=NULL,*data_type=NULL,*port_type=NULL,*port_path=NULL,*reserved=NULL,*description=NULL;
-                char devName[64] = {0};
+                char devName[DEV_NAME_LEN] = {0};
                 CDev *lpDev = NULL;
 
                 strncpy(devName, ptr->d_name, strlen(ptr->d_name)-strlen(".conf"));

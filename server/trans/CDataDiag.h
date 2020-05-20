@@ -2,7 +2,7 @@
 #define __CDATA_DIAG_H__
 
 #include "CProtolDiag.h"
-#include "../module/CModuleMgr.h"
+#include "CModuleMgr.h"
 
 class CDataDiag:public CProtolDiag{
     public:

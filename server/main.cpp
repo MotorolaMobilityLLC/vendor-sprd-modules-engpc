@@ -13,10 +13,11 @@
 #include "CDevMgr.h"
 #include "CChnlThreadMgr.h"
 #include "CChnlMgr.h"
-#include "./module/CModuleMgr.h"
+#include "CModuleMgr.h"
 #include "bootmode.h"
 #include "adapter.h"
 #include "cpctl.h"
+#include "engctl.h"
 
 #define CHNL_DEV_DIR_PATH "/vendor/etc/engpc/dev"
 #define CHNL_CHNL_DIR_PATH "/vendor/etc/engpc/chnl"
@@ -135,6 +136,11 @@ int main(){
     CCPCtl* lpCpCtl = new CCPCtl();
     lpCpCtl->attach(lpChnlMgr);
     lpCpCtl->run();
+    //engpc ctl srv
+    EngLog::info("engpc ctrl");
+    CEngCtl* lpEngCtl = new CEngCtl();
+    lpEngCtl->attach(lpChnlMgr);
+    lpEngCtl->run();
 
     //is modem to pc? is wcn to pc?
     if (strcasecmp(bootmode, BOOTMODE_NORMAL) == 0 || strcasecmp(bootmode, BOOTMODE_NORMAL_LITE) == 0){

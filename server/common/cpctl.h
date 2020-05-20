@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include "CChnlMgr.h"
-#include "../module/CModuleMgr.h"
+#include "CModuleMgr.h"
 
 //cp log ctrl
 #define SOCK_CPLOGCTL_NAME "engpc_soc.l"

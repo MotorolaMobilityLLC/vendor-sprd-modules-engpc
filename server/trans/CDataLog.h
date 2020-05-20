@@ -2,7 +2,7 @@
 #define __CDATA_LOG_H__
 
 #include "CProtol.h"
-#include "../module/CModuleMgr.h"
+#include "CModuleMgr.h"
 
 class CDataLog:public CProtol{
     public:

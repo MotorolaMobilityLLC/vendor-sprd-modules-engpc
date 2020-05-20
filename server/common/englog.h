@@ -1,7 +1,7 @@
 #ifndef  __ENG_LOG_H__
 #define  __ENG_LOG_H__
 
-#include "../module/CModuleMgr.h"
+#include "CModuleMgr.h"
 
 typedef enum {
   LOG_NONE,

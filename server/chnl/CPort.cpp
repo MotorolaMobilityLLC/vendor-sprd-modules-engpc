@@ -209,6 +209,11 @@ int CPort::open(){
             if (isatty(m_fd)) {
                 tcgetattr(m_fd, &ser_settings);
                 cfmakeraw(&ser_settings);
+                //Set AT cmd display ECHO
+                if(m_port.dataType == DATA_AT){
+                    ser_settings.c_lflag |= (ECHO | ECHONL);
+                    ser_settings.c_lflag &= ~ECHOCTL;
+                }
                 tcsetattr(m_fd, TCSANOW, &ser_settings);
             }
         }

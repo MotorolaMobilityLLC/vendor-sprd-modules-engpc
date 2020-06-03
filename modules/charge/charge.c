@@ -23,6 +23,7 @@
 #define CHARGER_CURRENT "/sys/class/power_supply/battery/constant_charge_current"
 #define CHARGER_INPUT_LIMIT_CURRENT_K44 "/sys/class/power_supply/battery/force_chg_cur"
 #define CHARGER_CURRENT_K44 "/sys/class/power_supply/battery/force_input_cur"
+#define POWER_SUPPLY_BATTERY_STATUS_PATH "/sys/class/power_supply/battery/status"
 
 #define ENG_DIAG_NTC_CMD        0x0a
 
@@ -37,7 +38,7 @@ typedef struct {
 } TOOLS_DIAG_AP_CAPACITY;
 
 typedef struct {
-	unsigned char status;
+	unsigned short current;
 } TOOLS_DIAG_AP_CHARGE_STATUS;
 
 typedef struct {
@@ -155,6 +156,27 @@ static int disconnect_vbus_charger(void)
 	ENG_LOG("disconnect_vbus_charger success.\n");
 
 	return 1;
+}
+
+static int power_supply_battery_status(void)
+{
+	int fd;
+	int read_len = 0;
+	char buffer[16] = {0};
+	char s[9] = "Charging";
+	int value;
+
+	fd = open(POWER_SUPPLY_BATTERY_STATUS_PATH, O_RDONLY);
+	ENG_LOG("get battery status fd=%d\n", fd);
+
+	if (fd >= 0) {
+		read_len = read(fd, buffer, sizeof(buffer));
+		value = strncmp(buffer, "Charging", strlen(s));
+
+	}
+
+	close(fd);
+	return value;
 }
 
 static int get_aux_battery_voltage(void)
@@ -317,54 +339,74 @@ static int ap_get_charge_current(void)
 	return temp;
 }
 
+static int get_battery_current(void)
+{
+	int fd = -1;
+	int read_len = 0;
+	char buffer[64] = {0};
+	short value = 0;
+
+	fd = open(CHARGER_CURRENT, O_RDONLY);
+	ENG_LOG("get_charge_battery_current fd=%d\n", fd);
+	if (fd >= 0) {
+		read_len = read(fd, buffer, sizeof(buffer));
+		if (read_len > 0) {
+		value = atoi(buffer) / 1000;
+		}
+	}
+	close(fd);
+	return value;
+}
+
 static int eng_diag_control_charge(char *buf, int len, char *rsp, int rsplen)
 {
-	int ret = 0;
-	char *rsp_ptr;
-	TOOLS_DIAG_AP_CHARGE_STATUS *aprsp;
+
 	int length;
+	int ret = 0;
 
 	if (NULL == buf) {
-		ENG_LOG("%s,null pointer", __FUNCTION__);
-		return 0;
-	}
-	MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(buf + 1);
+                ENG_LOG("%s,null pointer", __FUNCTION__);
+                return 0;
+        }
+
+	memcpy(rsp, buf, sizeof(MSG_HEAD_T) + 1);
 	TOOLS_DIAG_AP_CHARGE_CMD *charge =
-		(TOOLS_DIAG_AP_CHARGE_CMD *)(buf + 1 + sizeof(MSG_HEAD_T));
-	length = sizeof(TOOLS_DIAG_AP_CHARGE_CMD) + sizeof(MSG_HEAD_T);
-	rsp_ptr = (char *)malloc(length);
-	if (NULL == rsp_ptr) {
-		ENG_LOG("%s: Buffer malloc failed\n", __FUNCTION__);
-		return 0;
-	}
-	aprsp = (TOOLS_DIAG_AP_CHARGE_STATUS *)(rsp_ptr + sizeof(MSG_HEAD_T) - 1);
-	memcpy(rsp_ptr, msg_head_ptr, sizeof(MSG_HEAD_T));
-	aprsp->status = 0x01;
-	ENG_LOG("control charge_flag->cmd=%d\n", charge->cmd);
+                (TOOLS_DIAG_AP_CHARGE_CMD *)(buf + 1 + sizeof(MSG_HEAD_T));
+	MSG_HEAD_T *msg_head_ptr = (MSG_HEAD_T *)(rsp + 1);
+	TOOLS_DIAG_AP_CHARGE_STATUS *aprsp =
+                (TOOLS_DIAG_AP_CHARGE_STATUS *)(rsp + sizeof(MSG_HEAD_T) + 1);
+	length = sizeof(MSG_HEAD_T);
+	msg_head_ptr->len = length;
 	if (0x01 == charge->cmd) {
 		ret = connect_vbus_charger();
 		if (ret > 0) {
-			aprsp->status = 0x00;
+			msg_head_ptr->subtype = 0x00;
 		} else {
-			aprsp->status = 0x01;
+			msg_head_ptr->subtype = 0x01;
 		}
 	} else if (0x03 == charge->cmd) {
 		ret = disconnect_vbus_charger();
 		if (ret > 0) {
-			aprsp->status = 0x00;
+			msg_head_ptr->subtype = 0x00;
 		} else {
-			aprsp->status = 0x01;
+			msg_head_ptr->subtype = 0x01;
 		}
 	} else if (0x02 == charge->cmd) {
-		aprsp->status = 0x00;
+		ret = power_supply_battery_status();
+		length = sizeof(TOOLS_DIAG_AP_CHARGE_STATUS) + sizeof(MSG_HEAD_T);
+		ENG_LOG("length=%d\n", length);
+		msg_head_ptr->len = length;
+		if (0 == ret) {
+			msg_head_ptr->subtype = 0x00;
+			aprsp->current = get_battery_current();
+			ENG_LOG("aprsp->current=%d\n", aprsp->current);
+		} else {
+			msg_head_ptr->subtype = 0x01;
+		}
 	}
-	msg_head_ptr->len = 8;
-	memcpy(rsp, buf, sizeof(MSG_HEAD_T));
-	rsp[length - 1] = aprsp->status;
-	rsp[length] = 0x7E;
-	free(rsp_ptr);
 
-	return length + 1 ;
+	rsp[length + 1] = 0x7E;
+	return length + 2 ;
 }
 
 static int calibration_diag_control_charge(char *buf, int len, char *rsp, int rsplen)

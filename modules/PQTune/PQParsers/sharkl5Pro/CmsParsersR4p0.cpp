@@ -784,8 +784,8 @@ static int update_cms_config_table(cms_common_sharkl5Pro *cms, xmlNodePtr curNod
 
 int CmsParserR4p0::parse_reg(uint08_t *ctx)
 {
-	int fdhsv, fdcm, fdslp, fdepf;
-	unsigned int szhsv,szcm, szslp, szepf;
+	int fdhsv, fdcm, fdslp, fdltm, fdepf;
+	unsigned int szhsv,szcm, szslp, szltm, szepf;
 	unsigned char* data;
 	int cnt;
 	unsigned short tmp,tmp1;
@@ -796,16 +796,19 @@ int CmsParserR4p0::parse_reg(uint08_t *ctx)
 
 	fdhsv = open(DpuHsv, O_RDWR);
 	fdcm = open(DpuCm, O_RDWR);
-	fdslp = open(DpuLtm, O_RDWR);
+	fdslp = open(DpuSlp, O_RDWR);
+	fdltm = open(DpuLtm, O_RDWR);
 	fdepf = open(DpuEpf, O_RDWR);
 
-	if(fdhsv < 0 || fdcm < 0 || fdslp < 0 || fdepf < 0) {
+	if (fdhsv < 0 || fdcm < 0 || fdslp < 0 || fdepf < 0 || fdltm < 0) {
 		if (fdhsv >= 0)
 			close(fdhsv);
 		if (fdcm >= 0)
 			close(fdcm);
 		if (fdslp >= 0)
 			close(fdslp);
+		if (fdltm >= 0)
+			close(fdltm);
 		if (fdepf >= 0)
 			close(fdepf);
 		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
@@ -813,24 +816,30 @@ int CmsParserR4p0::parse_reg(uint08_t *ctx)
 	}
 	szhsv = sizeof(cms->hsvcm[0].hsv);
 	szcm = sizeof(cms->hsvcm[0].cm);
-	szslp = sizeof(slp_ltm_params_l5pro);
+	szslp = sizeof(slp_params_l5pro);
+	szltm = sizeof(ltm_params_l5pro);
 	szepf = sizeof(cms->hsvcm[0].epf);
-	memset(&slp_ltm_params_l5pro, 0, szslp);
+	memset(&slp_params_l5pro, 0, szslp);
+	memset(&ltm_params_l5pro, 0, szltm);
 	cnt = read(fdhsv, &(cms->hsvcm[0].hsv), szhsv);
 	cnt = read(fdcm, &(cms->hsvcm[0].cm), szcm);
-
 	cnt = read(fdepf, &(cms->hsvcm[0].epf), szepf);
-	cnt = read(fdslp, (unsigned char*)&slp_ltm_params_l5pro, szslp);
+	cnt = read(fdslp, (unsigned char*)&slp_params_l5pro, szslp);
 	if (cnt != szslp)
 		ALOGD("L5Pro read slp fail regs_size %d read_cnt %d\n", szslp, cnt);
-	cms->hsvcm[0].slp.brightness = slp_ltm_params_l5pro.brightness;
-	cms->hsvcm[0].ltm.slp_low_clip = slp_ltm_params_l5pro.limit_lclip;
-	cms->hsvcm[0].ltm.slp_high_clip = slp_ltm_params_l5pro.limit_hclip;
-	cms->hsvcm[0].ltm.slp_step_clip = slp_ltm_params_l5pro.limit_clip_step;
+	cnt = read(fdltm, (unsigned char*)&ltm_params_l5pro, szltm);
+	if (cnt != szltm)
+		ALOGD("L5Pro read ltm fail regs_size %d read_cnt %d\n", szltm, cnt);
+
+	cms->hsvcm[0].slp.brightness = slp_params_l5pro.brightness;
+	cms->hsvcm[0].ltm.slp_low_clip = ltm_params_l5pro.limit_lclip;
+	cms->hsvcm[0].ltm.slp_high_clip = ltm_params_l5pro.limit_hclip;
+	cms->hsvcm[0].ltm.slp_step_clip = ltm_params_l5pro.limit_clip_step;
 
 	close(fdhsv);
 	close(fdcm);
 	close(fdslp);
+	close(fdltm);
 	close(fdepf);
 
 	return 0;
@@ -838,8 +847,8 @@ int CmsParserR4p0::parse_reg(uint08_t *ctx)
 
 int CmsParserR4p0::update_reg(uint08_t *ctx)
 {
-	int fdhsv, fdcm, fdslp, fdepf;
-	unsigned int szhsv,szcm,szslp,szepf;
+	int fdhsv, fdcm, fdslp, fdltm, fdepf;
+	unsigned int szhsv, szcm, szslp, szltm, szepf;
 	unsigned char* data;
 	unsigned int disable;
 	unsigned short tmp,tmp1;
@@ -849,18 +858,21 @@ int CmsParserR4p0::update_reg(uint08_t *ctx)
 
 	cms = &((pq_tuning_parm_sharkl5Pro *)ctx)->cms;
 
-	if(cms->version.enable) {
+	if (cms->version.enable) {
 		fdhsv = open(DpuHsv, O_RDWR);
 		fdcm = open(DpuCm, O_RDWR);
 		fdslp = open(DpuSlp, O_RDWR);
+		fdltm = open(DpuLtm, O_RDWR);
 		fdepf = open(DpuEpf, O_RDWR);
-		if(fdhsv < 0 || fdcm < 0 || fdslp < 0 || fdepf < 0) {
+		if (fdhsv < 0 || fdcm < 0 || fdslp < 0 || fdepf < 0 || fdltm < 0) {
 			if (fdhsv >= 0)
 				close(fdhsv);
 			if (fdcm >= 0)
 				close(fdcm);
 			if (fdslp >= 0)
 				close(fdslp);
+			if (fdltm >= 0)
+				close(fdltm);
 			if (fdepf >= 0)
 				close(fdepf);
 			ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
@@ -868,25 +880,30 @@ int CmsParserR4p0::update_reg(uint08_t *ctx)
 		}
 		szhsv = sizeof(cms->hsvcm[0].hsv);
 		szcm = sizeof(cms->hsvcm[0].cm);
-		szslp = sizeof(slp_ltm_params_l5pro);
+		szslp = sizeof(slp_params_l5pro);
+		szslp = szslp - 2;
+		szltm = sizeof(ltm_params_l5pro);
 		szepf = sizeof(cms->hsvcm[0].epf);
 		write(fdhsv, (unsigned char *)&cms->hsvcm[0].hsv, szhsv);
 		write(fdcm, (unsigned char *)&cms->hsvcm[0].cm, szcm);
-
 		write(fdepf, (unsigned char *)&cms->hsvcm[0].epf, szepf);
 
-		slp_ltm_params_l5pro.brightness = cms->hsvcm[0].slp.brightness;
-		slp_ltm_params_l5pro.limit_lclip = cms->hsvcm[0].ltm.slp_low_clip;
-		slp_ltm_params_l5pro.limit_hclip = cms->hsvcm[0].ltm.slp_high_clip;
-		slp_ltm_params_l5pro.limit_clip_step = cms->hsvcm[0].ltm.slp_step_clip;
-	
-		szslp = szslp - 2;
-		cnt = write(fdslp, (unsigned char*)&slp_ltm_params_l5pro, szslp);
+		slp_params_l5pro.brightness = cms->hsvcm[0].slp.brightness;
+		ltm_params_l5pro.limit_lclip = cms->hsvcm[0].ltm.slp_low_clip;
+		ltm_params_l5pro.limit_hclip = cms->hsvcm[0].ltm.slp_high_clip;
+		ltm_params_l5pro.limit_clip_step = cms->hsvcm[0].ltm.slp_step_clip;
+
+		cnt = write(fdslp, (unsigned char*)&slp_params_l5pro, szslp);
 		if (cnt != szslp)
 			ALOGD("write slp fail regs_size %d wr_cnt %d\n", szslp, cnt);
+		cnt = write(fdltm, (unsigned char*)&ltm_params_l5pro, szltm);
+		if (cnt != szltm)
+			ALOGD("write ltm fail regs_size %d wr_cnt %d\n", szltm, cnt);
+
 		close(fdhsv);
 		close(fdcm);
 		close(fdslp);
+		close(fdltm);
 		close(fdepf);
 	} else {
 		fdslp = open(PQDisable, O_WRONLY);

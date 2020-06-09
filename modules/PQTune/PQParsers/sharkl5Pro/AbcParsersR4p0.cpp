@@ -1295,80 +1295,90 @@ static int update_ltm_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
 
 int AbcParserR4p0::parse_reg(uint08_t *ctx)
 {
-	int fdslp, fdepf;
+	int fdslp, fdepf, fdltm;
 	uint32_t cnt;
-	uint32_t szslp, szepf;
+	uint32_t szslp, szepf, szltm;
 	uint08_t* data;
 	abc_common_sharkl5Pro *abc;
 
 	abc = &((pq_tuning_parm_sharkl5Pro *)ctx)->abc;
 
-	fdslp = open(DpuLtm, O_RDWR);
+	fdslp = open(DpuSlp, O_RDWR);
+	fdltm = open(DpuLtm, O_RDWR);
 	fdepf = open(DpuEpf, O_RDWR);
 
-	if(fdslp < 0 || fdepf < 0) {
+	if(fdslp < 0 || fdepf < 0 || fdltm < 0) {
 		if (fdslp >= 0)
 			close(fdslp);
 		if (fdepf >= 0)
 			close(fdepf);
+		if (fdltm >= 0)
+			close(fdltm);
 		ENG_LOG("%s: open file failed, err: %s\n", __func__, strerror(errno));
 		return errno;
 	}
-	szslp = sizeof(slp_ltm_params_l5pro);
-	memset(&slp_ltm_params_l5pro, 0, szslp);
+	szslp = sizeof(slp_params_l5pro);
+	memset(&slp_params_l5pro, 0, szslp);
+	szltm = sizeof(ltm_params_l5pro);
+	memset(&ltm_params_l5pro, 0, szltm);
 	szepf = sizeof(abc->sceneTable[0].sceneTableItem[0].epfCfgSunlightProtector);
 	cnt = read(fdepf, (uint08_t*)&abc->sceneTable[0].sceneTableItem[0].epfCfgSunlightProtector, szepf);
 	if (cnt != szepf)
 		ENG_LOG("L5Pro Epf reg read fail regs_size = %d read_cnt = %d \n", szepf, cnt);
-	cnt = read(fdslp, (uint08_t*)&slp_ltm_params_l5pro, szslp);
+	cnt = read(fdslp, (uint08_t*)&slp_params_l5pro, szslp);
 	if (cnt != szslp)
 		ENG_LOG("L5Pro slp reg read fail regs_size = %d read_cnt = %d \n", szslp, cnt);
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness = slp_ltm_params_l5pro.brightness;
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness_step = slp_ltm_params_l5pro.brightness_step;
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th = slp_ltm_params_l5pro.fst_max_bright_th;
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step0 = slp_ltm_params_l5pro.fst_max_bright_th_step[0];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step1 = slp_ltm_params_l5pro.fst_max_bright_th_step[1];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step2 = slp_ltm_params_l5pro.fst_max_bright_th_step[2];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step3 = slp_ltm_params_l5pro.fst_max_bright_th_step[3];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step4 = slp_ltm_params_l5pro.fst_max_bright_th_step[4];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.mask_height = slp_ltm_params_l5pro.mask_height;
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_percent_th = slp_ltm_params_l5pro.fst_pth;
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index0 = slp_ltm_params_l5pro.fst_pth_index[0];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index1 = slp_ltm_params_l5pro.fst_pth_index[1];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index2 = slp_ltm_params_l5pro.fst_pth_index[2];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index3 = slp_ltm_params_l5pro.fst_pth_index[3];	
+	cnt = read(fdltm, (uint08_t*)&ltm_params_l5pro, szltm);
+	if (cnt != szltm)
+		ENG_LOG("L5Pro ltm reg read fail regs_size = %d read_cnt = %d \n", szltm, cnt);
 
-	abc->sceneTable[0].slpbasecfg.hist_exb_no = slp_ltm_params_l5pro.hist_exb_no;
-	abc->sceneTable[0].slpbasecfg.hist_exb_percent = slp_ltm_params_l5pro.hist_exb_percent;
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness = slp_params_l5pro.brightness;
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness_step = slp_params_l5pro.brightness_step;
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th = slp_params_l5pro.fst_max_bright_th;
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step0 = slp_params_l5pro.fst_max_bright_th_step[0];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step1 = slp_params_l5pro.fst_max_bright_th_step[1];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step2 = slp_params_l5pro.fst_max_bright_th_step[2];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step3 = slp_params_l5pro.fst_max_bright_th_step[3];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step4 = slp_params_l5pro.fst_max_bright_th_step[4];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.mask_height = slp_params_l5pro.mask_height;
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_percent_th = slp_params_l5pro.fst_pth;
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index0 = slp_params_l5pro.fst_pth_index[0];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index1 = slp_params_l5pro.fst_pth_index[1];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index2 = slp_params_l5pro.fst_pth_index[2];
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index3 = slp_params_l5pro.fst_pth_index[3];
 
-	abc->sceneTable[0].slpbasecfg.hist9_index0 = slp_ltm_params_l5pro.hist9_index[0];
-	abc->sceneTable[0].slpbasecfg.hist9_index1 = slp_ltm_params_l5pro.hist9_index[1];
-	abc->sceneTable[0].slpbasecfg.hist9_index2 = slp_ltm_params_l5pro.hist9_index[2];
-	abc->sceneTable[0].slpbasecfg.hist9_index3 = slp_ltm_params_l5pro.hist9_index[3];
-	abc->sceneTable[0].slpbasecfg.hist9_index4 = slp_ltm_params_l5pro.hist9_index[4];
-	abc->sceneTable[0].slpbasecfg.hist9_index5 = slp_ltm_params_l5pro.hist9_index[5];
-	abc->sceneTable[0].slpbasecfg.hist9_index6 = slp_ltm_params_l5pro.hist9_index[6];
-	abc->sceneTable[0].slpbasecfg.hist9_index7 = slp_ltm_params_l5pro.hist9_index[7];
-	abc->sceneTable[0].slpbasecfg.hist9_index8 = slp_ltm_params_l5pro.hist9_index[8];
+	abc->sceneTable[0].slpbasecfg.hist_exb_no = slp_params_l5pro.hist_exb_no;
+	abc->sceneTable[0].slpbasecfg.hist_exb_percent = slp_params_l5pro.hist_exb_percent;
 
-	abc->sceneTable[0].slpbasecfg.glb_x1 = slp_ltm_params_l5pro.glb_x[0];
-	abc->sceneTable[0].slpbasecfg.glb_x2 = slp_ltm_params_l5pro.glb_x[1];
-	abc->sceneTable[0].slpbasecfg.glb_x3 = slp_ltm_params_l5pro.glb_x[2];
+	abc->sceneTable[0].slpbasecfg.hist9_index0 = slp_params_l5pro.hist9_index[0];
+	abc->sceneTable[0].slpbasecfg.hist9_index1 = slp_params_l5pro.hist9_index[1];
+	abc->sceneTable[0].slpbasecfg.hist9_index2 = slp_params_l5pro.hist9_index[2];
+	abc->sceneTable[0].slpbasecfg.hist9_index3 = slp_params_l5pro.hist9_index[3];
+	abc->sceneTable[0].slpbasecfg.hist9_index4 = slp_params_l5pro.hist9_index[4];
+	abc->sceneTable[0].slpbasecfg.hist9_index5 = slp_params_l5pro.hist9_index[5];
+	abc->sceneTable[0].slpbasecfg.hist9_index6 = slp_params_l5pro.hist9_index[6];
+	abc->sceneTable[0].slpbasecfg.hist9_index7 = slp_params_l5pro.hist9_index[7];
+	abc->sceneTable[0].slpbasecfg.hist9_index8 = slp_params_l5pro.hist9_index[8];
 
-	abc->sceneTable[0].slpbasecfg.glb_s1 = slp_ltm_params_l5pro.glb_s[0];
-	abc->sceneTable[0].slpbasecfg.glb_s2 = slp_ltm_params_l5pro.glb_s[1];
-	abc->sceneTable[0].slpbasecfg.glb_s3 = slp_ltm_params_l5pro.glb_s[2];
+	abc->sceneTable[0].slpbasecfg.glb_x1 = slp_params_l5pro.glb_x[0];
+	abc->sceneTable[0].slpbasecfg.glb_x2 = slp_params_l5pro.glb_x[1];
+	abc->sceneTable[0].slpbasecfg.glb_x3 = slp_params_l5pro.glb_x[2];
+
+	abc->sceneTable[0].slpbasecfg.glb_s1 = slp_params_l5pro.glb_s[0];
+	abc->sceneTable[0].slpbasecfg.glb_s2 = slp_params_l5pro.glb_s[1];
+	abc->sceneTable[0].slpbasecfg.glb_s3 = slp_params_l5pro.glb_s[2];
 
 
-	abc->sceneTable[0].slpbasecfg.fast_ambient_th = slp_ltm_params_l5pro.fast_ambient_th;
-	abc->sceneTable[0].slpbasecfg.screen_change_percent_th = slp_ltm_params_l5pro.scene_change_percent_th;
-	abc->sceneTable[0].slpbasecfg.local_weight = slp_ltm_params_l5pro.local_weight;
+	abc->sceneTable[0].slpbasecfg.fast_ambient_th = slp_params_l5pro.fast_ambient_th;
+	abc->sceneTable[0].slpbasecfg.screen_change_percent_th = slp_params_l5pro.scene_change_percent_th;
+	abc->sceneTable[0].slpbasecfg.local_weight = slp_params_l5pro.local_weight;
 
-	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_low_clip = slp_ltm_params_l5pro.limit_lclip;
-	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_high_clip = slp_ltm_params_l5pro.limit_hclip;
-	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_step_clip = slp_ltm_params_l5pro.limit_clip_step;
+	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_low_clip = ltm_params_l5pro.limit_lclip;
+	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_high_clip = ltm_params_l5pro.limit_hclip;
+	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_step_clip = ltm_params_l5pro.limit_clip_step;
 
 	close(fdslp);
+	close(fdltm);
 	close(fdepf);
 
 	return 0;
@@ -1376,82 +1386,92 @@ int AbcParserR4p0::parse_reg(uint08_t *ctx)
 
 int AbcParserR4p0::update_reg(uint08_t *ctx)
 {
-	int fdslp;
+	int fdslp, fdltm;
 	int fdepf;
 	int cnt;
 	char backlight[11] = {0};
-	uint32_t szslp, szepf;
+	uint32_t szslp, szepf, szltm;
 	uint08_t* data;
 	uint32_t disable;
 	abc_common_sharkl5Pro *abc;
 
 	abc = &((pq_tuning_parm_sharkl5Pro *)ctx)->abc;
 
-	if(abc->version.enable) {
+	if (abc->version.enable) {
 		 fdslp = open(DpuSlp, O_RDWR);
+		 fdltm = open(DpuLtm, O_RDWR);
 		 fdepf = open(DpuEpf, O_RDWR);
-		 if(fdslp< 0 || fdepf < 0) {
+		 if (fdslp < 0 || fdepf < 0 || fdltm < 0) {
 			if (fdslp >= 0)
 				close(fdslp);
+			if (fdltm >= 0)
+				close(fdltm);
 			if (fdepf >= 0)
 				close(fdepf);
 			 ENG_LOG("%s: open file failed, err: %s\n", __func__, strerror(errno));
 			 return errno;
 		}
-		 slp_ltm_params_l5pro.brightness = abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness;
-		 slp_ltm_params_l5pro.brightness_step = abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness_step;
-		 slp_ltm_params_l5pro.fst_max_bright_th = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th;
-		 slp_ltm_params_l5pro.fst_max_bright_th_step[0] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step0;
-		 slp_ltm_params_l5pro.fst_max_bright_th_step[1] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step1;
-		 slp_ltm_params_l5pro.fst_max_bright_th_step[2] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step2;
-		 slp_ltm_params_l5pro.fst_max_bright_th_step[3] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step3;
-		 slp_ltm_params_l5pro.fst_max_bright_th_step[4] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step4;
+		 slp_params_l5pro.brightness = abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness;
+		 slp_params_l5pro.brightness_step = abc->sceneTable[0].sceneTableItem[0].slpCfg.brightness_step;
+		 slp_params_l5pro.fst_max_bright_th = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th;
+		 slp_params_l5pro.fst_max_bright_th_step[0] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step0;
+		 slp_params_l5pro.fst_max_bright_th_step[1] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step1;
+		 slp_params_l5pro.fst_max_bright_th_step[2] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step2;
+		 slp_params_l5pro.fst_max_bright_th_step[3] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step3;
+		 slp_params_l5pro.fst_max_bright_th_step[4] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step4;
 
-		 slp_ltm_params_l5pro.mask_height = abc->sceneTable[0].sceneTableItem[0].slpCfg.mask_height;
-		 slp_ltm_params_l5pro.fst_pth = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_percent_th;
-		 slp_ltm_params_l5pro.fst_pth_index[0] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index0;
-		 slp_ltm_params_l5pro.fst_pth_index[1] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index1;
-		 slp_ltm_params_l5pro.fst_pth_index[2] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index2;
-		 slp_ltm_params_l5pro.fst_pth_index[3] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index3;
+		 slp_params_l5pro.mask_height = abc->sceneTable[0].sceneTableItem[0].slpCfg.mask_height;
+		 slp_params_l5pro.fst_pth = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_percent_th;
+		 slp_params_l5pro.fst_pth_index[0] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index0;
+		 slp_params_l5pro.fst_pth_index[1] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index1;
+		 slp_params_l5pro.fst_pth_index[2] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index2;
+		 slp_params_l5pro.fst_pth_index[3] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index3;
 
-		 slp_ltm_params_l5pro.hist_exb_no = abc->sceneTable[0].slpbasecfg.hist_exb_no;
-		 slp_ltm_params_l5pro.hist_exb_percent = abc->sceneTable[0].slpbasecfg.hist_exb_percent;
+		 slp_params_l5pro.hist_exb_no = abc->sceneTable[0].slpbasecfg.hist_exb_no;
+		 slp_params_l5pro.hist_exb_percent = abc->sceneTable[0].slpbasecfg.hist_exb_percent;
 
-		 slp_ltm_params_l5pro.hist9_index[0] = abc->sceneTable[0].slpbasecfg.hist9_index0;
-		 slp_ltm_params_l5pro.hist9_index[1] = abc->sceneTable[0].slpbasecfg.hist9_index1;
-		 slp_ltm_params_l5pro.hist9_index[2] = abc->sceneTable[0].slpbasecfg.hist9_index2;
-		 slp_ltm_params_l5pro.hist9_index[3] = abc->sceneTable[0].slpbasecfg.hist9_index3;
-		 slp_ltm_params_l5pro.hist9_index[4] = abc->sceneTable[0].slpbasecfg.hist9_index4;
-		 slp_ltm_params_l5pro.hist9_index[5] = abc->sceneTable[0].slpbasecfg.hist9_index5;
-		 slp_ltm_params_l5pro.hist9_index[6] = abc->sceneTable[0].slpbasecfg.hist9_index6;
-		 slp_ltm_params_l5pro.hist9_index[7] = abc->sceneTable[0].slpbasecfg.hist9_index7;
-		 slp_ltm_params_l5pro.hist9_index[8] = abc->sceneTable[0].slpbasecfg.hist9_index8;
+		 slp_params_l5pro.hist9_index[0] = abc->sceneTable[0].slpbasecfg.hist9_index0;
+		 slp_params_l5pro.hist9_index[1] = abc->sceneTable[0].slpbasecfg.hist9_index1;
+		 slp_params_l5pro.hist9_index[2] = abc->sceneTable[0].slpbasecfg.hist9_index2;
+		 slp_params_l5pro.hist9_index[3] = abc->sceneTable[0].slpbasecfg.hist9_index3;
+		 slp_params_l5pro.hist9_index[4] = abc->sceneTable[0].slpbasecfg.hist9_index4;
+		 slp_params_l5pro.hist9_index[5] = abc->sceneTable[0].slpbasecfg.hist9_index5;
+		 slp_params_l5pro.hist9_index[6] = abc->sceneTable[0].slpbasecfg.hist9_index6;
+		 slp_params_l5pro.hist9_index[7] = abc->sceneTable[0].slpbasecfg.hist9_index7;
+		 slp_params_l5pro.hist9_index[8] = abc->sceneTable[0].slpbasecfg.hist9_index8;
 
-		 slp_ltm_params_l5pro.glb_x[0] = abc->sceneTable[0].slpbasecfg.glb_x1;
-		 slp_ltm_params_l5pro.glb_x[1] = abc->sceneTable[0].slpbasecfg.glb_x2;
-		 slp_ltm_params_l5pro.glb_x[2] = abc->sceneTable[0].slpbasecfg.glb_x3;
+		 slp_params_l5pro.glb_x[0] = abc->sceneTable[0].slpbasecfg.glb_x1;
+		 slp_params_l5pro.glb_x[1] = abc->sceneTable[0].slpbasecfg.glb_x2;
+		 slp_params_l5pro.glb_x[2] = abc->sceneTable[0].slpbasecfg.glb_x3;
 
-		 slp_ltm_params_l5pro.glb_s[0] = abc->sceneTable[0].slpbasecfg.glb_s1;
-		 slp_ltm_params_l5pro.glb_s[1] = abc->sceneTable[0].slpbasecfg.glb_s2;
-		 slp_ltm_params_l5pro.glb_s[2] = abc->sceneTable[0].slpbasecfg.glb_s3;
+		 slp_params_l5pro.glb_s[0] = abc->sceneTable[0].slpbasecfg.glb_s1;
+		 slp_params_l5pro.glb_s[1] = abc->sceneTable[0].slpbasecfg.glb_s2;
+		 slp_params_l5pro.glb_s[2] = abc->sceneTable[0].slpbasecfg.glb_s3;
 
-		 slp_ltm_params_l5pro.fast_ambient_th = abc->sceneTable[0].slpbasecfg.fast_ambient_th;
-		 slp_ltm_params_l5pro.scene_change_percent_th = abc->sceneTable[0].slpbasecfg.screen_change_percent_th;
-		 slp_ltm_params_l5pro.local_weight = abc->sceneTable[0].slpbasecfg.local_weight;
+		 slp_params_l5pro.fast_ambient_th = abc->sceneTable[0].slpbasecfg.fast_ambient_th;
+		 slp_params_l5pro.scene_change_percent_th = abc->sceneTable[0].slpbasecfg.screen_change_percent_th;
+		 slp_params_l5pro.local_weight = abc->sceneTable[0].slpbasecfg.local_weight;
 
-		 slp_ltm_params_l5pro.limit_lclip = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_low_clip;
-		 slp_ltm_params_l5pro.limit_hclip = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_high_clip;
-		 slp_ltm_params_l5pro.limit_clip_step = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_step_clip;
+		 ltm_params_l5pro.limit_lclip = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_low_clip;
+		 ltm_params_l5pro.limit_hclip = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_high_clip;
+		 ltm_params_l5pro.limit_clip_step = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_step_clip;
 
-		szslp = sizeof(slp_ltm_params_l5pro) - 2;
-		cnt = write(fdslp, (uint08_t *)&slp_ltm_params_l5pro, szslp);
+		szslp = sizeof(slp_params_l5pro) - 2;
+		szltm = sizeof(ltm_params_l5pro);
+		cnt = write(fdslp, (uint08_t *)&slp_params_l5pro, szslp);
 		if (cnt != szslp)
 			ENG_LOG("L5Pro write slp fail regs_size%d wr_cnt %d\n", szslp, cnt);
+
+		cnt = write(fdltm, (uint08_t *)&ltm_params_l5pro, szltm);
+		if (cnt != szltm)
+			ENG_LOG("L5Pro write ltm fail regs_size%d wr_cnt %d\n", szltm, cnt);
+
 		szepf = sizeof(abc->sceneTable[0].sceneTableItem[0].epfCfgSunlightProtector);
 		cnt = write(fdepf, (uint08_t *)&abc->sceneTable[0].sceneTableItem[0].epfCfgSunlightProtector, szepf);
 		if (cnt != szepf)
 			ENG_LOG("L5Pro write epf fail regs_size%d wr_cnt %d\n", szepf, cnt);
 		close(fdslp);
+		close(fdltm);
 		close(fdepf);
 	}
 	else {

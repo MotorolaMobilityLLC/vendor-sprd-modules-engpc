@@ -57,19 +57,24 @@ typedef struct
 	uint08_t hist9_index[9];
 	uint08_t glb_x[3];
 	uint16_t glb_s[3];
-	uint16_t limit_hclip;
-	uint16_t limit_lclip;
-	uint16_t limit_clip_step;
 	uint08_t fast_ambient_th;
 	uint08_t scene_change_percent_th;
 	uint08_t local_weight;
 	uint08_t fst_pth;
 	uint08_t cabc_endv;
 	uint08_t cabc_startv;
-} slp_ltm_cfg_sharkl5pro;
+} slp_cfg_sharkl5pro;
+
+typedef struct
+{
+	uint16_t limit_hclip;
+	uint16_t limit_lclip;
+	uint16_t limit_clip_step;
+} ltm_cfg_sharkl5pro;
 
 static slp_ltm_cfg  slp_ltm_params;
-static slp_ltm_cfg_sharkl5pro  slp_ltm_params_l5pro;
+static slp_cfg_sharkl5pro  slp_params_l5pro;
+static ltm_cfg_sharkl5pro  ltm_params_l5pro;
 static lut3d_cfg lut3d_l5pro;
 
 class XmlParser {

@@ -312,7 +312,7 @@ static int TestMakeCall (char *req, char *rsp) {
     int operate = -1;
     int simNum = -1;
     char *number = NULL;
-    char tmp[512];
+    char tmp[512] = {0};
     char* ptmp = NULL;
     int fdCall = -1;
     char *path = NULL;

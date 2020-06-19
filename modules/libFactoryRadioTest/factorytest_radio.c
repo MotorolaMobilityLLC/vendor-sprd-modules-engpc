@@ -349,6 +349,12 @@ static int TestMakeCall (char *req, char *rsp) {
     ALOGD("path = %s\n", path);
     fdCall = open(path, O_RDWR | O_NONBLOCK);
 
+    if (fdCall < 0) {
+        ALOGE("open failed %s\n", path);
+        close(fdCall);
+        return -1;
+    }
+
     //stop call
     if (0 == operate) {
 #if defined(AUDIO_WHALE_HAL)
@@ -482,6 +488,11 @@ static int TestCheckSIM (char *req, char *rsp) {
     }
 
     fd = open(path, O_RDWR | O_NONBLOCK);
+    if (fd < 0) {
+        ALOGE("open failed %s\n", path);
+        close(fd);
+        return -1;
+    }
     ALOGD("sendATCmd: simNum = %d, cmd = %s, path = %s", simNum, cmd, path);
 
     if (sendATCmd(fd, cmd, tmp, sizeof(tmp), 0) < 0) {

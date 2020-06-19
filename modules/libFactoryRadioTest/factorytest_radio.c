@@ -323,10 +323,12 @@ static int TestMakeCall (char *req, char *rsp) {
     pthread_attr_t attr;
 
     ptr = strdup(req) ;
-    ret = at_tok_flag_start(&ptr, '=');
-    at_tok_nextint(&ptr, &operate);
-    at_tok_nextint(&ptr, &simNum);
-    at_tok_nextstr(&ptr, &number);
+    char *temp = ptr;
+    ALOGD("ptr start addr = %p\n", ptr);
+    ret = at_tok_flag_start(&temp, '=');
+    at_tok_nextint(&temp, &operate);
+    at_tok_nextint(&temp, &simNum);
+    at_tok_nextstr(&temp, &number);
 
     ALOGD("operate = %d\n", operate);
     ALOGD("SIM num = %d\n", simNum);
@@ -374,6 +376,7 @@ static int TestMakeCall (char *req, char *rsp) {
         return -1;
     }
 
+    ALOGD("ptr free addr = %p\n", ptr);
     free(ptr);
     sendATCmd(fdCall, "AT+SFUN=5", NULL, 0, 0);     //close protocol
     usleep(3000 * 1000);
@@ -457,9 +460,12 @@ static int TestCheckSIM (char *req, char *rsp) {
     int simState = -1;
     char* ptmp = NULL;
 
-    ptr = strdup(req) ;
-    ret = at_tok_flag_start(&ptr, '=');
-    ret = at_tok_nextint(&ptr, &simNum);
+    ptr = strdup(req);
+    ALOGD("ptr start addr = %p\n", ptr);
+    char *temp = ptr;
+    ret = at_tok_flag_start(&temp, '=');
+    ret = at_tok_nextint(&temp, &simNum);
+    ALOGD("ptr free addr = %p\n", ptr);
     free(ptr);
 
     ALOGD("SIM num = %d\n", simNum);

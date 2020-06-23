@@ -351,7 +351,6 @@ static int TestMakeCall (char *req, char *rsp) {
 
     if (fdCall < 0) {
         ALOGE("open failed %s\n", path);
-        close(fdCall);
         return -1;
     }
 
@@ -490,7 +489,6 @@ static int TestCheckSIM (char *req, char *rsp) {
     fd = open(path, O_RDWR | O_NONBLOCK);
     if (fd < 0) {
         ALOGE("open failed %s\n", path);
-        close(fd);
         return -1;
     }
     ALOGD("sendATCmd: simNum = %d, cmd = %s, path = %s", simNum, cmd, path);

@@ -148,7 +148,12 @@ int CTrans::trans(){
         if ( (m_frameType == FRAME_COMPLETE || m_frameType == FRAME_HALF_CONTINUE) && m_apProcess == 1 ){
             // decode
             Info("decode...");
-            m_nLenReq = decode(m_chnl_buff_req, r_cnt);
+            // UNISOC: add for bug1358053, BT4.0 LE could not connect to the signaling table.
+            if(m_dataType == DATA_WCN_AT){
+                m_nLenReq = r_cnt;
+            }else {
+                m_nLenReq = decode(m_chnl_buff_req, r_cnt);
+            }
             Info("m_nLenReq = %d", m_nLenReq);
 
             // ap process
@@ -168,7 +173,12 @@ int CTrans::trans(){
 
             // encode
             info("encode...");
-            m_nLenRsp = encode(m_chnl_buff_rsp, retlen);
+             // UNISOC: add for bug1358053, BT4.0 LE could not connect to the signaling table.
+            if(m_dataType == DATA_WCN_AT){
+                m_nLenRsp = retlen;
+            }else{
+                m_nLenRsp = encode(m_chnl_buff_rsp, retlen);
+            }
             info("m_nLenRsp = %d", m_nLenRsp);
 
             if ( 0 != pre_write(m_chnl_buff_rsp, m_nLenRsp) ){

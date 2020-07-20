@@ -14,6 +14,6 @@ LOCAL_C_INCLUDES:= \
     $(TOP)/vendor/sprd/proprietories-source/engpc/sprd_fts_inc \
 
 LOCAL_SHARED_LIBRARIES := liblog libc libcutils libutils
-LOCAL_STATIC_LIBRARIES := libbootloader_message libfstab libbase
+LOCAL_STATIC_LIBRARIES := libbootloader_message_vendor libfstab libbase
 
 include $(BUILD_SHARED_LIBRARY)

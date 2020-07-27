@@ -51,7 +51,7 @@ class CPort:public CBase{
 
         virtual int open();
         virtual int close();
-        virtual int read(char *buff, int nLen);
+        virtual int read(char *buff, int nLen ,int ap_process);
         virtual int write(char *buff, int nLen);
 
         virtual int reopen(int second);
@@ -87,7 +87,7 @@ class CPort:public CBase{
         int  m_nClient;
         int  m_fd;
         bool m_bSuspend;
-        CTrans *m_lpTrans;
+        CTrans *m_lpTrans = NULL;
 
         pthread_mutex_t m_mtx;
 
@@ -102,7 +102,7 @@ class CPort:public CBase{
         //Work m_work_rd;
         //Work m_work_wr;
 
-        int internal_read(char* buff, int nLen);
+        int internal_read(char* buff, int nLen, int ap_process);
         int internal_write(char* buff, int nLen);
         PORT_TYPE StrToPortType(char* str);
         DATA_TYPE StrToDataType(char* str);

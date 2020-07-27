@@ -13,7 +13,6 @@ class CProtolDiag:public CProtol{
 
         virtual int decode(char* buff, int nlen);
         virtual int encode(char* buff, int nlen);
-        virtual FRAME_TYPE checkframe(char* buff, int& nlen);
         virtual int findframe(char* buff, int nlen);
         virtual int process(char* req, int reqlen, char* rsp, int rsplen, int& retlen);
 
@@ -26,8 +25,6 @@ class CProtolDiag:public CProtol{
         bool m_bPending;
         FRAME_TYPE m_iCurFrameType;
 
-    private:
-        int findFrameFlag(char* buff, int nlen);
 };
 
 #endif

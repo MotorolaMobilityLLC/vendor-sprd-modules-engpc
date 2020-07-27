@@ -41,7 +41,7 @@ class CDev:public CBase {
 
         int open(char* name);
         int close(char* name);
-        int read(char* name, char* buff, int nLen);
+        int read(char* name, char* buff, int nLen, int ap_process);
         int write(char* name, char* buff, int nLen);
 
         void print();

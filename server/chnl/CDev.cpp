@@ -166,13 +166,13 @@ int CDev::close(char* name){
     return lpPort->close();
 }
 
-int CDev::read(char* name, char* buff, int nLen){
+int CDev::read(char* name, char* buff, int nLen ,int ap_process){
     CPort* lpPort = find(name);
     if (lpPort == NULL){
         return -1;
     }
 
-    return lpPort->read(buff, nLen);
+    return lpPort->read(buff, nLen, ap_process);
 }
 
 int CDev::write(char* name, char* buff, int nLen){

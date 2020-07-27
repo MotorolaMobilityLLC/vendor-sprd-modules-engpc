@@ -13,6 +13,8 @@
 #include "CPort.h"
 #include "frame.h"
 #include "CTrans.h"
+#include "CProtolDiag.h"
+
 
 #define Info(fmt, args...) {\
         if (m_port.dataType != DATA_LOG) { \
@@ -119,11 +121,11 @@ void CPort::getEnable(bool& bEnableRD, bool& bEnableWR){
     bEnableWR = m_bEnableWR;
 }
 
-int CPort::read(char *buff, int nLen){
+int CPort::read(char *buff, int nLen ,int ap_process){
     int ret = 0;
     if (m_bEnableRD){
         pthread_mutex_lock(&m_mtx_rd);
-        ret = internal_read(buff, nLen);
+        ret = internal_read(buff, nLen,ap_process);
         pthread_mutex_unlock(&m_mtx_rd);
     }else{
         info("enable is false");
@@ -292,7 +294,7 @@ void CPort::notify(char* msg, int len){
     }
 }
 
-int CPort::internal_read(char* buff, int nLen){
+int CPort::internal_read(char* buff, int nLen,int ap_process){
     int rdSize = -1;
     int r_cnt = 0;
     int offset = 0;
@@ -374,7 +376,11 @@ int CPort::internal_read(char* buff, int nLen){
 
                 // complete frame
                 tmpOffset = offset;
-                FRAME_TYPE type = m_lpTrans->checkframe(buff, offset);
+                FRAME_TYPE type = FRAME_COMPLETE;
+                Info("===> read ap_process = %d", ap_process);
+                if(m_port.dataType == DATA_DIAG){
+                     type = CTrans::checkframe(buff, offset, ap_process);
+                 }
                 if (tmpOffset != offset){
                     Info("check frame: offset = %d", offset);
                     printData(buff, offset, 20, 1);

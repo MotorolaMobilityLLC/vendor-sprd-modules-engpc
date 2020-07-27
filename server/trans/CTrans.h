@@ -33,8 +33,8 @@ class  CTrans{
         
         virtual int decode(char* buff, int nlen);
         virtual int encode(char* buff, int nlen);
-
-        virtual FRAME_TYPE checkframe(char* buff, int& nlen);
+        static int findFrameFlag(char* buff, int nlen);
+         static FRAME_TYPE checkframe(char* buff, int& nlen,int ap_process);
         virtual int findframe(char* buff, int nlen);
 
         void init(char* name, CPort* lpSrc, CPort* lpDst, int dataType, int apProces);

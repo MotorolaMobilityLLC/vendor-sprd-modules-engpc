@@ -98,7 +98,7 @@ other:
 2. XX XX ... XX 7E XX XX XX ... XX XX XX : find frame (7E XX XX ... XX XX XX)
 */
 
-FRAME_TYPE CProtolDiag::checkframe(char* buff, int& nlen){
+/*FRAME_TYPE CProtolDiag::checkframe(char* buff, int& nlen){
     if (getApProcess() != 1){
         return FRAME_COMPLETE;
     }
@@ -125,13 +125,13 @@ FRAME_TYPE CProtolDiag::checkframe(char* buff, int& nlen){
     m_iCurFrameType = ret;
 
     return ret;
-}
+}*/
 
 int CProtolDiag::findframe(char* buff, int nlen){
     return nlen;
 }
 
-int CProtolDiag::findFrameFlag(char* buff, int nlen){
+/*int CProtolDiag::findFrameFlag(char* buff, int nlen){
     int offset = 0;
     char* ptr = buff;
     if (ptr == NULL) return -1;
@@ -148,7 +148,7 @@ int CProtolDiag::findFrameFlag(char* buff, int nlen){
     }
 
     return offset;
-}
+}*/
 
 bool CProtolDiag::checkPending(char*rsp, int nlen){
     int ret = 0;

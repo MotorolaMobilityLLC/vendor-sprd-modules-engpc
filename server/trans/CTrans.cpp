@@ -59,7 +59,7 @@ int CTrans::read(char* buff, int nlen){
     info("read");
     if (m_lpPortSrc != NULL){
         CTrans* ptr = m_lpPortSrc->attach(this);
-        ret = m_lpPortSrc->read(buff, nlen);
+        ret = m_lpPortSrc->read(buff, nlen, m_apProcess);
         m_lpPortSrc->attach(ptr);
     }
 
@@ -125,7 +125,7 @@ int CTrans::trans(){
         // read from src
         //Info("read...");
         CTrans* ptr = m_lpPortSrc->attach(this);
-        r_cnt = m_lpPortSrc->read(m_chnl_buff_req, sizeof(m_chnl_buff_req));
+        r_cnt = m_lpPortSrc->read(m_chnl_buff_req, sizeof(m_chnl_buff_req),m_apProcess);
         m_lpPortSrc->attach(ptr);
         activeOtherChnlDstPort();
         Info("r_cnt = %d", r_cnt);
@@ -253,8 +253,62 @@ int CTrans::encode(char* buff, int nlen){
     return nlen;
 }
 
-FRAME_TYPE CTrans::checkframe(char* buff, int& nlen){
-    return FRAME_COMPLETE;
+int CTrans::findFrameFlag(char* buff, int nlen){
+    int offset = 0;
+    char* ptr = buff;
+    if (ptr == NULL) return -1;
+    while(offset < nlen){
+        if(*(ptr++) == 0x7E){
+            break;
+        }else{
+            offset++;
+        }
+    }
+
+    if (offset >= nlen){
+        offset = -1;
+    }
+
+    return offset;
+}
+
+/*
+1.  7E XX XX XX ... 7E :  compete frame, ap process or cp process
+2.  XX XX XX XX ... XX :  invalid frame, send to cp
+3.  7E XX XX XX ... XX :  invalid frame, ap process or cp process
+
+other:
+1. XX XX ... XX 7E XX XX XX ... 7E XX XX : find frame (7E XX XX ... XX XX 7E)
+2. XX XX ... XX 7E XX XX XX ... XX XX XX : find frame (7E XX XX ... XX XX XX)
+*/
+
+FRAME_TYPE CTrans::checkframe(char* buff, int& nlen,int ap_process){
+    if (ap_process != 1){
+        return FRAME_COMPLETE;
+    }
+
+    FRAME_TYPE ret = FRAME_INVALID;
+    if (buff[0] == 0x7E && buff[nlen-1] == 0x7E){
+        ret = FRAME_COMPLETE;
+    }else {
+        int start = findFrameFlag(buff, nlen);
+        if (start != -1){
+            int end = findFrameFlag(buff+start+1, nlen-start-1);
+            if (end != -1){
+                memmove(buff, buff+start, end+2);
+                nlen = end+2;
+                ret = FRAME_COMPLETE;
+            }else{
+                memmove(buff, buff+start, nlen-start);
+                nlen = nlen-start;
+                ret = FRAME_HALF_CONTINUE;
+            }
+        }
+    }
+
+    //m_iCurFrameType = ret;
+
+    return ret;
 }
 
 int CTrans::findframe(char* buff, int nlen){

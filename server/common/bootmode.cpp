@@ -31,25 +31,27 @@ const char* parseCmdline(){
     int fd = open("/proc/cmdline", O_RDONLY);
     if (fd >= 0) {
         if ((ret = read(fd, cmdline, sizeof(cmdline) - 1)) > 0) {
+            cmdline[sizeof(cmdline) - 1] = 0;
             EngLog::debug("eng_pcclient: cmdline %s", cmdline);
+            if (strlen(cmdline) != 0) {
+                /*calibration*/
+                str = strstr(cmdline, "androidboot.mode=cali");
+                if (str != NULL) {
+                    close(fd);
+                    return BOOTMODE_CALI;
+                }
 
-            /*calibration*/
-            str = strstr(cmdline, "androidboot.mode=cali");
-            if (str != NULL) {
-                close(fd);
-                return BOOTMODE_CALI;
-            }
+                str = strstr(cmdline, "androidboot.mode=autotest");
+                if (str != NULL) {
+                    close(fd);
+                    return BOOTMODE_AUTOTEST;
+                }
 
-            str = strstr(cmdline, "androidboot.mode=autotest");
-            if (str != NULL) {
-                close(fd);
-                return BOOTMODE_AUTOTEST;
-            }
-
-            str = strstr(cmdline, "androidboot.mode=factorytest");
-            if (str != NULL) {
-                close(fd);
-                return BOOTMODE_FACTORYTEST;
+                str = strstr(cmdline, "androidboot.mode=factorytest");
+                if (str != NULL) {
+                    close(fd);
+                    return BOOTMODE_FACTORYTEST;
+                }
             }
         }
 

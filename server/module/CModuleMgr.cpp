@@ -375,7 +375,10 @@ int CModuleMgr::eng_modules_load(){
                 }
 
                 memset(path, 0, sizeof(path));
-                strncpy(path, lnk_path, strlen(lnk_path));
+                lnk_path[sizeof(lnk_path) - 1] = 0;
+                if (strlen(lnk_path) != 0) {
+                    strncpy(path, lnk_path, strlen(lnk_path));
+                }
             }
 
             if (access(path, R_OK) == 0) {

@@ -83,6 +83,7 @@ int main(){
         SAFE_DELETE(g_lpModMgr);
         SAFE_DELETE(g_lpDevMgr);
         SAFE_DELETE(lpThreadMgr);
+        SAFE_DELETE(lpChnlMgr);
         return -1;
     }
     lpChnlMgr->print();

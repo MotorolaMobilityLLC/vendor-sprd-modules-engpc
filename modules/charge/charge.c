@@ -164,7 +164,7 @@ static int power_supply_battery_status(void)
 	int read_len = 0;
 	char buffer[16] = {0};
 	char s[9] = "Charging";
-	int value;
+	int value = 0;
 
 	fd = open(POWER_SUPPLY_BATTERY_STATUS_PATH, O_RDONLY);
 	ENG_LOG("get battery status fd=%d\n", fd);

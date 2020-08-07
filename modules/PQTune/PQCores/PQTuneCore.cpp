@@ -200,25 +200,13 @@ PQTuneCore::PQTuneCore(int ver)
 
 	version = ver;
 	abc = new AbcParser();
-	if (!abc) {
-		ALOGD("%s abc create fail\n", __func__);
-		return;
-	}
+
 	cms = new CmsParser();
-	if (!cms) {
-		ALOGD("%s cms create fail\n", __func__);
-		return;
-	}
+
 	bld = new BldParser();
-	if (!bld) {
-		ALOGD("%s bld create fail\n", __func__);
-		return;
-	}
+
 	gamma = new GammaParser();
-	if (!gamma) {
-		ALOGD("%s gamma create fail\n", __func__);
-		return;
-	}
+
 	hsv = NULL;
 	hsv_size = 0;
 	ctx = (uint08_t *)malloc(sizeof(pq_tuning_parm));
@@ -233,7 +221,7 @@ PQTuneCore::PQTuneCore(int ver)
 	abc_size = sizeof(abc_common);
 	offset = 0;
 
-	ALOGD("%S created\n", __func__);
+	ALOGD("%s created\n", __func__);
 }
 
 PQTuneCore:: ~PQTuneCore()
@@ -325,7 +313,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 			tune_module_enable(version, ctx, status);
 		}
 	}
-	ALOGD("PQ status %x\n", status);
+	ALOGD("PQ status %lx\n", status);
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	memset(dut_info, 0, sizeof(DUT_INFO_T));
 	sizes = read(fd1, info, 1024);
@@ -990,7 +978,7 @@ int PQTuneCore::tune_rd_ambient(char *buf, int len, char *rsp, int rsplen)
 			tvalue = atoll(tbuf);
 			ALOGD("PQ tval = %llu\n", tvalue);
 			tfpvalue = &tvalue;
-			ALOGD("PQ float tval = %f\n", *tfpvalue);
+			ALOGD("PQ float tval = %lld\n", *tfpvalue);
 			value = (uint32_t)*tfpvalue;
 			ALOGD("PQ int val = %d\n", value);
 	}

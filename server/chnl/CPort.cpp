@@ -417,6 +417,14 @@ int CPort::internal_write(char* buff, int nLen){
     int offset = 0;
     int w_cnt = 0;
     bool bsplite = false;
+    //Add timeout 60s
+    struct timeval timeout;
+    timeout.tv_sec = 60;
+    timeout.tv_usec = 0;
+    bool use_timeout = false;
+    if (m_port.portType == PORT_GSER || m_port.portType == PORT_VSER || m_port.portType == PORT_COM){
+        use_timeout = true;;
+    }
     if (m_fd < 0){
         error("invalid  fd! please open first.");
         return -1;
@@ -440,7 +448,7 @@ int CPort::internal_write(char* buff, int nLen){
         FD_SET(getFD(),&writefd);
 
         Info("write select...m_fd = %d", m_fd);
-        ret = select(getFD()+1,NULL,&writefd,NULL,NULL);
+        ret = select(getFD()+1,NULL,&writefd,NULL,use_timeout ? &timeout : NULL);
         Info("select return = %d", ret);
         if(ret == -1){
             error("select error");
@@ -448,6 +456,7 @@ int CPort::internal_write(char* buff, int nLen){
             continue;
         }else if(ret == 0){
             error("select time out");
+            return 0;
         }else{
             if(FD_ISSET(getFD(),&writefd)){// write
 

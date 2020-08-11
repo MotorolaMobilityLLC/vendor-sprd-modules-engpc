@@ -36,6 +36,7 @@ static int pmic_chipid_get(char *req, char *rsp)
     pchar = strstr(cmdline, "androidboot.pmic.chipid");
     if (pchar == NULL) {
 	sprintf(rsp,"%s", "Not Find");
+	close(fd);
 	return 0;
     }
 
@@ -72,6 +73,7 @@ static int hw_chipid_get(char *req, char *rsp)
     pchar = strstr(cmdline, "androidboot.hardware");
     if (pchar == NULL) {
 	sprintf(rsp,"%s", "Not Find");
+	close(fd);
 	return 0;
     }
 

@@ -44,9 +44,9 @@ static u32 ana_read(u32 reg_addr)
     return (u32)strtol(ret_val,NULL,16);
 }
 
-static u32 ana_write(u32 reg_addr,u32 value)
+static void ana_write(u32 reg_addr,u32 value)
 {
-    int fd_reg, fd_val, ret;
+    int fd_reg, fd_val;
     char cmds_addr[30] = {0}, cmds_value[30] = {0};
     fd_val = open(PMIC_GLB_VALUE, O_RDWR);
     fd_reg = open(PMIC_GLB_REG, O_RDWR);
@@ -58,7 +58,6 @@ static u32 ana_write(u32 reg_addr,u32 value)
     close(fd_reg);
     close(fd_val);
     usleep(10000);
-    return ret;
 }
 
 static u32 hp_dcxo_amp_init()

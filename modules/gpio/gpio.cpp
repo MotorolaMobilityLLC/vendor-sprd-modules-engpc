@@ -25,6 +25,7 @@
 #define DEV_PIN_CONFIG_PATH1     "/sys/kernel/debug/pinctrl/e42a0000.pinctrl/pins_debug"
 #define DEV_PIN_CONFIG_PATH2    "/sys/kernel/debug/pinctrl/402a0000.pinctrl/pins_debug"
 #define AUTOTEST_DEV_FILE	"/dev/autotest0"
+#define MAX_STR_LEN	255
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -41,31 +42,31 @@
 int Setgpio_value(int gpio_num,char value)
 {
 	int ret = -1;
-	char gpio_out[255] = {0};
-	char out_cmd[255] = {0};
-	char setval_cmd[255] = {0};
-	char gpio_setval_path[255] = {0};
-	int fd= -1;
+	char gpio_out[MAX_STR_LEN] = {0};
+	char out_cmd[MAX_STR_LEN] = {0};
+	char setval_cmd[MAX_STR_LEN] = {0};
+	char gpio_setval_path[MAX_STR_LEN] = {0};
+	int fd;
 
 	ENG_LOG("%s enter!gpio%d value:%d\n", __FUNCTION__, gpio_num, value );
 
 	//moidify the gpionum list set out direction function
-	sprintf(gpio_out, "/sys/class/gpio/gpio%d/direction", gpio_num);
+	snprintf(gpio_out, MAX_STR_LEN, "/sys/class/gpio/gpio%d/direction", gpio_num);
 	if(0 != access(gpio_out, F_OK)){
 		LOGD("the path can`t find %s\n", gpio_out);
 		return  ret;
 	}
-	sprintf(out_cmd, "echo out > %s", gpio_out);
+	snprintf(out_cmd, MAX_STR_LEN, "echo out > %s", gpio_out);
 	system(out_cmd);
 	usleep(100);
 
 	//moidify the gpionum list set out direction function
-	sprintf(gpio_setval_path, "/sys/class/gpio/gpio%d/value", gpio_num);
+	snprintf(gpio_setval_path, MAX_STR_LEN, "/sys/class/gpio/gpio%d/value", gpio_num);
 	if(0 != access(gpio_setval_path, F_OK)){
 		ENG_LOG("the path can`t find %s\n", gpio_setval_path);
 		return  ret;
 	}
-	sprintf(setval_cmd, "echo %d > %s", value, gpio_setval_path);
+	snprintf(setval_cmd, MAX_STR_LEN, "echo %d > %s", value, gpio_setval_path);
 	system(setval_cmd);
 	usleep(100);
 
@@ -99,27 +100,23 @@ int Setgpio_value(int gpio_num,char value)
 int Getgpio_value(int gpio_num, char *value)
 {
 	char gpio_enable_status[3] = {0};
-	char gpio_setval_path[255] = {0};
-	int fd= -1, ret;
-	char gpio_in[255] = {0};
-	char in_cmd[255] = {0};
+	char gpio_setval_path[MAX_STR_LEN] = {0};
+	int fd, ret;
+	char gpio_in[MAX_STR_LEN] = {0};
+	char in_cmd[MAX_STR_LEN] = {0};
 
 	//moidify the gpionum list set in direction function
-	sprintf(gpio_in, "/sys/class/gpio/gpio%d/direction", gpio_num);
+	snprintf(gpio_in, MAX_STR_LEN, "/sys/class/gpio/gpio%d/direction", gpio_num);
 	if(0 != access(gpio_in, F_OK)){
 		ENG_LOG("the path can`t find %s\n", gpio_in);
 		return  -1;
 	}
-	sprintf(in_cmd, "echo in > %s", gpio_in);
+	snprintf(in_cmd, MAX_STR_LEN, "echo in > %s", gpio_in);
 	system(in_cmd);
 	usleep(100);
 
 	ENG_LOG("%s enter!get gpio%d value\n", __FUNCTION__, gpio_num);
-	sprintf(gpio_setval_path, "/sys/class/gpio/gpio%d/value", gpio_num);
-	if(0 != access(gpio_setval_path, F_OK)){
-		ENG_LOG("the path can`t find %s\n", gpio_setval_path);
-		return  -1;
-	}
+	snprintf(gpio_setval_path, MAX_STR_LEN, "/sys/class/gpio/gpio%d/value", gpio_num);
 
 	fd = open(gpio_setval_path, O_RDONLY);
 	if(fd < 0){
@@ -166,7 +163,7 @@ static int get_ap_gpio_base(void)
 	int fd, ret;
 	DIR *dir;
 	struct dirent *de;
-	char filename[256] = {0};
+	char filename[MAX_STR_LEN] = {0};
 	char buf[128] = {0};
 
 	dir = opendir("/sys/class/gpio");
@@ -179,38 +176,42 @@ static int get_ap_gpio_base(void)
 		if (strncmp(de->d_name, "gpiochip", strlen("gpiochip")))
 			continue;
 		memset(filename, 0, sizeof(filename));
-		sprintf(filename, "/sys/class/gpio/%s/%s", de->d_name, "ngpio");
+		snprintf(filename, MAX_STR_LEN, "/sys/class/gpio/%s/%s", de->d_name, "ngpio");
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
 			ENG_LOG("open %s failed, errno=%d(%s)\n", filename, errno, strerror(errno));
 			continue;
 		}
 		memset(buf, 0, sizeof(buf));
-		read(fd, buf, sizeof(buf) - 1);
+		ret = read(fd, buf, sizeof(buf) - 1);
 		close(fd);
-		fd = -1;
+		if (ret < 0) {
+			ENG_LOG("read %s failed, errno=%d(%s)\n", filename, errno, strerror(errno));
+			continue;
+		}
 		ret = atoi(buf);
 		if (ret == 256) {
 			memset(filename, 0, sizeof(filename));
-			sprintf(filename, "/sys/class/gpio/%s/%s", de->d_name, "base");
+			snprintf(filename, MAX_STR_LEN, "/sys/class/gpio/%s/%s", de->d_name, "base");
 			fd = open(filename, O_RDONLY);
 			if (fd < 0) {
 				ENG_LOG("open %s failed, errno=%d(%s)\n", filename, errno, strerror(errno));
 				continue;
 			}
 			memset(buf, 0, sizeof(buf));
-			read(fd, buf, sizeof(buf) - 1);
+			ret = read(fd, buf, sizeof(buf) - 1);
 			close(fd);
-			fd = -1;
+			if (ret < 0) {
+				ENG_LOG("read %s failed, errno=%d(%s)\n", filename, errno, strerror(errno));
+				continue;
+			}
 			ret = atoi(buf);
 			closedir(dir);
-			dir = NULL;
 			return ret;
 		}
 	}
 
 	closedir(dir);
-	dir = NULL;
 	return -1;
 }
 

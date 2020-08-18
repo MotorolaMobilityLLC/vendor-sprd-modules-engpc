@@ -172,10 +172,9 @@ static int power_supply_battery_status(void)
 	if (fd >= 0) {
 		read_len = read(fd, buffer, sizeof(buffer));
 		value = strncmp(buffer, "Charging", strlen(s));
-
+		close(fd);
 	}
 
-	close(fd);
 	return value;
 }
 
@@ -319,8 +318,8 @@ static int get_charge_current(void)
 			value = atoi(buffer) / 1000;
 			ENG_LOG("get_charge_current value=%d\n", value);
 		}
+		close(fd);
 	}
-	close(fd);
 
 	return value;
 }
@@ -351,10 +350,11 @@ static int get_battery_current(void)
 	if (fd >= 0) {
 		read_len = read(fd, buffer, sizeof(buffer));
 		if (read_len > 0) {
-		value = atoi(buffer) / 1000;
+			value = atoi(buffer) / 1000;
 		}
+		close(fd);
 	}
-	close(fd);
+
 	return value;
 }
 

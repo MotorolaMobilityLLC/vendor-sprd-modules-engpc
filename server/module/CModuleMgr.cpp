@@ -435,9 +435,8 @@ int CModuleMgr::eng_modules_load(){
                         continue;
                     }
                 }
-            } else {
-                EngLog::error("%s is not allow to read!\n", path);
             }
+             EngLog::error("%s is not allow to read!\n", path);
         }
     }
 

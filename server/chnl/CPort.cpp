@@ -348,9 +348,8 @@ int CPort::internal_read(char* buff, int nLen,int ap_process){
                 if (strcasecmp(msg, MSG_NOTIFY_EXIT) == 0){
                     offset = 0;
                     break;
-                }else{
-                    continue;
                 }
+                continue;
             }else if(FD_ISSET(getFD(),&readfd)){// read
                 int tmpOffset = 0;
                 Info("read...");

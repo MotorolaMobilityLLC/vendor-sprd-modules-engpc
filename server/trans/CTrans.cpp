@@ -118,10 +118,10 @@ int CTrans::trans(){
 
         // pre read
         //info("pre read");
-        if (0 != pre_read(m_chnl_buff_req, sizeof(m_chnl_buff_req))){
+        /*if (0 != pre_read(m_chnl_buff_req, sizeof(m_chnl_buff_req))){
             error("pre read return !0, break");
             continue;
-        }
+        }*/
         // read from src
         //Info("read...");
         CTrans* ptr = m_lpPortSrc->attach(this);
@@ -131,10 +131,10 @@ int CTrans::trans(){
         Info("r_cnt = %d", r_cnt);
         
         //info("post read");
-        if (0 != post_read(m_chnl_buff_req, sizeof(m_chnl_buff_req), r_cnt)){
+        /*if (0 != post_read(m_chnl_buff_req, sizeof(m_chnl_buff_req), r_cnt)){
             error("post read return !0, break");
             continue;
-        }
+        }*/
 
         if(r_cnt <= 0){
             error("read fail, break");

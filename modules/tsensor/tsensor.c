@@ -53,28 +53,57 @@ typedef struct
        unsigned short length;
 } TOOLS_DIAG_AP_CNF_T;*/
 
-static unsigned int ana_read(unsigned int reg_addr)
+static int ana_read(unsigned int reg_addr, unsigned int * reg_data)
 {
 	int fd_reg, fd_val, ret;
 	char cmds[30] = {0}, ret_val[30] = {0};
 
+	if (reg_data == NULL) {
+		ENG_LOG("%s: input invalid parameter",__FUNCTION__);
+		return -1;
+	}
+
 	fd_val = open(PMIC_GLB_VALUE, O_RDWR);
+	if (fd_val < 0) {
+		ENG_LOG("%s: open \"%s\" fail",__FUNCTION__, PMIC_GLB_VALUE);
+		return -1;
+	}
+
 	fd_reg = open(PMIC_GLB_REG, O_RDWR);
+	if (fd_reg < 0) {
+		close(fd_val);
+		ENG_LOG("%s: open \"%s\" fail",__FUNCTION__, PMIC_GLB_REG);
+		return -1;
+	}
+
 	sprintf(cmds,"%x",reg_addr);
 	ret = write( fd_reg, cmds, sizeof(cmds));
 	ret = read( fd_val, ret_val,sizeof(ret_val));
 	ENG_LOG("%s: cmds:%s, ret_val:%s",__FUNCTION__,cmds,ret_val);
 	close(fd_reg);
 	close(fd_val);
-	return (unsigned int)strtol(ret_val,NULL,16);
+	*reg_data = (unsigned int)strtol(ret_val,NULL,16);
+	return 0;
 }
 
-static unsigned int ana_write(unsigned int reg_addr,unsigned int value)
+static int ana_write(unsigned int reg_addr,unsigned int value)
 {
 	int fd_reg, fd_val;
 	char cmds_addr[30] = {0}, cmds_value[30] = {0};
+
 	fd_val = open(PMIC_GLB_VALUE, O_RDWR);
+	if (fd_val < 0) {
+		ENG_LOG("%s: open \"%s\" fail",__FUNCTION__, PMIC_GLB_VALUE);
+		return -1;
+	}
+
 	fd_reg = open(PMIC_GLB_REG, O_RDWR);
+	if (fd_reg < 0) {
+		close(fd_val);
+		ENG_LOG("%s: open \"%s\" fail",__FUNCTION__, PMIC_GLB_REG);
+		return -1;
+	}
+
 	sprintf(cmds_addr,"%8x", reg_addr);
 	write( fd_reg, cmds_addr, sizeof(cmds_addr));
 	sprintf(cmds_value,"%8x", value);
@@ -86,23 +115,38 @@ static unsigned int ana_write(unsigned int reg_addr,unsigned int value)
 	return 0;
 }
 
-static void tsensor_regmap_update_bits(unsigned int reg, unsigned int mask, unsigned int val)
+static int tsensor_regmap_update_bits(unsigned int reg, unsigned int mask, unsigned int val)
 {
 	unsigned int tmp, orig;
 
-	orig = ana_read(reg);
+	if (ana_read(reg, &orig) < 0) {
+		ENG_LOG("%s: reg:%x read fail",__FUNCTION__, reg);
+		return -1;
+	}
+
 	tmp = orig & ~mask;
 	tmp |= val & mask;
-	ana_write(reg, tmp);
+	if (ana_write(reg, tmp) < 0) {
+		ENG_LOG("%s: reg:%x write fail",__FUNCTION__, reg);
+		return -1;
+	}
+
+	return 0;
 }
 
-static void tsenor_restore_default_reg(void)
+static int tsenor_restore_default_reg(void)
 {
-	tsensor_regmap_update_bits(SC27XX_TSEN_CTRL0, SC27XX_TSEN_CLK_SRC_SEL, SC27XX_TSEN_CLK_SRC_SEL);
-	tsensor_regmap_update_bits(SC27XX_TSEN_CTRL3, SC27XX_TSEN_EN | SC27XX_TSEN_SEL_EN | SC27XX_TSEN_SEL_CH, 0);
-	tsensor_regmap_update_bits(SC27XX_TSEN_CTRL1, SC27XX_TSEN_SDADC_EN | SC27XX_TSEN_UGBUF_EN, 0);
-	tsensor_regmap_update_bits(SC27XX_TSEN_CTRL0, SC27XX_TSEN_ADCLDO_EN, 0);
+	if (tsensor_regmap_update_bits(SC27XX_TSEN_CTRL0, SC27XX_TSEN_CLK_SRC_SEL, SC27XX_TSEN_CLK_SRC_SEL))
+		return -1;
+	if (tsensor_regmap_update_bits(SC27XX_TSEN_CTRL3, SC27XX_TSEN_EN | SC27XX_TSEN_SEL_EN | SC27XX_TSEN_SEL_CH, 0))
+		return -1;
+	if (tsensor_regmap_update_bits(SC27XX_TSEN_CTRL1, SC27XX_TSEN_SDADC_EN | SC27XX_TSEN_UGBUF_EN, 0))
+		return -1;
+	if (tsensor_regmap_update_bits(SC27XX_TSEN_CTRL0, SC27XX_TSEN_ADCLDO_EN, 0))
+		return -1;
 	inited = 0;
+
+	return 0;
 }
 
 static int tsensor_match_thm_zone(const char* type)
@@ -209,7 +253,7 @@ static int eng_diag_read_tsx_osc_temp(char *buf, int len, char *rsp, int rsplen)
 
 	memset(rsp_ptr, '\0', length);
 	rsp_status = (TOOLS_DIAG_AP_CNF_T *)(rsp_ptr + sizeof(MSG_HEAD_T));
-	rsp_status->status = 0x00; //error fail
+	rsp_status->status = 0x00;
 	tsenor = (DIAG_AP_PMIC_AFC_TSX_TEMP_T *)(rsp_ptr + sizeof(MSG_HEAD_T) + sizeof(TOOLS_DIAG_AP_CNF_T));
 
 	if(result < 0){
@@ -268,10 +312,14 @@ static int eng_diag_restore_default_reg(char *buf, int len, char *rsp, int rsple
 		return 0;
 	}
 
-	tsenor_restore_default_reg();
 	memset(rsp_ptr, '\0', length);
 	rsp_status = (TOOLS_DIAG_AP_CNF_T *)(rsp_ptr + sizeof(MSG_HEAD_T));
-	rsp_status->status = 0x00; //error fail
+
+	if (tsenor_restore_default_reg())
+		rsp_status->status = 0x01; //error fail
+	else
+		rsp_status->status = 0x00;
+
 	rsp_status->length = 0x00;
 
 	msg_head_ptr->len = length;

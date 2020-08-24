@@ -98,7 +98,7 @@ static u32 hp_amp_cali()
     }
 
     if (OK_FLAG == 0 && HP_CAL_CTRL_7_5 == 0) {
-        ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) && 0x1F);
+        ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) & 0x1F);
     }
 
     ana_write(ANA_REG_GLB_TSX_CTRL4,(ana_read(ANA_REG_GLB_TSX_CTRL4)& ~BIT_DCXO_CORE_AML_CTRL(0XF))
@@ -157,7 +157,7 @@ static u32 lp_amp_cali()
     }
 
     if (OK_FLAG == 0 && LP_CAL_CTRL_5_4 == 0) {
-        ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) && 0xF);
+        ana_write(ANA_REG_GLB_TSX_CTRL5,ana_read(ANA_REG_GLB_TSX_CTRL5) & 0xF);
     }
 
         ana_write(ANA_REG_GLB_TSX_CTRL4,(ana_read(ANA_REG_GLB_TSX_CTRL4)& ~BIT_DCXO_CORE_AML_CTRL(0XF))

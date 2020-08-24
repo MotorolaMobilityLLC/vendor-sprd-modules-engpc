@@ -145,6 +145,11 @@ static int pmic_efuse_handle(char *buf, char *rsp)
         sprintf(rsp, "\r\n+CME ERROR:4\r\n");
     }
 
+    if(buf[0] != 0x7e){
+	free(ptr);
+	ptr = NULL;
+    }
+
     return strlen(rsp);
 }
 
@@ -190,6 +195,11 @@ static int ap_efuse_handle(char *buf, char *rsp)
 	}
     }else{
 	sprintf(rsp, "\r\n+CME ERROR:4\r\n");
+    }
+
+    if(buf[0] != 0x7e){
+	free(ptr);
+	ptr = NULL;
     }
 
     return strlen(rsp);

@@ -36,6 +36,7 @@ common_engpc_modules_dirs := charge \
                              libnefuse \
                              libucpubench \
                              libapcomm \
-                             libtouchscreen
+                             libtouchscreen \
+                             libylogtopc
 
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

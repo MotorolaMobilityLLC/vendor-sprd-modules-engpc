@@ -30,6 +30,8 @@
 #define AP_BLOCK_SIZE (4)
 #define PMIC_BLOCK_SIZE (2)
 
+#define PROTOCOL_HEAD 0x7e
+
 static char pmic_efuse_cmd_param[64] = {0};
 static char ap_efuse_cmd_param[64] = {0};
 static char ap_efuse_blk_param[8] = {0};
@@ -112,10 +114,12 @@ static int pmic_efuse_handle(char *buf, char *rsp)
     {
         ALOGE("%s,null pointer", __FUNCTION__);
         sprintf(rsp, "\r\nERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+	if(rsp == NULL)
+	    return 0;
+        return strlen(rsp);
     }
 
-    if(buf[0] == 0x7e)
+    if(buf[0] == PROTOCOL_HEAD)
     {
         ptr = buf + 1 + sizeof(MSG_HEAD_T);
     }
@@ -145,7 +149,7 @@ static int pmic_efuse_handle(char *buf, char *rsp)
         sprintf(rsp, "\r\n+CME ERROR:4\r\n");
     }
 
-    if(buf[0] != 0x7e){
+    if(buf[0] != PROTOCOL_HEAD){
 	free(ptr);
 	ptr = NULL;
     }
@@ -164,10 +168,12 @@ static int ap_efuse_handle(char *buf, char *rsp)
     {
         ALOGE("%s,null pointer", __FUNCTION__);
         sprintf(rsp, "\r\nERROR\r\n");
-        return rsp != NULL ? strlen(rsp) : 0;
+	if(rsp == NULL)
+            return 0;
+        return strlen(rsp);
     }
 
-    if(buf[0] == 0x7e)
+    if(buf[0] == PROTOCOL_HEAD)
     {
         ptr = buf + 1 + sizeof(MSG_HEAD_T);
     }
@@ -197,7 +203,7 @@ static int ap_efuse_handle(char *buf, char *rsp)
 	sprintf(rsp, "\r\n+CME ERROR:4\r\n");
     }
 
-    if(buf[0] != 0x7e){
+    if(buf[0] != PROTOCOL_HEAD){
 	free(ptr);
 	ptr = NULL;
     }

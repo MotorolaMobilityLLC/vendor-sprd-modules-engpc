@@ -228,9 +228,9 @@ int setTestMode(char *req, char *rsp){
         ptr = strdup(req);
     }
 
-    ptrTmp = ptr;
+    //ptrTmp = ptr;
     ENG_LOG("%s: ptr = %s", __FUNCTION__, ptr);
-    ptrTmp = ptrTmp+strlen(AT_CMD_SETTESTMODE);
+    ptrTmp = ptr+strlen(AT_CMD_SETTESTMODE);
     if (ptrTmp != NULL && (strNum = trim(ptrTmp)) != NULL){
         unsigned int val = 0;
         if ( isdigitstr(strNum) ){

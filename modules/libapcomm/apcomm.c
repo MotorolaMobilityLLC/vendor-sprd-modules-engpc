@@ -55,6 +55,7 @@ long getSize(int type){
     }
     if(read(fd,buffer,sizeof(buffer)) <= 0){
         ENG_LOG("read %s fail\n", path);
+        close(fd);
         return 0;
     }
     ENG_LOG("read %s succ: size = %s", path, buffer);

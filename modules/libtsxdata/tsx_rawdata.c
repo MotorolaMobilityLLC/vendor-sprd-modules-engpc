@@ -91,7 +91,7 @@ int write_tsx_rawdata(char *data, int nLen)
 
 int read_tsx_rawdata(char *buff, int nLen)
 {
-  int rcount;
+  int rcount = -1;
   int ret = 0;
   FILE * fp = NULL;
   if(NULL == buff)

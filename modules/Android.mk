@@ -37,6 +37,7 @@ common_engpc_modules_dirs := charge \
                              libucpubench \
                              libapcomm \
                              libtouchscreen \
-                             libylogtopc
+                             libylogtopc \
+                             libpartinfo
 
 include $(call all-named-subdir-makefiles,$(common_engpc_modules_dirs))

@@ -34,6 +34,8 @@ else ifneq (,$(findstring ums512, $(TARGET_BOARD_PLATFORM)))
 PLATFORM := sharkl5Pro
 else ifneq (,$(findstring ud710, $(TARGET_BOARD_PLATFORM)))
 PLATFORM := roc1
+else ifneq (,$(findstring ums9230, $(TARGET_BOARD_PLATFORM)))
+PLATFORM := qogirl6
 else
 PLATFORM := default
 endif

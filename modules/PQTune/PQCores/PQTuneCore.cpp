@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/sysinfo.h>
 #include <ctype.h>
+#include <cutils/properties.h>
 #include <utils/Log.h>
 #include "PQTuningParmDefine.h"
 #include "PQTuneCore.h"
@@ -27,7 +28,7 @@ static void HexStrstoInt(char *buf, int size)
 	for(; i < size; i++){
 		temp[i] = strtol((const char *)(buf + j), (char**)0, 16);
 		j += 9;
-	}   
+	}
 }
 
 static int eng_diag_encode7d7e(char *buf, int len, int *extra_len) {
@@ -40,7 +41,7 @@ static int eng_diag_encode7d7e(char *buf, int len, int *extra_len) {
 			tmp = buf[i] ^ 0x20;
 			buf[i] = 0x7d;
 			for (j = len; j > i + 1; j--) {
-				buf[j] = buf[j - 1]; 
+				buf[j] = buf[j - 1];
 			}
 			buf[i + 1] = tmp;
 			len++;
@@ -50,7 +51,7 @@ static int eng_diag_encode7d7e(char *buf, int len, int *extra_len) {
 				printf("%x,", buf[j]);
 			}
 		}
-	}   
+	}
 
 	return len;
 }
@@ -62,7 +63,7 @@ static int MultTimes(int base, int n)
 
 	for(m = 0; m < n; m++)
 		mt *= base;
-	return mt; 
+	return mt;
 }
 
 static void parse_panelsize(char *data, int count, DUT_INFO_T  *dut_info_t)
@@ -79,16 +80,16 @@ static void parse_panelsize(char *data, int count, DUT_INFO_T  *dut_info_t)
 			next = i + 1;
 			for (j=0; j < i-1; j++){
 				dut_info_t->stResolution.HPixel += (data[j]- 48)*(MultTimes(10, i-1-j));
-			}   
-		}   
+			}
+		}
 		if(data[i] == '\n'){
-			last = i -1; 
+			last = i -1;
 			for(j = 0; j < (last-next+1); j++){
 				dut_info_t->stResolution.VPixel += (data[next+j]- 48)*(MultTimes(10, last-next-j));
-			}   
+			}
 
 		}
-	}   
+	}
 
 }
 
@@ -118,6 +119,14 @@ static void tune_modules_enable(int version, void *ctx,int enable)
 			((pq_tuning_parm_sharkl5Pro *)ctx)->abc.version.enable = enable;
 			((pq_tuning_parm_sharkl5Pro *)ctx)->cms.version.enable = enable;
 			((pq_tuning_parm_sharkl5Pro *)ctx)->bld.version.enable = enable;
+			((pq_tuning_parm_sharkl5Pro *)ctx)->dci.version.enable = enable;
+			break;
+		case DPU_R5P0:
+			((pq_tuning_parm_sharkl5Pro *)ctx)->gamma.version.enable = enable;
+			((pq_tuning_parm_sharkl5Pro *)ctx)->abc.version.enable = enable;
+			((pq_tuning_parm_sharkl5Pro *)ctx)->cms.version.enable = enable;
+			((pq_tuning_parm_sharkl5Pro *)ctx)->bld.version.enable = enable;
+			((pq_tuning_parm_sharkl5Pro *)ctx)->dci.version.enable = enable;
 			break;
 		default:
 			return;
@@ -166,6 +175,20 @@ static void tune_module_enable(int version, void *ctx, int module)
 				((pq_tuning_parm_sharkl5Pro *)ctx)->cms.version.enable = 1;
 			if (module & HSV_EN)
 				((pq_tuning_parm_sharkl5Pro *)ctx)->bld.version.enable = 1;
+			if (module & EPF_EN)
+				((pq_tuning_parm_sharkl5Pro *)ctx)->dci.version.enable = 1;
+			break;
+		case DPU_R5P0:
+			if (module & GAMMA_EN)
+				((pq_tuning_parm_sharkl5Pro *)ctx)->gamma.version.enable = 1;
+			if (module & SLP_EN)
+				((pq_tuning_parm_sharkl5Pro *)ctx)->abc.version.enable = 1;
+			if (module & CMS_EN)
+				((pq_tuning_parm_sharkl5Pro *)ctx)->cms.version.enable = 1;
+			if (module & HSV_EN)
+				((pq_tuning_parm_sharkl5Pro *)ctx)->bld.version.enable = 1;
+			if (module & EPF_EN)
+				((pq_tuning_parm_sharkl5Pro *)ctx)->dci.version.enable = 1;
 			break;
 
 		default:
@@ -188,6 +211,9 @@ static void tune_version_copy(int version, char *dpuname)
 		case DPU_R4P0:
 			strncpy(dpuname, "dpu-r4p0", strlen("dpu-r4p0"));
 			break;
+		case DPU_R5P0:
+			strncpy(dpuname, "dpu-r5p0", strlen("dpu-r5p0"));
+			break;
 		default:
 			return;
 		}
@@ -209,6 +235,8 @@ PQTuneCore::PQTuneCore(int ver)
 
 	hsv = NULL;
 	hsv_size = 0;
+	dci = NULL;
+	dci_size = 0;
 	ctx = (uint08_t *)malloc(sizeof(pq_tuning_parm));
 	if (!ctx) {
 		ALOGD("%s ctx create fail\n", __func__);
@@ -262,11 +290,12 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	char *ptemp;
 	unsigned long status = 0;
 	int ret;
+	char value[PROPERTY_VALUE_MAX];
 
 	fd = open(PanelSize, O_RDONLY);
 	fd1 = open(ChipInfo, O_RDONLY);
 	fd2 = open(PQStatus, O_RDONLY);
-	fd3 = open(Brightness, O_RDWR); 
+	fd3 = open(Brightness, O_RDWR);
 	if (fd < 0 || fd1 < 0 || fd2 < 0 || fd3 < 0) {
 		ALOGD("%s: open file failed, err: %s\n", __func__,
 			strerror(errno));
@@ -347,6 +376,10 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	sizes = ptemp - pchar - 1;
 	tune_version_copy(version, dut_info->szModelName);
 	strncpy(dut_info->szChipName, pchar + 1, sizes);
+
+	property_get("ro.system.build.version.release", value, "0");
+	dut_info->AndroidVersion = atoi(value);
+
 	sizes = read(fd, info, 1024);
 	if (sizes < 0) {
 		close(fd);
@@ -666,6 +699,7 @@ int PQTuneCore::tune_end_write_cfg(char *buf, int len, char *rsp, int rsplen)
 		bld->update_xml(ctx);
 		gamma->update_xml(ctx);
 		hsv->update_xml(ctx);
+		dci->update_xml(ctx);
 		err = 0;
 	} else
 		err = 1;
@@ -689,6 +723,7 @@ static bool parse_pq_module_type(uint16_t cmd){
 		case PQ_CMS:
 		case PQ_ABC:
 		case PQ_HSV:
+		case PQ_DCI:
 			return true;
 		default:
 			return false;
@@ -740,6 +775,11 @@ int PQTuneCore::tune_rd_tuning_reg(char *buf, int len, char *rsp, int rsplen)
 			hsv->parse_reg(ctx);
 			sizes = hsv_size;
 			memcpy(pdata, ctx + gamma_size + bld_size + cms_size + abc_size + sizeof(mainversion), sizes);
+			break;
+		case PQ_DCI:
+			dci->parse_reg(ctx);
+			sizes = dci_size;
+			memcpy(pdata, ctx + gamma_size + bld_size + cms_size + abc_size + hsv_size + sizeof(mainversion), sizes);
 			break;
 		default:
 			break;
@@ -804,6 +844,11 @@ int PQTuneCore::tune_wr_tuning_reg(char *buf, int len, char *rsp, int rsplen)
 			memcpy(ctx + gamma_size + bld_size + cms_size + abc_size + sizeof(mainversion), pdata, sizes);
 			hsv->update_reg(ctx);
 			break;
+		case PQ_DCI:
+			sizes = dci_size;
+			memcpy(ctx + gamma_size + bld_size + cms_size + abc_size + hsv_size + sizeof(mainversion), pdata, sizes);
+			dci->update_reg(ctx);
+			break;
 		default:
 			break;
 	}
@@ -867,6 +912,11 @@ int PQTuneCore::tune_rd_tuning_xml(char *buf, int len, char *rsp, int rsplen)
 			sizes = hsv_size;
 			memcpy(pdata, ctx + gamma_size + bld_size + cms_size + abc_size + sizeof(mainversion), sizes);
 			break;
+		case PQ_DCI:
+			dci->parse_xml(ctx);
+			sizes = dci_size;
+			memcpy(pdata, ctx + gamma_size + bld_size + cms_size + abc_size + hsv_size + sizeof(mainversion), sizes);
+			break;
 		default:
 			break;
 	}
@@ -919,7 +969,6 @@ int PQTuneCore::tune_wr_tuning_xml(char *buf, int len, char *rsp, int rsplen)
 			sizes = cms_size;
 			memcpy(ctx + gamma_size + bld_size + sizeof(mainversion), pdata, sizes);
 			cms->update_xml(ctx);
-
 			break;
 		case PQ_ABC:
 			sizes = abc_size;
@@ -930,6 +979,11 @@ int PQTuneCore::tune_wr_tuning_xml(char *buf, int len, char *rsp, int rsplen)
 			sizes = hsv_size;
 			memcpy(ctx + gamma_size + bld_size + cms_size + abc_size + sizeof(mainversion), pdata, sizes);
 			hsv->update_xml(ctx);
+			break;
+		case PQ_DCI:
+			sizes = dci_size;
+			memcpy(ctx + gamma_size + bld_size + cms_size + abc_size + hsv_size + sizeof(mainversion), pdata, sizes);
+			dci->update_xml(ctx);
 			break;
 		default:
 			break;

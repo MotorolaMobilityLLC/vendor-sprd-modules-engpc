@@ -22,6 +22,7 @@
 #define gamma_xml           "/mnt/vendor/enhance/gamma.xml"
 #define cms_xml             "/mnt/vendor/enhance/cms.xml"
 #define hsv_xml				"/mnt/vendor/enhance/3d_lut.xml"
+#define dci_xml				"/mnt/vendor/enhance/dci.xml"
 #define DpuVersion			"/sys/class/display/dispc0/dpu_version"
 #define DispcBg 			"/sys/class/display/dispc0/bg_color"
 #define PanelSize 			"/sys/class/display/panel0/resolution"

@@ -32,7 +32,8 @@ LOCAL_SRC_FILES += PQParsers/ParserCore.cpp \
 		PQParsers/roc1/AbcParsersR3p0.cpp \
 		PQParsers/sharkl5Pro/CmsParsersR4p0.cpp \
 		PQParsers/sharkl5Pro/AbcParsersR4p0.cpp \
-		PQParsers/sharkl5Pro/HsvParsers.cpp 
+		PQParsers/sharkl5Pro/HsvParsers.cpp \
+		PQParsers/sharkl5Pro/DciParsers.cpp
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
@@ -57,6 +58,7 @@ endif
 endif
 LOCAL_SHARED_LIBRARIES += libcutils   \
 			  libutils \
+			  libcutils \
 			  libdl \
 			  libxml2 \
 			  liblog \

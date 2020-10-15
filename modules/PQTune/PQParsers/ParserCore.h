@@ -183,3 +183,11 @@ public:
 	virtual int parse_reg(uint08_t *ctx);
 };
 
+class DciParser: public XmlParser {
+public:
+	virtual int update_xml(uint08_t *ctx);
+	virtual int parse_xml(uint08_t *ctx);
+	virtual int update_reg(uint08_t *ctx);
+	virtual int parse_reg(uint08_t *ctx);
+};
+

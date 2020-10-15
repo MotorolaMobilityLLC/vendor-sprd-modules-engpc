@@ -16,6 +16,7 @@ typedef struct _DUT_INFO_T
   char szChipName[MAX_NAME_LEN];  // Chip model ,such as 7731
   RESOLUTION_T stResolution;      // Resolution
   float  fLcdInch;                // LcdInch
+  unsigned int AndroidVersion;    // the version of Android
 }DUT_INFO_T;
 
 typedef enum {
@@ -45,6 +46,11 @@ typedef enum {
   PQ_CMS,
   PQ_ABC,
   PQ_HSV,
+  PQ_DCI,
   E_UNDEFINE,
 } PQ_MODULE_TYPE;
 
+typedef enum {
+  AndroidQ = 10,
+  AndroidR = 11,
+} PQ_ANDROID_TYPE;

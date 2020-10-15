@@ -6,13 +6,14 @@ enum ENUM_IPCORE{
     DPU_R2P0,
     DPU_R3P0,
     DPU_R4P0,
+    DPU_R5P0,
     DPU_MAX_NUM,
 };
 
 class PQTuneCore {
 public:
 	virtual int tune_connect(char *buf, int len, char *rsp, int rsplen);
-	virtual	int tune_rgb_pattern(char *buf, int len, char *rsp, int rsplen);
+	virtual int tune_rgb_pattern(char *buf, int len, char *rsp, int rsplen);
 	virtual int tune_read_regs(char *buf, int len, char *rsp, int rsplen);
 	virtual int tune_write_regs(char *buf, int len, char *rsp, int rsplen);
 	virtual int tune_start_read_cfg(char *buf, int len, char *rsp, int rsplen);
@@ -40,16 +41,18 @@ protected:
 	uint32_t cms_size;
 	uint32_t abc_size;
 	uint32_t hsv_size;
+	uint32_t dci_size;
 	GammaParser *gamma;
 	BldParser *bld;
 	CmsParser *cms;
 	AbcParser *abc;
 	HsvParser *hsv;
+	DciParser *dci;
 };
 
 class PQTuneCoreLiteR2p0: public PQTuneCore {
 public:
-	PQTuneCoreLiteR2p0(int ver);	
+	PQTuneCoreLiteR2p0(int ver);
 };
 
 class PQTuneCoreR3p0: public PQTuneCoreLiteR2p0 {
@@ -62,4 +65,10 @@ class PQTuneCoreR4p0: public PQTuneCoreLiteR2p0 {
 public:
 	PQTuneCoreR4p0(int ver);
 	virtual ~PQTuneCoreR4p0();
+};
+
+class PQTuneCoreR5p0: public PQTuneCoreR4p0 {
+public:
+	PQTuneCoreR5p0(int ver);
+	virtual ~PQTuneCoreR5p0();
 };

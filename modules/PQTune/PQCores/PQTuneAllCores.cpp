@@ -84,6 +84,8 @@ PQTuneCoreR4p0::PQTuneCoreR4p0(int ver):PQTuneCoreLiteR2p0(DPU_R4P0)
 
 	hsv = new HsvParser();
 
+	dci = new DciParser();
+
 	ctx = (uint08_t *)malloc(sizeof(pq_tuning_parm_sharkl5Pro));
 	if (!ctx) {
 		ALOGD("%s ctx create fail\n", __func__);
@@ -95,6 +97,39 @@ PQTuneCoreR4p0::PQTuneCoreR4p0(int ver):PQTuneCoreLiteR2p0(DPU_R4P0)
 	cms_size = sizeof(cms_common_sharkl5Pro);
 	abc_size = sizeof(abc_common_sharkl5Pro);
 	hsv_size = sizeof(hsv_common_sharkl5Pro);
+	dci_size = sizeof(dci_common_sharkl5Pro);
+	offset = 0;
+	version = ver;
+}
+
+PQTuneCoreR5p0::PQTuneCoreR5p0(int ver):PQTuneCoreR4p0(DPU_R5P0)
+{
+	if (ver != DPU_R5P0)
+		return;
+	gamma = new GammaParserLiteR2p0();
+
+	bld = new BldParserLiteR2p0();
+
+	cms = new CmsParserR4p0();
+
+	abc = new AbcParserR4p0();
+
+	hsv = new HsvParser();
+
+	dci = new DciParser();
+
+	ctx = (uint08_t *)malloc(sizeof(pq_tuning_parm_sharkl5Pro));
+	if (!ctx) {
+		ALOGD("%s ctx create fail\n", __func__);
+		return;
+	}
+	tune_sizes = sizeof(pq_tuning_parm_sharkl5Pro);
+	gamma_size = sizeof(gamma_common_sharkl5);
+	bld_size = sizeof(bld_common_sharkl5);
+	cms_size = sizeof(cms_common_sharkl5Pro);
+	abc_size = sizeof(abc_common_sharkl5Pro);
+	hsv_size = sizeof(hsv_common_sharkl5Pro);
+	dci_size = sizeof(dci_common_sharkl5Pro);
 	offset = 0;
 	version = ver;
 }
@@ -102,5 +137,11 @@ PQTuneCoreR4p0::PQTuneCoreR4p0(int ver):PQTuneCoreLiteR2p0(DPU_R4P0)
 PQTuneCoreR4p0:: ~PQTuneCoreR4p0()
 {
 	delete hsv;
+	delete dci;
 }
 
+PQTuneCoreR5p0:: ~PQTuneCoreR5p0()
+{
+	delete hsv;
+	delete dci;
+}

@@ -352,6 +352,7 @@ typedef struct
     rgb_cm_mapping      rgbcm[10];
     uint16_t            cm_mode;   // 1:cold; 2:warm; 3-12:rgb auto
     cm_cfg              cm[12];
+    float               sat[36];
 } cms_common_sharkl5Pro;
 
 typedef struct
@@ -401,6 +402,45 @@ typedef struct
 
 typedef struct
 {
+	uint08_t hist_exb_no;
+	uint08_t hist_exb_percent;
+	uint08_t hist9_index0;
+	uint08_t hist9_index1;
+	uint08_t hist9_index2;
+	uint08_t hist9_index3;
+	uint08_t hist9_index4;
+	uint08_t hist9_index5;
+	uint08_t hist9_index6;
+	uint08_t hist9_index7;
+	uint08_t hist9_index8;
+	uint08_t glb_x1;
+	uint08_t glb_x2;
+	uint08_t glb_x3;
+	uint16_t glb_s1;
+	uint16_t glb_s2;
+	uint16_t glb_s3;
+	uint08_t fast_ambient_th;
+	uint08_t screen_change_percent_th;
+	uint16_t mask_height;
+	uint08_t brightness;
+	uint16_t brightness_step;
+	uint08_t first_max_bright_th;
+	uint08_t first_max_bright_th_step0;
+	uint08_t first_max_bright_th_step1;
+	uint08_t first_max_bright_th_step2;
+	uint08_t first_max_bright_th_step3;
+	uint08_t first_max_bright_th_step4;
+	uint08_t local_weight;
+	uint08_t first_percent_th;
+	uint08_t first_pth_index0;
+	uint08_t first_pth_index1;
+	uint08_t first_pth_index2;
+	uint08_t first_pth_index3;
+	uint08_t reserved[3];
+} slp_cfg_sharkl5Pro_dci;
+
+typedef struct
+{
     epf_cfg                epfCfgSunlightProtector;
     epf_cfg                epfCfgSuperResolution;
     slp_cfg_sharkl5Pro_abc slpCfg;
@@ -426,12 +466,23 @@ typedef struct
 
 typedef struct
 {
+    subversion          version;
+    uint16_t            mode;                // 0:Horizontal screen; 1:Portrait
+    epf_cfg      epf[2];
+    slp_cfg_sharkl5Pro_dci slp[2];
+    ltm_cfg      ltm[2];
+    lut_3d       lut3d;
+} dci_common_sharkl5Pro;
+
+typedef struct
+{
     mainversion             version;
     gamma_common_sharkl5    gamma;
     bld_common_sharkl5      bld;
     cms_common_sharkl5Pro   cms;
     abc_common_sharkl5Pro   abc;
     hsv_common_sharkl5Pro   hsv;
+    dci_common_sharkl5Pro   dci;
 
 } pq_tuning_parm_sharkl5Pro;
 

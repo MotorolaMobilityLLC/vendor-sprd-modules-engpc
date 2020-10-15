@@ -21,7 +21,7 @@ static int pq_cmd_connect(char *buf, int len, char *rsp, int rsplen)
 
 	if (TuneCore)
 		rsp_len = TuneCore->tune_connect(buf, len, rsp, rsplen);
-	
+
 	return rsp_len;
 }
 
@@ -31,7 +31,6 @@ static int pq_cmd_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 
 	if (TuneCore)
 		rsp_len = TuneCore->tune_rgb_pattern(buf, len, rsp, rsplen);
-	
 
 	return rsp_len;
 }
@@ -42,10 +41,8 @@ static int pq_cmd_read_regs(char *buf, int len, char *rsp, int rsplen)
 
 	if (TuneCore)
 		rsp_len = TuneCore->tune_read_regs(buf, len, rsp, rsplen);
-		
 
 	return rsp_len;
-	
 }
 
 static int pq_cmd_write_regs(char *buf, int len, char *rsp, int rsplen)
@@ -54,7 +51,7 @@ static int pq_cmd_write_regs(char *buf, int len, char *rsp, int rsplen)
 
 	if (TuneCore)
 		rsp_len = TuneCore->tune_write_regs(buf, len, rsp, rsplen);
-		
+
 	return rsp_len;
 }
 
@@ -62,10 +59,8 @@ static int pq_cmd_start_read_cfg(char *buf, int len, char *rsp, int rsplen)
 {
 	int rsp_len = 0;
 
-	
 	if (TuneCore)
 		rsp_len = TuneCore->tune_start_read_cfg(buf, len, rsp, rsplen);
-	
 
 	return rsp_len;
 }
@@ -76,7 +71,6 @@ static int pq_cmd_midst_read_cfg(char *buf, int len, char *rsp, int rsplen)
 
 	if (TuneCore)
 		rsp_len = TuneCore->tune_midst_read_cfg(buf, len, rsp, rsplen);
-		
 
 	return rsp_len;
 }
@@ -148,7 +142,7 @@ int pq_cmd_rd_tuning_xml(char *buf, int len, char *rsp, int rsplen)
 
 	if (TuneCore)
 		rsp_len = TuneCore->tune_rd_tuning_xml(buf, len, rsp, rsplen);
-	
+
 	return rsp_len;
 }
 
@@ -173,15 +167,17 @@ int pq_cmd_rd_ambient(char *buf, int len, char *rsp, int rsplen)
 
 PQTuneCore* pq_create_TuneCore(char *version)
 {
-	if (!strncmp(version, "dpu-lite-r2p0", strlen("dpu-lite-r2p0"))){
+	if (!strncmp(version, "dpu-lite-r2p0", strlen("dpu-lite-r2p0"))) {
 		return new PQTuneCoreLiteR2p0(DPU_LITE_R2P0);
 	} else if (!strncmp(version, "dpu-r2p0", strlen("dpu-r2p0"))) {
-		return 	new PQTuneCore(DPU_R2P0);
-	} else if (!strncmp(version, "dpu-r3p0", strlen("dpu-r3p0")))
+		return new PQTuneCore(DPU_R2P0);
+	} else if (!strncmp(version, "dpu-r3p0", strlen("dpu-r3p0"))) {
 		return new PQTuneCoreR3p0(DPU_R3P0);
-	else if (!strncmp(version, "dpu-r4p0", strlen("dpu-r4p0")))
+  	} else if (!strncmp(version, "dpu-r4p0", strlen("dpu-r4p0"))) {
 		return new PQTuneCoreR4p0(DPU_R4P0);
-	else 
+  	} else if (!strncmp(version, "dpu-r5p0", strlen("dpu-r5p0"))) {
+		return new PQTuneCoreR5p0(DPU_R5P0);
+  	} else
 		return NULL;
 }
 
@@ -339,5 +335,3 @@ extern "C" void register_this_module_ext(struct eng_callback *reg, int *num) {
 
   ALOGD("register_this_module_ext: %d - %d", *num, moudles_num);
 }
-
-

@@ -14,13 +14,14 @@ xmlNodePtr FindNode(xmlNodePtr curNode, const char *name)
 	if (!curNode) {
 		ALOGD("FindNode fail");
 		return NULL;
-	}   
+	}
+
 	while(NULL != curNode) {
 		if (!xmlStrcmp(curNode->name, (const xmlChar*)name)) {
 			return curNode;
 		}
 		curNode = curNode->next;
-	}   
+	}
 
 	return NULL;
 }
@@ -29,7 +30,7 @@ void RemoveNode(xmlNode *ParentNode, xmlNode *ChildNode)
 {
 	if (ChildNode == NULL) {
 		return;
-	}   
+	}
 
 	xmlNodePtr siblingNode = ChildNode->next;//next index
 
@@ -38,19 +39,19 @@ void RemoveNode(xmlNode *ParentNode, xmlNode *ChildNode)
 			break;
 		}
 		siblingNode = siblingNode->next;
-	}   
+	}
 
 
 	xmlNode *childrenNode = ChildNode->children;//item
 	if (childrenNode == NULL) {
-	}   
+	}
 	xmlNodePtr nextChildNode = NULL;
 
 	while (childrenNode != NULL) {
 		nextChildNode = childrenNode->next;//next item
 		xmlUnlinkNode(childrenNode);
 		childrenNode = nextChildNode;
-	}   
+	}
 	xmlUnlinkNode(ChildNode);
 	xmlFreeNode(ChildNode);
 }

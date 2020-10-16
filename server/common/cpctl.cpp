@@ -194,7 +194,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
             // start cp log
             EngLog::info("%s: enable cp log\n", __FUNCTION__);
             if (LOG_LOCATION_PC != *bufLoc) { //2 to 1 , 0 to 1
-                if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0) {
+                if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0 || notice_slogmodem(DISABLE_LDSP_LOG_CMD) < 0) {
                     ret = -1;
                 } else { // notice slogomodem success
                     m_lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, true);
@@ -214,7 +214,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
         case LOG_LOCATION_TCARD: // t card
             EngLog::info("%s: disable cp log\n", __FUNCTION__);
             if (LOG_LOCATION_TCARD != *bufLoc) { //1 to 2 , 0 to 2
-                if (notice_slogmodem(ENABLE_5MODE_LOG_CMD) < 0) {
+                if (notice_slogmodem(ENABLE_5MODE_LOG_CMD) < 0 || notice_slogmodem(ENABLE_LDSP_LOG_CMD) < 0) {
                     ret = -1;
                 } else {
                     m_lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, false);
@@ -234,7 +234,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
         case LOG_LOCATION_NONE: // no log
             EngLog::info("%s: no log case\n", __FUNCTION__);
             if (LOG_LOCATION_NONE != *bufLoc) { //1 to 0 , 2 to 0
-                if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0) {
+                if (notice_slogmodem(DISABLE_5MODE_LOG_CMD) < 0 || notice_slogmodem(DISABLE_LDSP_LOG_CMD) < 0) {
                     ret = -1;
                 } else { // notice slogomodem success
                     memset(bufLoc, 0, sizeof(bufLoc));

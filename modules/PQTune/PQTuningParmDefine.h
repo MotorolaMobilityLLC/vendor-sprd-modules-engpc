@@ -4,32 +4,32 @@ typedef          char    int08_t;
 typedef unsigned short   uint16_t;
 typedef unsigned int     uint32_t;
 
-typedef struct  
+typedef struct
 {
     uint32_t version; // reserved
     uint32_t enable;  // 0/1
 } subversion;
 
-typedef struct  
+typedef struct
 {
-    uint32_t version;     // 
-    uint32_t modify_time; // YYMMDDHHMM 
+    uint32_t version;     //
+    uint32_t modify_time; // YYMMDDHHMM
 } mainversion;
 
-typedef struct  
+typedef struct
 {
     uint16_t r[256];
     uint16_t g[256];
     uint16_t b[256];
 } gamma_lut;
 
-typedef struct 
+typedef struct
 {
     uint16_t hue;
     uint16_t sat;
 } hsv_lut_table;
 
-typedef struct  
+typedef struct
 {
     short coef00;
     short coef01;
@@ -45,9 +45,9 @@ typedef struct
     short coef23;
 } cm_cfg;
 
-typedef struct  
+typedef struct
 {
-    short rmin; 
+    short rmin;
     short rmax;
     short gmin;
     short gmax;
@@ -55,42 +55,42 @@ typedef struct
     short bmax;
 } range_cfg;
 
-typedef struct  
+typedef struct
 {
     hsv_lut_table table[360];
 } hsv_lut;
 
-typedef struct  
+typedef struct
 {
     hsv_lut hsv;
     cm_cfg cm;
 } hsv_cm;
 
-typedef struct  
+typedef struct
 {
     cm_cfg cm;
     range_cfg range;
 } cm_range;
 
-typedef struct 
+typedef struct
 {
     uint08_t rgb;
     uint08_t cmindex;
 } rgb_cm_mapping;
 
-typedef struct 
+typedef struct
 {
     uint16_t ambient;
     uint16_t slp_brightness_factor;
 } slp_mapping_table_item;
 
-typedef struct  
+typedef struct
 {
     uint16_t ambient;
     uint16_t backlight;
 } bl_mapping_table_item;
 
-typedef struct  
+typedef struct
 {
     uint08_t brightness;
     uint08_t conversion_matrix;
@@ -100,7 +100,7 @@ typedef struct
     uint08_t first_max_bright_th;
 } slp_cfg;
 
-typedef struct 
+typedef struct
 {
     uint16_t epsilon0;
     uint16_t epsilon1;
@@ -116,19 +116,19 @@ typedef struct
     uint08_t min_diff;
 } epf_cfg;
 
-typedef struct  
+typedef struct
 {
     uint32_t map_num;
     slp_mapping_table_item item[128];
 } slp_mapping_table;
 
-typedef struct  
+typedef struct
 {
     uint32_t map_num;             // The count of actual use
     bl_mapping_table_item item[128];
 } bl_mapping_table;
 
-typedef struct  
+typedef struct
 {
     epf_cfg             epfCfgSunlightProtector;
     epf_cfg             epfCfgSuperResolution;
@@ -137,7 +137,7 @@ typedef struct
 } scene_table_item;
 
 
-typedef struct  
+typedef struct
 {
     uint16_t num;
     uint16_t index;
@@ -147,40 +147,40 @@ typedef struct
 
 #pragma region SHARKL3
 
-typedef struct  
+typedef struct
 {
     subversion          version;
     gamma_lut           gamma;
 } gamma_common;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
     uint32_t            mode;  // 1:default; 2:middle; 3:high
     hsv_cm              hsvcm[3];
 } bld_common;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
-    uint32_t            mode;   // 1:auto; 2:enhance; 3:standard 
+    uint32_t            mode;   // 1:auto; 2:enhance; 3:standard
     hsv_cm              hsvcm[3];
     rgb_cm_mapping      rgbcm[10];
     uint16_t            cm_mode;   // 1:cold; 2:warm; 3-12:rgb auto
     cm_cfg              cm[12];
 } cms_common;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
     uint08_t            mode;                // 1:Normal; 2:low
-	uint08_t			nMajorVersion;
+    uint08_t           nMajorVersion;
     uint16_t            slpblMode;           // 1:slp; 2:bl
-    scene_table         sceneTable[2];  
+    scene_table         sceneTable[2];
     bl_mapping_table    blMappingTable[2];
 } abc_common;
 
-typedef struct 
+typedef struct
 {
     mainversion         version;
     gamma_common        gamma;
@@ -194,7 +194,7 @@ typedef struct
 
 #pragma region SHARKL5_ROC1
 
-typedef struct  
+typedef struct
 {
     uint16_t slp_low_clip;
     uint16_t slp_high_clip;
@@ -202,7 +202,7 @@ typedef struct
     uint16_t reserved;
 } ltm_cfg;
 
-typedef struct  
+typedef struct
 {
     epf_cfg             epfCfg;
     slp_cfg             slpCfg;
@@ -210,7 +210,7 @@ typedef struct
     slp_mapping_table   slpMappingTable;
 } scene_table_item_sharkl5;
 
-typedef struct  
+typedef struct
 {
     uint16_t num;
     uint16_t index;
@@ -218,7 +218,7 @@ typedef struct
 } scene_table_sharkl5;
 
 
-typedef struct  
+typedef struct
 {
     hsv_lut hsv;
     cm_cfg  cm;
@@ -227,7 +227,7 @@ typedef struct
     ltm_cfg ltm;
 } hsv_cm_sharkl5;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
     uint16_t            nMode;  // 1: default; 2: Standard
@@ -236,17 +236,17 @@ typedef struct
 } gamma_common_sharkl5;
 
 
-typedef struct  
+typedef struct
 {
     subversion          version;
     uint32_t            nMajorVersion;
     cm_range            cmrange;
 } bld_common_sharkl5;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
-    uint16_t            mode;   // 1:auto; 2:enhance; 3:standard 
+    uint16_t            mode;   // 1:auto; 2:enhance; 3:standard
     uint16_t            nMajorVersion;
     hsv_cm_sharkl5      hsvcm[3];
     rgb_cm_mapping      rgbcm[10];
@@ -254,17 +254,17 @@ typedef struct
     cm_cfg              cm[12];
 } cms_common_sharkl5;
 
-typedef struct  
+typedef struct
 {
     subversion                  version;
     uint08_t                    mode;                // 1:Normal; 2:low
     uint08_t                    nMajorVersion;
     uint16_t                    slpblMode;           // 1:slp; 2:bl
-    scene_table_sharkl5         sceneTable[2];  
+    scene_table_sharkl5         sceneTable[2];
     bl_mapping_table            blMappingTable[2];
 } abc_common_sharkl5;
 
-typedef struct 
+typedef struct
 {
     mainversion             version;
     gamma_common_sharkl5    gamma;
@@ -274,33 +274,33 @@ typedef struct
 
 } pq_tuning_parm_sharkl5;
 
-typedef struct  
+typedef struct
 {
-	epf_cfg             epfCfgSunlightProtector;
-	epf_cfg             epfCfgSuperResolution;
+    epf_cfg             epfCfgSunlightProtector;
+    epf_cfg             epfCfgSuperResolution;
     slp_cfg             slpCfg;
     ltm_cfg             ltmCfg;
     slp_mapping_table   slpMappingTable;
 } scene_table_item_roc1;
 
-typedef struct  
+typedef struct
 {
     uint16_t num;
     uint16_t index;
     scene_table_item_roc1 sceneTableItem[16];
 } scene_table_roc1;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
     uint08_t            mode;                // 1:Normal; 2:low
-    uint08_t            nMajorVersion;      
+    uint08_t            nMajorVersion;
     uint16_t            slpblMode;           // 1:slp; 2:bl
-    scene_table_roc1    sceneTable[2];  
+    scene_table_roc1    sceneTable[2];
     bl_mapping_table    blMappingTable[2];
 } abc_common_roc1;
 
-typedef struct 
+typedef struct
 {
     mainversion             version;
     gamma_common_sharkl5    gamma;
@@ -314,7 +314,7 @@ typedef struct
 
 #pragma region SHARKL5PRO
 
-typedef struct  
+typedef struct
 {
     uint16_t r[729];
     uint16_t g[729];
@@ -324,17 +324,17 @@ typedef struct
 typedef struct
 {
     subversion version;
-    uint32_t   nMajorVersion;  
-    uint32_t   flag_bit_no; 
+    uint32_t   nMajorVersion;
+    uint32_t   flag_bit_no;
     lut_3d     lut3d[3];
 } hsv_common_sharkl5Pro;
 
-typedef struct  
+typedef struct
 {
     uint16_t brightness;
 } slp_cfg_sharkl5Pro_cms;
 
-typedef struct  
+typedef struct
 {
     hsv_lut hsv;
     cm_cfg  cm;
@@ -343,10 +343,10 @@ typedef struct
     ltm_cfg ltm;
 } hsv_cm_sharkl5Pro;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
-    uint16_t            mode;   // 1:auto; 2:enhance; 3:standard 
+    uint16_t            mode;   // 1:auto; 2:enhance; 3:standard
     uint16_t            nMajorVersion;
     hsv_cm_sharkl5Pro   hsvcm[3];
     rgb_cm_mapping      rgbcm[10];
@@ -365,7 +365,7 @@ typedef struct
 	uint08_t first_max_bright_th_step2;
 	uint08_t first_max_bright_th_step3;
 	uint08_t first_max_bright_th_step4;
-	uint16_t mask_height;
+	uint08_t local_weight;
 	uint08_t first_percent_th;
 	uint08_t first_pth_index0;
 	uint08_t first_pth_index1;
@@ -395,11 +395,11 @@ typedef struct
 	uint16_t glb_s3;
 	uint08_t fast_ambient_th;
 	uint08_t screen_change_percent_th;
-	uint08_t local_weight;
+	uint16_t mask_height;
 	uint08_t reserved;
 } slp_basecfg_sharkl5Pro_abc;
 
-typedef struct  
+typedef struct
 {
     epf_cfg                epfCfgSunlightProtector;
     epf_cfg                epfCfgSuperResolution;
@@ -408,7 +408,7 @@ typedef struct
     slp_mapping_table      slpMappingTable;
 } scene_table_item_sharkl5Pro;
 
-typedef struct  
+typedef struct
 {
     uint16_t num;
     uint16_t index;
@@ -416,15 +416,15 @@ typedef struct
     scene_table_item_sharkl5Pro sceneTableItem[16];
 } scene_table_sharkl5Pro;
 
-typedef struct  
+typedef struct
 {
     subversion          version;
     uint16_t            mode;                // 1:Normal; 2:low
-    uint16_t            nMajorVersion;      
-    scene_table_sharkl5Pro sceneTable[2];  
+    uint16_t            nMajorVersion;
+    scene_table_sharkl5Pro sceneTable[2];
 } abc_common_sharkl5Pro;
 
-typedef struct 
+typedef struct
 {
     mainversion             version;
     gamma_common_sharkl5    gamma;
@@ -437,7 +437,7 @@ typedef struct
 
 #pragma endregion SHARKL5PRO
 
-typedef struct 
+typedef struct
 {
     uint32_t light;
 } ambient_light;

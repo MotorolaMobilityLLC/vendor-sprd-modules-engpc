@@ -266,7 +266,7 @@ static int parse_slp_cfg_arrays(abc_common_sharkl5Pro *abc, xmlNodePtr curNode, 
 		PARSE_SLP_CONFIG(first_max_bright_th_step2, i, j);
 		PARSE_SLP_CONFIG(first_max_bright_th_step3, i, j);
 		PARSE_SLP_CONFIG(first_max_bright_th_step4, i, j);
-		PARSE_SLP_CONFIG(mask_height, i, j);
+		PARSE_SLP_CONFIG(local_weight, i, j);
 		PARSE_SLP_CONFIG(first_percent_th, i, j);
 		PARSE_SLP_CONFIG(first_pth_index0, i, j);
 		PARSE_SLP_CONFIG(first_pth_index1, i, j);
@@ -275,7 +275,7 @@ static int parse_slp_cfg_arrays(abc_common_sharkl5Pro *abc, xmlNodePtr curNode, 
 		subNode = subNode->next;
 		j++;
 	}
-	
+
 	abc->sceneTable[i].num = j;
 	ENG_LOG("l5pro jkjkjkjk %d %s\n", j, __func__);
 	return 0;
@@ -311,7 +311,7 @@ static void parse_slp_baseconfig(abc_common_sharkl5Pro *abc, xmlNodePtr curNode,
 	PARSE_SLP_BASECONFIG(glb_s3, i);
 	PARSE_SLP_BASECONFIG(fast_ambient_th, i);
 	PARSE_SLP_BASECONFIG(screen_change_percent_th, i);
-	PARSE_SLP_BASECONFIG(local_weight, i);
+	PARSE_SLP_BASECONFIG(mask_height, i);
 
 }
 
@@ -951,7 +951,7 @@ static int update_slp_child_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNod
 			UPDATE_SLP_CONFIG(first_max_bright_th_step2, i, j);
 			UPDATE_SLP_CONFIG(first_max_bright_th_step3, i, j);
 			UPDATE_SLP_CONFIG(first_max_bright_th_step4, i, j);
-			UPDATE_SLP_CONFIG(mask_height, i, j);
+			UPDATE_SLP_CONFIG(local_weight, i, j);
 			UPDATE_SLP_CONFIG(first_percent_th, i, j);
 			UPDATE_SLP_CONFIG(first_pth_index0, i, j);
 			UPDATE_SLP_CONFIG(first_pth_index1, i, j);
@@ -996,7 +996,7 @@ static int update_slp_config_child_xml(xmlNodePtr curNode)
 	UPDATE_SLP_CONFIG_CHILD_XML(glb_s3);
 	UPDATE_SLP_CONFIG_CHILD_XML(fast_ambient_th);
 	UPDATE_SLP_CONFIG_CHILD_XML(screen_change_percent_th);
-	UPDATE_SLP_CONFIG_CHILD_XML(local_weight);
+	UPDATE_SLP_CONFIG_CHILD_XML(mask_height);
 
 	return 0;
 }
@@ -1097,7 +1097,7 @@ static void update_slp_baseconfig(abc_common_sharkl5Pro *abc, xmlNodePtr curNode
 	UPDATE_SLP_BASECONFIG(glb_s3, i);
 	UPDATE_SLP_BASECONFIG(fast_ambient_th, i);
 	UPDATE_SLP_BASECONFIG(screen_change_percent_th, i);
-	UPDATE_SLP_BASECONFIG(local_weight, i);
+	UPDATE_SLP_BASECONFIG(mask_height, i);
 
 }
 static int update_slp_config(abc_common_sharkl5Pro *abc, xmlNodePtr curNode)
@@ -1340,7 +1340,7 @@ int AbcParserR4p0::parse_reg(uint08_t *ctx)
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step2 = slp_params_l5pro.fst_max_bright_th_step[2];
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step3 = slp_params_l5pro.fst_max_bright_th_step[3];
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step4 = slp_params_l5pro.fst_max_bright_th_step[4];
-	abc->sceneTable[0].sceneTableItem[0].slpCfg.mask_height = slp_params_l5pro.mask_height;
+	abc->sceneTable[0].sceneTableItem[0].slpCfg.local_weight = slp_params_l5pro.local_weight;
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_percent_th = slp_params_l5pro.fst_pth;
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index0 = slp_params_l5pro.fst_pth_index[0];
 	abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index1 = slp_params_l5pro.fst_pth_index[1];
@@ -1371,7 +1371,7 @@ int AbcParserR4p0::parse_reg(uint08_t *ctx)
 
 	abc->sceneTable[0].slpbasecfg.fast_ambient_th = slp_params_l5pro.fast_ambient_th;
 	abc->sceneTable[0].slpbasecfg.screen_change_percent_th = slp_params_l5pro.scene_change_percent_th;
-	abc->sceneTable[0].slpbasecfg.local_weight = slp_params_l5pro.local_weight;
+	abc->sceneTable[0].slpbasecfg.mask_height = slp_params_l5pro.mask_height;
 
 	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_low_clip = ltm_params_l5pro.limit_lclip;
 	abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_high_clip = ltm_params_l5pro.limit_hclip;
@@ -1420,7 +1420,7 @@ int AbcParserR4p0::update_reg(uint08_t *ctx)
 		 slp_params_l5pro.fst_max_bright_th_step[3] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step3;
 		 slp_params_l5pro.fst_max_bright_th_step[4] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_max_bright_th_step4;
 
-		 slp_params_l5pro.mask_height = abc->sceneTable[0].sceneTableItem[0].slpCfg.mask_height;
+		 slp_params_l5pro.local_weight = abc->sceneTable[0].sceneTableItem[0].slpCfg.local_weight;
 		 slp_params_l5pro.fst_pth = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_percent_th;
 		 slp_params_l5pro.fst_pth_index[0] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index0;
 		 slp_params_l5pro.fst_pth_index[1] = abc->sceneTable[0].sceneTableItem[0].slpCfg.first_pth_index1;
@@ -1450,7 +1450,7 @@ int AbcParserR4p0::update_reg(uint08_t *ctx)
 
 		 slp_params_l5pro.fast_ambient_th = abc->sceneTable[0].slpbasecfg.fast_ambient_th;
 		 slp_params_l5pro.scene_change_percent_th = abc->sceneTable[0].slpbasecfg.screen_change_percent_th;
-		 slp_params_l5pro.local_weight = abc->sceneTable[0].slpbasecfg.local_weight;
+		 slp_params_l5pro.mask_height = abc->sceneTable[0].slpbasecfg.mask_height;
 
 		 ltm_params_l5pro.limit_lclip = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_low_clip;
 		 ltm_params_l5pro.limit_hclip = abc->sceneTable[0].sceneTableItem[0].ltmCfg.slp_high_clip;

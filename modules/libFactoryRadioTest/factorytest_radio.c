@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include"unistd.h"
-#include"sys/types.h"
-#include"fcntl.h"
-#include"stdio.h"
+#include "unistd.h"
+#include "sys/types.h"
+#include "fcntl.h"
+#include "stdio.h"
 #include <errno.h>
 #include <utils/Log.h>
 #include <time.h>
@@ -13,19 +13,18 @@
 #include "at_tok.h"
 #include "sprd_fts_type.h"
 
-#define LOG_TAG  "FACTORYTESTRADIO"
+#define LOG_TAG                       "FACTORYTESTRADIO"
+#define TEL_TIMEOUT                   100
+#define AT_BUFFER_SIZE                512
+#define MAX_PHONE_MUM                 2
+#define MAX_AT_CHANNEL_NAME_LENGHT    32
 
 static const char *s_at_call = "AT+TELTEST";
 static const char *s_at_sim = "AT+SIMTEST";
 
-#define TEL_TIMEOUT     100
-#define AT_BUFFER_SIZE  512
 static char s_ATBuffer[AT_BUFFER_SIZE];
 static char *s_ATBufferCur = s_ATBuffer;
 static bool s_threadStarted = false;
-
-#define MAX_AT_CHANNEL_NAME_LENGHT (32)
-#define MAX_PHONE_MUM (2)
 
 DYMIC_WRITETOPC_FUNC g_func[WRITE_TO_MAX] = {NULL};
 
@@ -134,7 +133,6 @@ static char *readline(int modemfd) {
         /* that will be returned the while () loop below        */
     }
 
-
     while (p_eol == NULL) {
         if (0 == AT_BUFFER_SIZE - (p_read - s_ATBuffer)) {
             /* ditch buffer and start over again */
@@ -230,7 +228,7 @@ int sendATCmd(int fd, char* cmd, char* buf, unsigned int buf_len, int wait) {
         if (strstr(line, "OK")) {
             ret = rsp_len;
             break;
-        } else if (strstr(line, "ERROR")) {
+        } else if ((buf_len == 0 || buf == NULL) && strstr(line, "ERROR")) {
             ret = -1;
             break;
         } else {
@@ -238,13 +236,19 @@ int sendATCmd(int fd, char* cmd, char* buf, unsigned int buf_len, int wait) {
                 continue;
             }
             if (rsp_len + strlen(line) > buf_len) {
-                ALOGD("mmitest  recv too many word, (%d) > (%d)\n",
+                ALOGD("mmitest recv too many word, (%d) > (%d)\n",
                                (rsp_len + strlen(line)), buf_len);
                 ret = -1;
                 break;
             }
-            memcpy(buf+rsp_len, line, strlen(line));
+            memcpy(buf + rsp_len, line, strlen(line));
             rsp_len += strlen(line);
+
+            // get +CME ERROR: xxx
+            if (strstr(buf, "ERROR")) {
+                ret = -1;
+                break;
+            }
         }
     }
 
@@ -252,14 +256,14 @@ int sendATCmd(int fd, char* cmd, char* buf, unsigned int buf_len, int wait) {
 }
 
 void *readURCThread() {
+    int ret = -1;
     int fd0 = -1;
     int fd3 = -1;
     int fd = -1;
+    int count = 0;
     fd_set readfs;
     fd_set rdfds;
-    char buffer[AT_BUFFER_SIZE];
-    int count = 0;
-    int ret = -1;
+    char buffer[AT_BUFFER_SIZE] = {0};
 
     if (isNrMode()) {
         fd0 = open("/dev/stty_nr0", O_RDWR | O_NONBLOCK);
@@ -278,7 +282,8 @@ void *readURCThread() {
     for (;;) {
         do {
             rdfds = readfs;
-            ret = select((fd0>fd3)?(fd0 + 1):(fd3 + 1), &rdfds, NULL, NULL, NULL);
+            ret = select((fd0 > fd3) ? (fd0 + 1) : (fd3 + 1), &rdfds,
+                    NULL, NULL, NULL);
         } while (ret == -1 && errno == EINTR);
 
         if (ret <= 0) {
@@ -307,32 +312,29 @@ void *readURCThread() {
 //AT+TELTEST=p1,p2,str   p1 is dial(1)/hold(0); p2 is sim1/2; str is number
 static int TestMakeCall (char *req, char *rsp) {
     ALOGD("test CALL start: req = %s\n", req);
-    char *ptr = NULL;
     int ret = 0;
     int operate = -1;
     int simNum = -1;
-    char *number = NULL;
-    char tmp[512] = {0};
-    char* ptmp = NULL;
-    int fdCall = -1;
-    char *path = NULL;
-    char* cmd[32] = {0};
-    time_t startTime, nowTime;
     int mode = -1;
+    int fdCall = -1;
+    char *number = NULL;
+    char *ptr = NULL;
+    char *path = NULL;
+    char *ptmp = NULL;
+    char cmd[32] = {0};
+    char tmp[AT_BUFFER_SIZE] = {0};
+    time_t startTime, nowTime;
     pthread_t tid;
     pthread_attr_t attr;
 
     ptr = strdup(req) ;
     char *temp = ptr;
-    ALOGD("ptr start addr = %p\n", ptr);
     ret = at_tok_flag_start(&temp, '=');
     at_tok_nextint(&temp, &operate);
     at_tok_nextint(&temp, &simNum);
     at_tok_nextstr(&temp, &number);
 
-    ALOGD("operate = %d\n", operate);
-    ALOGD("SIM num = %d\n", simNum);
-    ALOGD("CALL number = %s\n", number);
+    ALOGD("operate = %d, SIM num = %d, CALL number = %s\n", operate, simNum, number);
 
     if ((simNum < 1) || (simNum > 2) || (operate < 0) || (operate > 1)) {
         ALOGE("SIM num = %d error or operate = %d error!\n", simNum, operate);
@@ -351,6 +353,7 @@ static int TestMakeCall (char *req, char *rsp) {
 
     if (fdCall < 0) {
         ALOGE("open failed %s\n", path);
+        free(ptr);
         return -1;
     }
 
@@ -363,7 +366,7 @@ static int TestMakeCall (char *req, char *rsp) {
             g_func[WRITE_TO_NPISO_AT](req_open, sizeof(req_open));
         }
 #endif
-        sendATCmd(fdCall, "ATH", NULL, 0, 0);//hang up
+        sendATCmd(fdCall, "ATH", NULL, 0, 0); //hang up
         sendATCmd(fdCall, "AT", NULL, 0, 0);
         close(fdCall);
         free(ptr);
@@ -383,7 +386,7 @@ static int TestMakeCall (char *req, char *rsp) {
 
     ALOGD("ptr free addr = %p\n", ptr);
     free(ptr);
-    sendATCmd(fdCall, "AT+SFUN=5", NULL, 0, 0);     //close protocol
+    sendATCmd(fdCall, "AT+SFUN=5", NULL, 0, 0); //close protocol
     usleep(3000 * 1000);
 
     if (isLteOnly(simNum)) {
@@ -392,7 +395,11 @@ static int TestMakeCall (char *req, char *rsp) {
         sendATCmd(fdCall, "AT+SPTESTMODEM=15,10", NULL, 0, 0);
     }
 
-    ret = sendATCmd(fdCall, "AT+SFUN=4", NULL, 0, 100); //open protocol stack and wait 100s,if exceed more than 20s,we regard rregistering network fail
+    /*
+     * open protocol stack and wait 100s
+     * if exceed more than 20s, we regard rregistering network fail
+    */
+    ret = sendATCmd(fdCall, "AT+SFUN=4", NULL, 0, 100);
     startTime = time(NULL);
 
     if (!s_threadStarted) {
@@ -432,7 +439,7 @@ static int TestMakeCall (char *req, char *rsp) {
         }
     }
 
-    ret = sendATCmd(fdCall, cmd, NULL,0, 0);  //call 112
+    ret = sendATCmd(fdCall, cmd, NULL,0, 0); //call 112
     ALOGD("tel send at return: %d", ret);
     usleep(200 * 1000);
 
@@ -455,26 +462,24 @@ static int TestMakeCall (char *req, char *rsp) {
 //AT+SIMTEST=p
 static int TestCheckSIM (char *req, char *rsp) {
     ALOGD("test SIM start: req = %s\n", req);
-    char *ptr = NULL;
     int ret = 0;
     int simNum = -1;
-    char tmp[512];
     int fd = -1;
-    char *path = NULL;
-    const char* cmd = "AT+EUICC?";
     int simState = -1;
-    char* ptmp = NULL;
+    int cnt = 10;
+    char *path = NULL;
+    char *ptmp = NULL;
+    char *ptr = NULL;
+    const char *cmd = "AT+EUICC?";
+    char tmp[AT_BUFFER_SIZE] = {0};
 
     ptr = strdup(req);
-    ALOGD("ptr start addr = %p\n", ptr);
     char *temp = ptr;
     ret = at_tok_flag_start(&temp, '=');
     ret = at_tok_nextint(&temp, &simNum);
-    ALOGD("ptr free addr = %p\n", ptr);
     free(ptr);
 
     ALOGD("SIM num = %d\n", simNum);
-
     if ((simNum < 1) || (simNum > 2)) {
         ALOGE("SIM num = %d error!\n", simNum);
         return -1;
@@ -493,12 +498,23 @@ static int TestCheckSIM (char *req, char *rsp) {
     }
     ALOGD("sendATCmd: simNum = %d, cmd = %s, path = %s", simNum, cmd, path);
 
+    do {
+        ret = sendATCmd(fd, "AT+CPIN?", tmp, sizeof(tmp), 0);
+        if (ret >= 0 || (ret == -1 && !strstr(tmp, "+CME ERROR: 14"))) {
+            break;
+        }
+        ALOGD("sim busy, retry");
+        usleep(200 * 1000);
+        cnt--;
+    } while(cnt > 0);
+
+    ALOGD("sendATCmd: simNum = %d, cmd = %s, path = %s", simNum, cmd, path);
+    memset(tmp, sizeof(tmp), 0);
     if (sendATCmd(fd, cmd, tmp, sizeof(tmp), 0) < 0) {
         simState = -1;
     } else {
         ptmp = tmp;
         ptmp = strstr(ptmp, "EUICC");
-        ALOGD("sim_check_thread line =%s", ptmp);
         if (ptmp) {
             at_tok_start(&ptmp);
             at_tok_nextint(&ptmp, &simState);
@@ -507,9 +523,8 @@ static int TestCheckSIM (char *req, char *rsp) {
         }
     }
     ALOGD("get sim%d, state = %d", simNum, simState);
-
     close(fd);
-    return (simState == 0)?0:-1;
+    return (simState == 0) ? 0 : -1;
 }
 
 void register_this_module_ext(struct eng_callback *reg, int *num) {

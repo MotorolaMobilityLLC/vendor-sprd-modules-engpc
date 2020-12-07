@@ -111,8 +111,12 @@ static int dloader_handle(char *buff, char *rsp)
         pthread_attr_t attr;
         pthread_t pthread;
         pthread_attr_init(&attr);
-        pthread_create(&pthread, &attr, autodloader_thread, NULL);
-        sprintf(rsp, "\r\nOK\r\n");
+        int retp = pthread_create(&pthread, &attr, autodloader_thread, NULL);
+        if(retp != 0){
+            sprintf(rsp, "\r\nERROR\r\n");
+        } else {
+            sprintf(rsp, "\r\nOK\r\n");
+        }
     }else{
         sprintf(rsp, "\r\nERROR\r\n");
     }
@@ -159,8 +163,12 @@ static int reboot_cmd_handle(char *buff, char *rsp)
         pthread_attr_t attr;
         pthread_t pthread;
         pthread_attr_init(&attr);
-        pthread_create(&pthread, &attr, reboot_cmd_thread, reboot_cmd_param);
-        sprintf(rsp, "\r\nOK\r\n");
+        int ret = pthread_create(&pthread, &attr, reboot_cmd_thread, reboot_cmd_param);
+        if(ret != 0){
+            sprintf(rsp, "\r\nERROR\r\n");
+        } else {
+            sprintf(rsp, "\r\nOK\r\n");
+        }
     }else{
         sprintf(rsp, "\r\nERROR\r\n");
     }
@@ -193,9 +201,12 @@ static int reset_cmd_handle(char *buff, char *rsp)
     pthread_attr_t attr;
     pthread_t pthread;
     pthread_attr_init(&attr);
-    pthread_create(&pthread, &attr, reset_cmd_thread, NULL);
-    sprintf(rsp, "\r\nOK\r\n");
-
+    int retp = pthread_create(&pthread, &attr, reset_cmd_thread, NULL);
+    if(retp != 0){
+        sprintf(rsp, "\r\nERROR\r\n");
+    } else {
+        sprintf(rsp, "\r\nOK\r\n");
+    }
     return strlen(rsp);
 }
 
@@ -258,7 +269,11 @@ int eng_diag_poweroff(char *buf, int len, char *rsp, int rsp_len)
         pthread_attr_t attr;
         pthread_t pthread;
         pthread_attr_init(&attr);
-        pthread_create(&pthread, &attr, eng_power_off_thread, NULL);
+        int ret = pthread_create(&pthread, &attr, eng_power_off_thread, NULL);
+        if(ret != 0){
+            sprintf(rsp, "\r\nERROR\r\n");
+            return strlen(rsp);
+        }
     }else{
         phone_poweroff();
     }

@@ -39,27 +39,20 @@ char g_nr_normal_at_channel[MAX_PHONE_MUM][MAX_AT_CHANNEL_NAME_LENGHT] = {
 };
 
 /* static report_ptr g_func; */
-int send_at_to_engpc(DYMIC_WRITETOPC_FUNC * write_interface_ptr) {
-    bool flag = false;
-    ALOGD("end_at_to_engpc");
-
-    if (flag == false) {
-        ALOGD("send_at_to_engpc");
-            for (int i = 0; i < WRITE_TO_MAX; i++) {
-                g_func[i] = write_interface_ptr[i];
-                if (g_func[i] != NULL) {
-                    ALOGD("send_at_to_engpc ad 0x%x, i %d", g_func[i], i);
-                }
-            }
-
-        flag = true;
+int send_at_to_engpc(DYMIC_WRITETOPC_FUNC *write_interface_ptr) {
+    ALOGD("send_at_to_engpc");
+    for (int i = 0; i < WRITE_TO_MAX; i++) {
+        g_func[i] = write_interface_ptr[i];
+        if (g_func[i] != NULL) {
+            ALOGD("send_at_to_engpc ad 0x%x, i:%d", g_func[i], i);
+        }
     }
 
     return 0;
 }
 
 bool isLteOnly(int phoneId) {
-    char testmode[PROPERTY_VALUE_MAX + 1];
+    char testmode[PROPERTY_VALUE_MAX + 1] = {0};
     property_get("persist.vendor.radio.modem.workmode", testmode, "0,0");
     ALOGD("isLteOnly: persist.vendor.radio.modem.workmode = %s\n", testmode);
 
@@ -71,7 +64,7 @@ bool isLteOnly(int phoneId) {
 }
 
 bool isNrMode() {
-    char modemtype[PROPERTY_VALUE_MAX + 1];
+    char modemtype[PROPERTY_VALUE_MAX + 1] = {0};
     property_get("ro.vendor.radio.modemtype", modemtype, "");
     ALOGD("isNrMode: ro.vendor.radio.modemtype = %s\n", modemtype);
 
@@ -82,7 +75,7 @@ bool isNrMode() {
     return true;
 }
 
-static char * findNextEOL(char *cur) {
+static char *findNextEOL(char *cur) {
     if (cur[0] == '>' && cur[1] == ' ' && cur[2] == '\0') {
         /* SMS prompt character...not \r terminated */
         return cur+2;
@@ -98,7 +91,7 @@ static char *readline(int modemfd) {
     ssize_t count;
     char *p_read = NULL;
     char *p_eol = NULL;
-    char *ret;
+    char *ret = NULL;
 
     /* this is a little odd. I use *s_ATBufferCur == 0 to
      * mean "buffer consumed completely". If it points to a character, than
@@ -168,12 +161,12 @@ static char *readline(int modemfd) {
 }
 
 int sendATCmd(int fd, char* cmd, char* buf, unsigned int buf_len, int wait) {
-    struct timeval timeout;
     int ret = -1;
     int cmd_len = 0;
-    int rsp_len = 0;
-    char* line = NULL;
+    char *line = NULL;
     fd_set readfs;
+    struct timeval timeout;
+
 
     if (NULL == cmd) {
         ALOGE("error param");
@@ -185,9 +178,11 @@ int sendATCmd(int fd, char* cmd, char* buf, unsigned int buf_len, int wait) {
     ret = write(fd, cmd, cmd_len);
 
     if (ret != cmd_len) {
-        ALOGE("mmitest write err, ret=%d, cmd_len=%d\n",  ret, cmd_len);
+        ALOGE("mmitest write err, ret = %d, cmd_len = %d\n", ret, cmd_len);
         return -1;
     }
+
+    cmd_len = 0;
 
     write(fd, "\r", 1);
 
@@ -226,7 +221,7 @@ int sendATCmd(int fd, char* cmd, char* buf, unsigned int buf_len, int wait) {
         }
 
         if (strstr(line, "OK")) {
-            ret = rsp_len;
+            ret = cmd_len;
             break;
         } else if ((buf_len == 0 || buf == NULL) && strstr(line, "ERROR")) {
             ret = -1;
@@ -235,14 +230,14 @@ int sendATCmd(int fd, char* cmd, char* buf, unsigned int buf_len, int wait) {
             if (buf_len == 0 || buf == NULL) {
                 continue;
             }
-            if (rsp_len + strlen(line) > buf_len) {
-                ALOGD("mmitest recv too many word, (%d) > (%d)\n",
-                               (rsp_len + strlen(line)), buf_len);
+            if (cmd_len + strlen(line) > buf_len) {
+                ALOGD("mmitest recv too many word, %d > %d\n", cmd_len + strlen(line),
+                        buf_len);
                 ret = -1;
                 break;
             }
-            memcpy(buf + rsp_len, line, strlen(line));
-            rsp_len += strlen(line);
+            memcpy(buf + cmd_len, line, strlen(line));
+            cmd_len += strlen(line);
 
             // get +CME ERROR: xxx
             if (strstr(buf, "ERROR")) {
@@ -310,7 +305,7 @@ void *readURCThread() {
 }
 
 //AT+TELTEST=p1,p2,str   p1 is dial(1)/hold(0); p2 is sim1/2; str is number
-static int TestMakeCall (char *req, char *rsp) {
+static int TestMakeCall(char *req, char *rsp) {
     ALOGD("test CALL start: req = %s\n", req);
     int ret = 0;
     int operate = -1;
@@ -329,7 +324,7 @@ static int TestMakeCall (char *req, char *rsp) {
 
     ptr = strdup(req) ;
     char *temp = ptr;
-    ret = at_tok_flag_start(&temp, '=');
+    at_tok_flag_start(&temp, '=');
     at_tok_nextint(&temp, &operate);
     at_tok_nextint(&temp, &simNum);
     at_tok_nextstr(&temp, &number);
@@ -384,7 +379,6 @@ static int TestMakeCall (char *req, char *rsp) {
         return -1;
     }
 
-    ALOGD("ptr free addr = %p\n", ptr);
     free(ptr);
     sendATCmd(fdCall, "AT+SFUN=5", NULL, 0, 0); //close protocol
     usleep(3000 * 1000);
@@ -399,7 +393,7 @@ static int TestMakeCall (char *req, char *rsp) {
      * open protocol stack and wait 100s
      * if exceed more than 20s, we regard rregistering network fail
     */
-    ret = sendATCmd(fdCall, "AT+SFUN=4", NULL, 0, 100);
+    sendATCmd(fdCall, "AT+SFUN=4", NULL, 0, 100);
     startTime = time(NULL);
 
     if (!s_threadStarted) {
@@ -415,18 +409,20 @@ static int TestMakeCall (char *req, char *rsp) {
     }
 
     for (;;) {
-        sendATCmd(fdCall, "AT+CREG?", tmp, sizeof(tmp), 0);
-        ptmp = strstr(tmp, "CREG");
-        ALOGD("+CREG = %s", ptmp);
-        at_tok_start(&ptmp);
-        at_tok_nextint(&ptmp, &mode);
-        ALOGD("get ps mode = %d", mode);
+        if (sendATCmd(fdCall, "AT+CREG?", tmp, sizeof(tmp), 0) >= 0) {
+            ptmp = strstr(tmp, "CREG");
+            if (ptmp) {
+                at_tok_start(&ptmp);
+                at_tok_nextint(&ptmp, &mode);
+                ALOGD("get ps mode = %d", mode);
 
-        if (2 == mode) {
-            at_tok_nextint(&ptmp, &mode);
-            ALOGD("get state = %d", mode);
-            if ((1 == mode) || (8 == mode) || (5 == mode)) {
-                break;
+                if (2 == mode) {
+                    at_tok_nextint(&ptmp, &mode);
+                    ALOGD("get state = %d", mode);
+                    if ((1 == mode) || (8 == mode) || (5 == mode)) {
+                        break;
+                    }
+                }
             }
         }
 
@@ -475,8 +471,8 @@ static int TestCheckSIM (char *req, char *rsp) {
 
     ptr = strdup(req);
     char *temp = ptr;
-    ret = at_tok_flag_start(&temp, '=');
-    ret = at_tok_nextint(&temp, &simNum);
+    at_tok_flag_start(&temp, '=');
+    at_tok_nextint(&temp, &simNum);
     free(ptr);
 
     ALOGD("SIM num = %d\n", simNum);
@@ -496,7 +492,6 @@ static int TestCheckSIM (char *req, char *rsp) {
         ALOGE("open failed %s\n", path);
         return -1;
     }
-    ALOGD("sendATCmd: simNum = %d, cmd = %s, path = %s", simNum, cmd, path);
 
     do {
         ret = sendATCmd(fd, "AT+CPIN?", tmp, sizeof(tmp), 0);
@@ -509,7 +504,7 @@ static int TestCheckSIM (char *req, char *rsp) {
     } while(cnt > 0);
 
     ALOGD("sendATCmd: simNum = %d, cmd = %s, path = %s", simNum, cmd, path);
-    memset(tmp, sizeof(tmp), 0);
+    memset(tmp, 0, sizeof(tmp));
     if (sendATCmd(fd, cmd, tmp, sizeof(tmp), 0) < 0) {
         simState = -1;
     } else {

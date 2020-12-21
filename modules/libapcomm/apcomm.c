@@ -25,6 +25,7 @@
 #define AT_RSP "+EMMCDDRSIZE: "
 
 #define EMMC_SIZE_PATH   "/sys/block/mmcblk0/size"
+#define UFS_SIZE_PATH    "/sys/block/sda/size"
 #define DDR_SIZE_PATH    "/proc/sprd_dmc/property"
 
 enum{
@@ -43,7 +44,10 @@ long getSize(int type){
     if (type == SIZE_DDR){
         path = DDR_SIZE_PATH;
     }else if(type == SIZE_EMMC){
-        path = EMMC_SIZE_PATH;
+        if (0 == access(EMMC_SIZE_PATH,F_OK))
+            path = EMMC_SIZE_PATH;
+        else
+            path = UFS_SIZE_PATH;
     }else{
         return 0;
     }

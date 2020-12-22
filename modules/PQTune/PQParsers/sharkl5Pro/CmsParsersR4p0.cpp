@@ -336,7 +336,7 @@ static int parse_hsv_cm_epf_slp_ltm(cms_common_sharkl5Pro *cms, xmlNodePtr subNo
 	char *endptr = NULL;
 
 	curNode = subNode;
-	
+
 	while(NULL != curNode) {
 		if (!xmlStrcmp(curNode->name, (const xmlChar*)"hsv")) {
 			parse_hsv(cms, curNode, i);
@@ -949,13 +949,6 @@ int CmsParserR4p0::update_reg(uint08_t *ctx)
 		ltm_params_l5pro.limit_lclip = cms->hsvcm[0].ltm.slp_low_clip;
 		ltm_params_l5pro.limit_hclip = cms->hsvcm[0].ltm.slp_high_clip;
 		ltm_params_l5pro.limit_clip_step = cms->hsvcm[0].ltm.slp_step_clip;
-
-		cnt = write(fdslp, (unsigned char*)&slp_params_l5pro, szslp);
-		if (cnt != szslp)
-			ALOGD("write slp fail regs_size %d wr_cnt %d\n", szslp, cnt);
-		cnt = write(fdltm, (unsigned char*)&ltm_params_l5pro, szltm);
-		if (cnt != szltm)
-			ALOGD("write ltm fail regs_size %d wr_cnt %d\n", szltm, cnt);
 
 		close(fdhsv);
 		close(fdcm);

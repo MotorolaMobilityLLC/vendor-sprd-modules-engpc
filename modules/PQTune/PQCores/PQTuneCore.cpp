@@ -377,7 +377,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	tune_version_copy(version, dut_info->szModelName);
 	strncpy(dut_info->szChipName, pchar + 1, sizes);
 
-	property_get("ro.system.build.version.release", value, "0");
+	property_get("ro.build.version.release", value, "0");
 	dut_info->AndroidVersion = atoi(value);
 
 	sizes = read(fd, info, 1024);

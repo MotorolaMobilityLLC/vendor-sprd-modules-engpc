@@ -46,8 +46,7 @@ int findpart(char *basePath, char* partname, char **foundname)
     int found = 0;
     ENG_LOG("%s %s%s", __func__, basePath, partname);
 
-    if ((dir=opendir(basePath)) == NULL)
-    {
+    if ((dir=opendir(basePath)) == NULL) {
         ENG_LOG("Open dir:%s error... errno=%d", basePath, errno);
         return 0;
     }
@@ -57,14 +56,13 @@ int findpart(char *basePath, char* partname, char **foundname)
         if(strcmp(ptr->d_name,".")==0 || strcmp(ptr->d_name,"..")==0)    ///current dir OR parrent dir
             continue;
 
-        if(ptr->d_type == 10){
+        if(ptr->d_type == 10) {
             ///link file
             ENG_LOG("d_name:%s%s\n",basePath, ptr->d_name);
             char *ret = strstr(ptr->d_name, partname);
-            if(ret != NULL)
-            {
+            if(ret != NULL) {
                 found++;
-                *foundname = (char*)malloc(strlen(ptr->d_name));
+                *foundname = (char*)malloc(strlen(ptr->d_name) + 1);
                 strcpy(*foundname, ptr->d_name);
                 ENG_LOG("found:%s%s\n",basePath, *foundname);
                 break;
@@ -86,8 +84,7 @@ int get_match(char *basePath, char* partname, char **foundname)
     ENG_LOG("%s %s%s", __func__, basePath, partname);
 
     dir = opendir(basePath);
-    if ( dir == NULL)
-    {
+    if ( dir == NULL) {
         ENG_LOG("Open dir:%s error...", basePath);
         return 0;
     }
@@ -97,36 +94,30 @@ int get_match(char *basePath, char* partname, char **foundname)
         if(strcmp(ptr->d_name,".")==0 || strcmp(ptr->d_name,"..")==0)    ///current dir OR parrent dir
             continue;
 
-        if(ptr->d_type == 10){
+        if(ptr->d_type == 10) {
             ///link file
             printf("d_name:%s/%s\n",basePath,ptr->d_name);
             char *ret = strstr(ptr->d_name, partname);
-            if(ret != NULL)
-            {
-
-                foundname[found] = (char*)malloc(strlen(ptr->d_name));
+            if(ret != NULL) {
+                foundname[found] = (char*)malloc(strlen(ptr->d_name)+1);
                 strcpy(foundname[found], ptr->d_name);
                 found++;
-                if(found > 4){
+                if(found > 4) {
                     ENG_LOG("%s found too much", __func__);
                     break;
                 }
             }
         }
-
     }
     closedir(dir);
     ENG_LOG("%s found=%d", __func__, found);
     return found;
 }
 
-
-
 int partinfo_query(char *buf, int len, char *rsp, int rsplen){
 
     char *real_partname = NULL;
     int part_size=0;
-
 
     MSG_HEAD_T	*msg_head_ptr = NULL;
     diag_query_partition_info_req_t *lpDiagQuery = NULL;
@@ -140,36 +131,31 @@ int partinfo_query(char *buf, int len, char *rsp, int rsplen){
 
     lpDiagQuery = (diag_query_partition_info_req_t* )(buf + 1 + sizeof(MSG_HEAD_T));
 
-    if(findpart(PARTINFO_PATH, lpDiagQuery->partition_name, &real_partname)){
+    if(findpart(PARTINFO_PATH, lpDiagQuery->partition_name, &real_partname)) {
         lpDiagAck->status = 0; //success
+	int namelen = 0;
 
-        int namelen = strlen(real_partname)+strlen(PARTINFO_PATH);
-        char *fullpath = (char*)malloc(namelen);
-        if(!fullpath)
-        {
+        namelen = strlen(real_partname)+strlen(PARTINFO_PATH);
+        char *fullpath = (char*)malloc(namelen + 1);
+        if(!fullpath) {
             ENG_LOG("the %s malloc fail\n", __FUNCTION__);
             return 0;
         }
         memset(fullpath, 0, namelen);
         sprintf(fullpath, "%s%s", PARTINFO_PATH, real_partname);
         int fd = open(fullpath,O_RDONLY);
-        if(fd < 0)
-        {
+        if(fd < 0) {
             ENG_LOG("the %s--- open %s path fail\n", __FUNCTION__, fullpath);
-            return 0;
+            goto out;
         }
 
         int ret = ioctl(fd, BLKGETSIZE64, &part_size);
-        if(ret < 0)
-        {
+        if(ret < 0) {
             ENG_LOG("the %s--- ioctl ret= %d fail\n", __FUNCTION__, ret);
-            return 0;
+            goto out;
         }
 
-        if(real_partname != NULL)
-            free(real_partname);
-        if(strcmp(lpDiagQuery->partition_name, "fixnv")==0)
-        {
+        if(strcmp(lpDiagQuery->partition_name, "fixnv")==0) {
             char fixnv_property[50];
             char fixnv[95];
             int fixnv_size=0;
@@ -186,11 +172,15 @@ int partinfo_query(char *buf, int len, char *rsp, int rsplen){
             fixnv_size = strtol(fixnv, 0, 16);
             ENG_LOG("fixnv_size %x\n", fixnv_size);
             part_size = fixnv_size;
-
         }
+
         lpDiagAck->size = part_size; // prodnv size = 5M
         ENG_LOG("lpDiagAck->size=%d", lpDiagAck->size);
+
         close(fd);
+out:
+	free(fullpath);
+	free(real_partname);
 
     }else{
             lpDiagAck->status = 1; //fail
@@ -204,28 +194,33 @@ int partinfo_read_offset(char *path, char *file, int offset, int size, unsigned 
 {
     int szbuff=0;
     int namelen = 0;
-    memset(buff, 0, size);
+    int ret = 0;
 
     ENG_LOG("%s enter",__FUNCTION__);
+    memset(buff, 0, size);
     namelen = strlen(path)+strlen(file);
-    char *fullpath = (char*)malloc(namelen);
-    if(!fullpath)
-    {
+    char *fullpath = (char*)malloc(namelen + 1);
+    if(!fullpath) {
         ENG_LOG("the %s malloc fail\n", __FUNCTION__);
         return 0;
     }
     memset(fullpath, 0, namelen);
     sprintf(fullpath, "%s%s", path, file);
     int fd = open(fullpath, O_RDONLY);
-    if(fd < 0){
+    if(fd < 0) {
 	ENG_LOG("the %s--- read %s path fail\n", __FUNCTION__, fullpath);
-        return 0;
+        goto out;
     }
 
-   lseek(fd, offset,SEEK_SET);
+   ret = lseek(fd, offset,SEEK_SET);
+   if(ret < 0) {
+	   ENG_LOG("%s lseek fail.\n", __func__);
+	   goto out;
+   }
    szbuff = read(fd,buff,size);
-   if(fullpath)
-        free(fullpath);
+
+out:
+   free(fullpath);
    close(fd);
 
    return szbuff;
@@ -247,8 +242,7 @@ int partinfo_read(char *buf, int len, char *rsp, int rsplen){
     lpDiagRD = (diag_read_partition_req_t* )(buf + 1 + sizeof(MSG_HEAD_T));
     memset(lpDiagAck->data, 0, lpDiagRD->size);
 
-    if(findpart(PARTINFO_PATH, lpDiagRD->partition_name, &real_partname)){
-
+    if(findpart(PARTINFO_PATH, lpDiagRD->partition_name, &real_partname)) {
         int offset = lpDiagRD->offset;
         int size = lpDiagRD->size;
         //read prodnv data: offset, size
@@ -268,11 +262,13 @@ int partinfo_read(char *buf, int len, char *rsp, int rsplen){
 }
 int partinfo_write_offset(char *path, char *file, int offset, int size, unsigned char *buff, int szbuff){
 
-    int namelen = strlen(path)+strlen(file);
+    int namelen = 0;
+    int ret = 0;
 
-    char *fullpath = (char*)malloc(namelen);
-    if(!fullpath)
-    {
+    namelen = strlen(path)+strlen(file);
+
+    char *fullpath = (char*)malloc(namelen + 1);
+    if(!fullpath) {
         ENG_LOG("the %s malloc fail\n", __FUNCTION__);
         return 0;
     }
@@ -280,19 +276,23 @@ int partinfo_write_offset(char *path, char *file, int offset, int size, unsigned
     sprintf(fullpath, "%s%s", path, file);
 
     int fd = open(fullpath, O_RDWR);
-    if(fd < 0){
+    if(fd < 0) {
 	ENG_LOG("the %s--- open %s path fail\n", __FUNCTION__, fullpath);
-        return 0;
+        goto out;
     }
 
-    lseek(fd, offset,SEEK_SET);
+    ret = lseek(fd, offset,SEEK_SET);
+    if(ret < 0) {
+	ENG_LOG("%s lseek fail.\n", __func__);
+	goto out;
+    }
     szbuff=write(fd, buff,size);
     fsync(fd);
-    if(fullpath)
-        free(fullpath);
+out:
+     free(fullpath);
+     close(fd);
 
-    close(fd);
-    return szbuff;
+     return szbuff;
 }
 
 int partinfo_write(char *buf, int len, char *rsp, int rsplen){
@@ -313,11 +313,10 @@ int partinfo_write(char *buf, int len, char *rsp, int rsplen){
 
     lpDiagWR = (diag_write_partition_req_t* )(buf + 1 + sizeof(MSG_HEAD_T));
     count = get_match(PARTINFO_PATH, lpDiagWR->partition_name, &real_partname[0]);
-    if(count == 0)
-    {
+    if(count == 0) {
         lpDiagAck->status = 1; //fail
     }
-    while(i < count){
+    while(i < count) {
         int offset = lpDiagWR->offset;
         int size = lpDiagWR->size;
         ENG_LOG("%s i=%d",__FUNCTION__, i);
@@ -347,7 +346,7 @@ int partinfo_handler(char *buf, int len, char *rsp, int rsplen){
       diag_query_partition_info_req_t *lpDiagApReq = NULL;
 
       ENG_LOG("%s enter",__FUNCTION__);
-      if(NULL == buf || NULL == rsp){
+      if(NULL == buf || NULL == rsp) {
           ENG_LOG("%s,null pointer",__FUNCTION__);
           return 0;
       }

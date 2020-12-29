@@ -25,13 +25,13 @@
 
 #define PARSE_CMS_CM_CFG(I, X) \
 ({ \
-        if (xmlHasProp(propNode, BAD_CAST #X)) { \
-                szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-                cms->cm[I].X = strtoul((char *)szPropity, NULL, 0); \
-				xmlFree(szPropity); \
-				ALOGD("pqpqpq cm cfg rrrr %d %s %d",cms->cm[I].X, #X, I); \
-                propNode = propNode->next; \
-        } \
+	if (xmlHasProp(propNode, BAD_CAST #X)) { \
+		szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
+		cms->cm[I].X = strtoul((char *)szPropity, NULL, 0); \
+		xmlFree(szPropity); \
+		ALOGD("pqpqpq cm cfg rrrr %d %s %d",cms->cm[I].X, #X, I); \
+		propNode = propNode->next; \
+	} \
 })
 
 #define PARSE_CMS_SLP(I, X) \
@@ -56,19 +56,8 @@
 	} \
 })
 
-#define PARSE_CMS_SAT(I, X) \
-		({ \
-			if (xmlHasProp(propNode, BAD_CAST #X)) { \
-				szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-				cms->sat[I] = strtoul((char *)szPropity, NULL, 0); \
-				ALOGD("pqpqpq cm rrrr %f %s i = %d",cms->sat[I], #X, I); \
-				xmlFree(szPropity); \
-				propNode = propNode->next; \
-			} \
-	})
-
-#define UPDATE_CMS_EPF(I, X)   \
-({  \
+#define UPDATE_CMS_EPF(I, X) \
+({ \
 	if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		snprintf(numStr, sizeof(numStr), "%d", cms->hsvcm[I].epf.X); \
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
@@ -78,27 +67,27 @@
 })
 
 #define UPDATE_CMS_CM(I, X) \
-({	\
-	if (xmlHasProp(propNode, BAD_CAST #X)) {	\
+({ \
+	if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		snprintf(numStr, sizeof(numStr), "%d", cms->hsvcm[I].cm.X); \
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
 		ALOGD("pqpqpq cm wwww %d %s i = %d",cms->hsvcm[I].cm.X, #X, I); \
 		propNode = propNode->next; \
-	}	\
+	} \
 })
 
 #define UPDATE_CMS_CM_CFG(I, X) \
-({      \
-        if (xmlHasProp(propNode, BAD_CAST #X)) {        \
-                snprintf(numStr, sizeof(numStr), "%d", cms->cm[I].X); \
-                xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
+({ \
+	if (xmlHasProp(propNode, BAD_CAST #X)) { \
+		snprintf(numStr, sizeof(numStr), "%d", cms->cm[I].X); \
+		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
 		ALOGD("pqpqpq cm_cfg wwww %d %s i= %d",cms->cm[I].X, #X, I); \
-                propNode = propNode->next; \
-        }       \
+		propNode = propNode->next; \
+	} \
 })
 
 #define UPDATE_CMS_SLP(I, X) \
-({  \
+({ \
 	if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		snprintf(numStr, sizeof(numStr), "%d", cms->hsvcm[I].slp.X); \
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
@@ -108,7 +97,7 @@
 })
 
 #define UPDATE_CMS_LTM(I, X) \
-({	\
+({ \
 	if (xmlHasProp(propNode, BAD_CAST #X)) { \
 		snprintf(numStr, sizeof(numStr), "%d", cms->hsvcm[I].ltm.X); \
 		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
@@ -136,18 +125,18 @@
 
 #define PARSE_CMS_CM_CFG_ARRAYS(i) \
 ({ \
-        PARSE_CMS_CM_CFG(i, coef00); \
-        PARSE_CMS_CM_CFG(i, coef01); \
-        PARSE_CMS_CM_CFG(i, coef02); \
-        PARSE_CMS_CM_CFG(i, coef03); \
-        PARSE_CMS_CM_CFG(i, coef10); \
-        PARSE_CMS_CM_CFG(i, coef11); \
-        PARSE_CMS_CM_CFG(i, coef12); \
-        PARSE_CMS_CM_CFG(i, coef13); \
-        PARSE_CMS_CM_CFG(i, coef20); \
-        PARSE_CMS_CM_CFG(i, coef21); \
-        PARSE_CMS_CM_CFG(i, coef22); \
-        PARSE_CMS_CM_CFG(i, coef23); \
+	PARSE_CMS_CM_CFG(i, coef00); \
+	PARSE_CMS_CM_CFG(i, coef01); \
+	PARSE_CMS_CM_CFG(i, coef02); \
+	PARSE_CMS_CM_CFG(i, coef03); \
+	PARSE_CMS_CM_CFG(i, coef10); \
+	PARSE_CMS_CM_CFG(i, coef11); \
+	PARSE_CMS_CM_CFG(i, coef12); \
+	PARSE_CMS_CM_CFG(i, coef13); \
+	PARSE_CMS_CM_CFG(i, coef20); \
+	PARSE_CMS_CM_CFG(i, coef21); \
+	PARSE_CMS_CM_CFG(i, coef22); \
+	PARSE_CMS_CM_CFG(i, coef23); \
 })
 
 #define PARSE_CMS_EPF_ARRAYS(i) \
@@ -196,18 +185,18 @@
 
 #define UPDATE_CMS_CM_CFG_ARRAYS(i) \
 ({ \
-        UPDATE_CMS_CM_CFG(i, coef00); \
-        UPDATE_CMS_CM_CFG(i, coef01); \
-        UPDATE_CMS_CM_CFG(i, coef02); \
-        UPDATE_CMS_CM_CFG(i, coef03); \
-        UPDATE_CMS_CM_CFG(i ,coef10); \
-        UPDATE_CMS_CM_CFG(i, coef11); \
-        UPDATE_CMS_CM_CFG(i, coef12); \
-        UPDATE_CMS_CM_CFG(i, coef13); \
-        UPDATE_CMS_CM_CFG(i, coef20); \
-        UPDATE_CMS_CM_CFG(i, coef21); \
-        UPDATE_CMS_CM_CFG(i, coef22); \
-        UPDATE_CMS_CM_CFG(i, coef23); \
+	UPDATE_CMS_CM_CFG(i, coef00); \
+	UPDATE_CMS_CM_CFG(i, coef01); \
+	UPDATE_CMS_CM_CFG(i, coef02); \
+	UPDATE_CMS_CM_CFG(i, coef03); \
+	UPDATE_CMS_CM_CFG(i ,coef10); \
+	UPDATE_CMS_CM_CFG(i, coef11); \
+	UPDATE_CMS_CM_CFG(i, coef12); \
+	UPDATE_CMS_CM_CFG(i, coef13); \
+	UPDATE_CMS_CM_CFG(i, coef20); \
+	UPDATE_CMS_CM_CFG(i, coef21); \
+	UPDATE_CMS_CM_CFG(i, coef22); \
+	UPDATE_CMS_CM_CFG(i, coef23); \
 })
 
 #define UPDATE_CMS_EPF_ARRAYS(i) \
@@ -421,14 +410,19 @@ static int parse_cms_sat(cms_common_sharkl5Pro *cms, xmlNodePtr subNode)
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 	char *endptr = NULL;
-	char mm_buf[40] = {0};
+	char mm_buf[36] = {0};
 	int i = 0;
 
-	propNode = subNode->children;
-
+	propNode = subNode->children; //param
 	for (i = 0; i < 36; i++) {
-		snprintf(mm_buf, sizeof(mm_buf), "sat_%d", i * 10);
-		PARSE_CMS_SAT(i, mm_buf);
+		sprintf(mm_buf, "sat_%d", i * 10);
+		if (xmlHasProp(propNode, BAD_CAST mm_buf)) {
+			szPropity = xmlGetProp(propNode, (const xmlChar*) mm_buf);
+			cms->sat[i] = strtod((char *)szPropity, NULL);
+			ALOGD("pqpqpq cm rrrr %f %s i = %d",cms->sat[i], mm_buf, i);
+			xmlFree(szPropity);
+			propNode = propNode->next;
+		}
 	}
 
 	return 0;
@@ -556,22 +550,21 @@ static int update_cms_sat_config(cms_common_sharkl5Pro *cms, xmlNodePtr curNode)
 	xmlAttrPtr attrPtr;
 	xmlChar* szPropity;
 	char *endptr = NULL;
-	int j = 0, i;
+	int i = 0;
 	char numStr[10];
-	char mm_buf[40] = {0};
-
-	propNode = curNode;
+	char mm_buf[36] = {0};
+	propNode = curNode->children;
 	while (NULL != propNode) {
 		attrPtr = propNode->properties;
 		while (NULL != attrPtr) {
-			snprintf(mm_buf, sizeof(mm_buf), "sat_%d", i * 10);
+			sprintf(mm_buf, "sat_%d", i * 10);
 			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)mm_buf)) {
-				snprintf(numStr, sizeof(numStr), "%f", cms->sat[j]);
+				snprintf(numStr, sizeof(numStr), "%f", cms->sat[i]);
 				xmlSetProp(propNode, BAD_CAST mm_buf, (const xmlChar*)numStr);
 			}
 			attrPtr = attrPtr->next;
  		}
-		j++;
+		i++;
 		propNode = propNode->next;
 	}
 

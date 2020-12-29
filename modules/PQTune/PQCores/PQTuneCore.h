@@ -27,6 +27,7 @@ public:
 	virtual int tune_rd_tuning_xml(char *buf, int len, char *rsp, int rsplen);
 	virtual int tune_wr_tuning_xml(char *buf, int len, char *rsp, int rsplen);
 	virtual int tune_rd_ambient(char *buf, int len, char *rsp, int rsplen);
+	virtual int tune_wr_backlight(char *buf, int len, char *rsp, int rsplen);
 	virtual int tune_version();
 	virtual ~PQTuneCore();
 	PQTuneCore(int ver);

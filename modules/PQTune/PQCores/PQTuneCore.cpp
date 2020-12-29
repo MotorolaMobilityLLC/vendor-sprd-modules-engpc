@@ -436,7 +436,7 @@ int PQTuneCore::tune_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 		flip_en = false;
 	}
 	pdata = (uint32_t *)(buf + DIAG_HEADER_LENGTH + 5);
-	rsp_pdata = (uint32_t *)(rsp + DIAG_HEADER_LENGTH + 5);;
+	rsp_pdata = (uint32_t *)(rsp + DIAG_HEADER_LENGTH + 5);
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	if (*pdata != 0xffffffff) {
 		sprintf(rgb, "%x", *pdata);
@@ -461,6 +461,47 @@ int PQTuneCore::tune_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 	close(fd0);
 	return rsp_len;
 
+}
+
+int PQTuneCore::tune_wr_backlight(char *buf, int len, char *rsp, int rsplen)
+{
+	int fd;
+	int ret = 0;
+	char brightness[10] = {0};
+	bool exit = false;
+	static bool flip_en = true;
+	uint32_t *pdata = NULL;
+	uint32_t *rsp_pdata = NULL;
+	MSG_HEAD_T *rsp_head;
+	uint32_t rsp_len = 0;
+	uint32_t extra_len = 0;
+
+	fd = open(Brightness, O_RDWR);
+	if (fd < 0) {
+		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
+		return errno;
+	}
+
+	pdata = (uint32_t *)(buf + DIAG_HEADER_LENGTH + 5);
+	rsp_pdata = (uint32_t *)(rsp + DIAG_HEADER_LENGTH + 5);
+	rsp_head = (MSG_HEAD_T *)(rsp + 1);
+	if ((*pdata >= 0) && (*pdata <= 255)) {
+		sprintf(brightness, "%d", *pdata);
+		ret = write(fd, brightness, sizeof(brightness));
+		exit = false;
+	}
+
+	memcpy(rsp, buf, DIAG_HEADER_LENGTH + 5);
+	if (ret == -1)
+		*rsp_pdata = 1;
+	else
+		*rsp_pdata = 0;
+	rsp_len = DIAG_HEADER_LENGTH + 10;
+	rsp_head->len = rsp_len - 2;
+	rsp[rsp_len - 1] = 0x7e;
+	close(fd);
+
+	return rsp_len;
 }
 
 int PQTuneCore::tune_read_regs(char *buf, int len, char *rsp, int rsplen)
@@ -758,7 +799,7 @@ int PQTuneCore::tune_rd_tuning_reg(char *buf, int len, char *rsp, int rsplen)
 			break;
 		case PQ_BLD:
 			bld->parse_reg(ctx);
-			sizes = bld_size;;
+			sizes = bld_size;
 			memcpy(pdata, ctx + gamma_size + sizeof(mainversion), sizes);
 			break;
 		case PQ_CMS:

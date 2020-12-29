@@ -165,6 +165,16 @@ int pq_cmd_rd_ambient(char *buf, int len, char *rsp, int rsplen)
 	return rsp_len;
 }
 
+int pq_cmd_wr_backlight(char *buf, int len, char *rsp, int rsplen)
+{
+	int rsp_len = 0;
+
+	if (TuneCore)
+		rsp_len = TuneCore->tune_wr_backlight(buf, len, rsp, rsplen);
+
+	return rsp_len;
+}
+
 PQTuneCore* pq_create_TuneCore(char *version)
 {
 	if (!strncmp(version, "dpu-lite-r2p0", strlen("dpu-lite-r2p0"))) {
@@ -329,6 +339,14 @@ extern "C" void register_this_module_ext(struct eng_callback *reg, int *num) {
   tmp->subtype = 0x1; // sub cmd
   tmp->diag_ap_cmd = 0xf;
   tmp->eng_diag_func = pq_cmd_rd_ambient; // rsp function ptr
+  moudles_num++;
+  tmp++;
+
+    /***PQ set backlight Cmd***/
+  tmp->type = 0x5D;   // main cmd
+  tmp->subtype = 0x1; // sub cmd
+  tmp->diag_ap_cmd = 0x10;
+  tmp->eng_diag_func = pq_cmd_wr_backlight; // rsp function ptr
   moudles_num++;
 
   *num = moudles_num;

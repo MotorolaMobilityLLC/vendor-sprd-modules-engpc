@@ -388,7 +388,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 		close(fd3);
 		free(dut_info);
 		return -1;
-        }
+	}
 	parse_panelsize(info, sizes , dut_info);
 	memcpy(rsp, buf, DIAG_HEADER_LENGTH + 5);
 	memcpy(rsp + DIAG_HEADER_LENGTH + 5, dut_info, sizeof(DUT_INFO_T));
@@ -404,24 +404,20 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	return rsp_len;
 }
 
-
 int PQTuneCore::tune_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 {
 	int fd;
 	int fd0;
 	int ret = 0;
 	char rgb[10] = {0};
-	char flip[10] = {0};
-	bool exit = false;
-	static bool flip_en = true;
+	char refresh[10] = {0};
 	uint32_t *pdata = NULL;
 	uint32_t *rsp_pdata = NULL;
 	MSG_HEAD_T *rsp_head;
 	uint32_t rsp_len = 0;
 	uint32_t extra_len = 0;
-
 	fd = open(DispcBg, O_RDWR);
-	fd0 = open(FlipDisable, O_RDWR);
+	fd0 = open(DpuRefresh, O_RDWR);
 	if (fd < 0 || fd0 < 0) {
 		ALOGD("%s: open file failed, err: %s\n", __func__, strerror(errno));
 		if (fd >= 0)
@@ -430,24 +426,17 @@ int PQTuneCore::tune_rgb_pattern(char *buf, int len, char *rsp, int rsplen)
 			close(fd0);
 		return errno;
 	}
-	if(flip_en) {
-		sprintf(flip, "%d", 1);
-		write(fd0, flip, sizeof(flip));
-		flip_en = false;
-	}
+
 	pdata = (uint32_t *)(buf + DIAG_HEADER_LENGTH + 5);
 	rsp_pdata = (uint32_t *)(rsp + DIAG_HEADER_LENGTH + 5);
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
 	if (*pdata != 0xffffffff) {
 		sprintf(rgb, "%x", *pdata);
 		ret = write(fd, rgb, sizeof(rgb));
-		exit = false;
 	} else {
-		sprintf(flip, "%d", 0);
-		write(fd0, flip, sizeof(flip));
+		sprintf(refresh, "%d", 1);
+		ret = write(fd0, refresh, sizeof(refresh));
 		ret = 0;
-		exit = true;
-		flip_en = true;
 	}
 	memcpy(rsp, buf, DIAG_HEADER_LENGTH + 5);
 	if (ret == -1)
@@ -468,8 +457,6 @@ int PQTuneCore::tune_wr_backlight(char *buf, int len, char *rsp, int rsplen)
 	int fd;
 	int ret = 0;
 	char brightness[10] = {0};
-	bool exit = false;
-	static bool flip_en = true;
 	uint32_t *pdata = NULL;
 	uint32_t *rsp_pdata = NULL;
 	MSG_HEAD_T *rsp_head;
@@ -488,7 +475,9 @@ int PQTuneCore::tune_wr_backlight(char *buf, int len, char *rsp, int rsplen)
 	if ((*pdata >= 0) && (*pdata <= 255)) {
 		sprintf(brightness, "%d", *pdata);
 		ret = write(fd, brightness, sizeof(brightness));
-		exit = false;
+	} else if (*pdata == 0xffffffff) {
+		sprintf(brightness, "%d", 255);
+		ret = write(fd, brightness, sizeof(brightness));
 	}
 
 	memcpy(rsp, buf, DIAG_HEADER_LENGTH + 5);
@@ -1088,4 +1077,3 @@ int PQTuneCore::tune_rd_ambient(char *buf, int len, char *rsp, int rsplen)
 
 	return rsp_len;
 }
-

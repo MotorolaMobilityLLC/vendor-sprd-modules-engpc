@@ -16,7 +16,12 @@
 #include "sprd_fts_diag.h"
 
 #include "dcx_cali.h"
+
+#ifdef ANALOG_UMP9622
+#include "ump9622_glb.h"
+#else
 #include "sc2730_glb.h"
+#endif
 
 typedef unsigned int u32;
 typedef unsigned short u16;
@@ -25,8 +30,13 @@ typedef unsigned char u8;
 int current_mode = 1;
 static u32 hp_cbank =0, lp_cbank =0, hp_amp =0, lp_amp =0;
 
+#ifdef ANALOG_UMP9622
+#define PMIC_GLB_VALUE "/sys/bus/platform/drivers/sprd-pmic-glb/ump9622-syscon/pmic_value"
+#define PMIC_GLB_REG "/sys/bus/platform/drivers/sprd-pmic-glb/ump9622-syscon/pmic_reg"
+#else
 #define PMIC_GLB_VALUE "/sys/bus/platform/drivers/sprd-pmic-glb/sc27xx-syscon/pmic_value"
 #define PMIC_GLB_REG "/sys/bus/platform/drivers/sprd-pmic-glb/sc27xx-syscon/pmic_reg"
+#endif
 
 static u32 ana_read(u32 reg_addr)
 {
@@ -291,6 +301,10 @@ static int dcx_set_afc_mode(char *buf, int len, char *rsp, int rsplen)
 		ana_write(ANA_REG_GLB_TSX_CTRL10,0x0);
 		ana_write(ANA_REG_GLB_TSX_CTRL14,
 			  ana_read(ANA_REG_GLB_TSX_CTRL14) | BIT_DCXO_LP_CAL_EN);
+#ifdef ANALOG_UMP9622
+		ana_write(ANA_REG_GLB_TSX_CTRL15,
+			  ana_read(ANA_REG_GLB_TSX_CTRL15) | BIT_DCXO_AC_COUPLE_BUF_SEL);
+#endif
         }
         current_mode = 0;
     }else { //1 high power mode
@@ -299,7 +313,11 @@ static int dcx_set_afc_mode(char *buf, int len, char *rsp, int rsplen)
 		lp_cbank = ana_read(ANA_REG_GLB_TSX_CTRL10);
 		lp_amp = ana_read(ANA_REG_GLB_TSX_CTRL5);
 		ana_write(ANA_REG_GLB_TSX_CTRL14,
-		ana_read(ANA_REG_GLB_TSX_CTRL14) & ~BIT_DCXO_LP_CAL_EN);
+			ana_read(ANA_REG_GLB_TSX_CTRL14) & ~BIT_DCXO_LP_CAL_EN);
+#ifdef ANALOG_UMP9622
+		ana_write(ANA_REG_GLB_TSX_CTRL15,
+			ana_read(ANA_REG_GLB_TSX_CTRL15) & ~BIT_DCXO_AC_COUPLE_BUF_SEL);
+#endif
 		ana_write(ANA_REG_GLB_TSX_CTRL10,hp_cbank);
 		ana_write(ANA_REG_GLB_TSX_CTRL5,hp_amp);
 	}

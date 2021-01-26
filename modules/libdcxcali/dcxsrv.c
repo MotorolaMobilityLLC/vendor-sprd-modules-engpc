@@ -36,13 +36,22 @@ typedef unsigned short u16;
 typedef unsigned char u8;
 
 #define ENG_RAWDATA_FILE "/mnt/vendor/productinfo/dcx_data.dat"
+
+#ifdef ANALOG_UMP9622
+#define DCXO_CDAC_REG		0X20a8
+#define DCXO_HP_AMP_26M		0x2094
+#define DCXO_LP_AMP_26M		0x2098
+#define DCXO_LP_Drift_32K	0x20b4
+#define PMIC_GLB_VALUE "/sys/bus/platform/drivers/sprd-pmic-glb/ump9622-syscon/pmic_value"
+#define PMIC_GLB_REG "/sys/bus/platform/drivers/sprd-pmic-glb/ump9622-syscon/pmic_reg"
+#else
+#define DCXO_CDAC_REG		0X1b14
+#define DCXO_HP_AMP_26M		0x1b00
+#define DCXO_LP_AMP_26M		0x1b04
+#define DCXO_LP_Drift_32K	0x1b20
 #define PMIC_GLB_VALUE "/sys/bus/platform/drivers/sprd-pmic-glb/sc27xx-syscon/pmic_value"
 #define PMIC_GLB_REG "/sys/bus/platform/drivers/sprd-pmic-glb/sc27xx-syscon/pmic_reg"
-
-#define SC2730_CDAC_REG	0X1b14
-#define SC2730_HP_AMP_26M	0x1b00
-#define SC2730_LP_AMP_26M	0x1b04
-#define SC2730_LP_Drift_32K	0x1b20
+#endif
 
 typedef struct
 {
@@ -143,10 +152,10 @@ int main() {
 		return 0;
 	}
 
-	ana_write(SC2730_CDAC_REG, pmicCaliData.CDAC);
-	ana_write(SC2730_HP_AMP_26M, pmicCaliData.HP_Mode_Amp_26M);
-	ana_write(SC2730_LP_AMP_26M, pmicCaliData.LP_Mode_Amp_26M);
-	ana_write(SC2730_LP_Drift_32K, pmicCaliData.LP_Mode_Freq_Drift_32K);
+	ana_write(DCXO_CDAC_REG, pmicCaliData.CDAC);
+	ana_write(DCXO_HP_AMP_26M, pmicCaliData.HP_Mode_Amp_26M);
+	ana_write(DCXO_LP_AMP_26M, pmicCaliData.LP_Mode_Amp_26M);
+	ana_write(DCXO_LP_Drift_32K, pmicCaliData.LP_Mode_Freq_Drift_32K);
 
 	ENG_LOG("dcxsrv end........");
 

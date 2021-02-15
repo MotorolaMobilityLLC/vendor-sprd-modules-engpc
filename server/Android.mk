@@ -10,6 +10,10 @@ endif
 
 #LOCAL_CFLAGS += -D_USE_STD_CPP_LIB_
 
+ifeq ($(strip $(USE_SPRD_ENGPC_5G)), true)
+    LOCAL_CFLAGS += -DUSE_ENGPC_5G_ENABLE
+endif
+
 file_list := $(wildcard $(LOCAL_PATH)/*.cpp)
 file_list += $(wildcard $(LOCAL_PATH)/chnl/*.cpp)
 file_list += $(wildcard $(LOCAL_PATH)/module/*.cpp)

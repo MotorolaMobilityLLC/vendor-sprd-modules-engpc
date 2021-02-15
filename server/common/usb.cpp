@@ -131,12 +131,24 @@ int eng_usb_config(char* buff, int nlen){
     return usb_getConf(buff, nlen);
 }
 
+int is_5g_enable(void){
+    #ifdef USE_ENGPC_5G_ENABLE
+        return 1;
+    #else
+        return 0;
+    #endif
+}
+
 int usb_mode(const char* bootmode){
     EngLog::info("usb_mode: %s", bootmode);
     if (strcasecmp(bootmode, BOOTMODE_CALI) == 0){
         disconnect_vbus_charger();
         eng_usb_maximum_speed(USB_SPEED_FULL);
-        usb_vser_enable(0);
+        if (is_5g_enable() == 1) {
+            usb_vser_enable(2);
+        } else {
+            usb_vser_enable(0);
+        }
     }else if (strcasecmp(bootmode, BOOTMODE_AUTOTEST) == 0){
         disconnect_vbus_charger();
         eng_usb_maximum_speed(USB_SPEED_FULL);

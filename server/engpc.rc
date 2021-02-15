@@ -12,3 +12,9 @@ on property:vendor.ro.bootmode=cali && property:vendor.flag.sys.usb.config=1
 
 on property:vendor.ro.bootmode=cali && property:sys.usb.state=vser
     setprop vendor.sys.usb.state vser
+
+on property:vendor.ro.bootmode=cali && property:vendor.flag.sys.5gusb.config=1
+    setprop sys.usb.config adb,vser,gser
+
+on property:vendor.ro.bootmode=cali && property:sys.usb.state=adb,vser,gser
+    setprop vendor.sys.usb.state adb,vser,gser

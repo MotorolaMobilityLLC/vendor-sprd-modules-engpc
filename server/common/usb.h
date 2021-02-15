@@ -44,5 +44,6 @@ void handle_device_event(struct uevent *uevent);
 void handle_device_fd(int sock);
 void* eng_uevt_thread(void* x);
 void usb_monitor(uevent_notify ptrNotify);
+int is_5g_enable(void);
 
 #endif

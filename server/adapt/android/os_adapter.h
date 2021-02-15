@@ -6,8 +6,10 @@ extern "C" {
 #endif
 
 #define USB_CONFIG_VSER "vser"
+#define USB_CONFIG_VSER_GSER "adb,vser,gser"
 
 #ifdef ENGPC_VSER_INIT
+#define PROP_5G_USB_CONFIG          "vendor.flag.sys.5gusb.config"
 #define PROP_USB_CONFIG             "vendor.flag.sys.usb.config"
 #define PROP_USB_CONFIG_VALUE       "1"
 #define PROP_USB_STATE              "vendor.sys.usb.state"

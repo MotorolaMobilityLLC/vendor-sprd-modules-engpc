@@ -103,7 +103,10 @@ void OS_usb_vser_enable(int mode){
         property_set(PROP_USB_CONFIG, PROP_USB_CONFIG_VALUE);
         wait_for_usbenum_succ(600, USB_CONFIG_VSER);
         //usleep(2000*1000);
-    }else if (mode == 1){//cali
+    } else if(mode == 2){//caliroca
+        property_set(PROP_5G_USB_CONFIG, PROP_USB_CONFIG_VALUE);
+        wait_for_usbenum_succ(600, USB_CONFIG_VSER_GSER);
+   } else if (mode == 1) {//cali
         const char* path = OS_usb_getEnablePath();
         if (path == NULL) {
             ALOGD("ENGPC: invalid usb enable path.");

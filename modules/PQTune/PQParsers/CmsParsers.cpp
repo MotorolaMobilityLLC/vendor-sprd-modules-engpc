@@ -43,7 +43,6 @@
 	} \
 })
 
-
 #define PARSE_CM_HSVCM_ARRAYS(i) \
 ({ \
 	PARSE_CMS_HSVCM(i, coef00); \
@@ -198,6 +197,30 @@ static int parse_cms_hsvcm(cms_common *cms, xmlNodePtr curNode)
 	return 0;
 }
 
+static int parse_cms_sat(cms_common *cms, xmlNodePtr subNode)
+{
+	xmlNodePtr propNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	char *endptr = NULL;
+	char mm_buf[36] = {0};
+	int i = 0;
+
+	propNode = subNode->children; //param
+	for (i = 0; i < 36; i++) {
+		sprintf(mm_buf, "sat_%d", i * 10);
+		if (xmlHasProp(propNode, BAD_CAST mm_buf)) {
+			szPropity = xmlGetProp(propNode, (const xmlChar*) mm_buf);
+			cms->sat[i] = strtod((char *)szPropity, NULL);
+			ALOGD("pqpqpq cm rrrr %f %s i = %d",cms->sat[i], mm_buf, i);
+			xmlFree(szPropity);
+			propNode = propNode->next;
+		}
+	}
+
+	return 0;
+}
+
 static int parse_cms_rgbmap_table(cms_common *cms, xmlNodePtr curNode)
 {
 	int i = 0;
@@ -346,6 +369,34 @@ static int update_hsvcm(cms_common *cms, xmlNodePtr subNode, int i)
 	}
 	propNode = subNode->next->children;
 	UPDATE_CM_HSVCM_ARRAYS(i);
+
+	return 0;
+}
+
+static int update_cms_sat_config(cms_common *cms, xmlNodePtr curNode)
+{
+	xmlNodePtr propNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	char *endptr = NULL;
+	int i = 0;
+	char numStr[10];
+	char mm_buf[36] = {0};
+
+	propNode = curNode->children;
+	while (NULL != propNode) {
+		attrPtr = propNode->properties;
+		while (NULL != attrPtr) {
+			sprintf(mm_buf, "sat_%d", i * 10);
+			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)mm_buf)) {
+				snprintf(numStr, sizeof(numStr), "%f", cms->sat[i]);
+				xmlSetProp(propNode, BAD_CAST mm_buf, (const xmlChar*)numStr);
+			}
+			attrPtr = attrPtr->next;
+ 		}
+		i++;
+		propNode = propNode->next;
+	}
 
 	return 0;
 }
@@ -602,6 +653,8 @@ int CmsParser::update_xml(uint08_t *ctx)
 		update_cms_rgbmap_table(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "cm_cfg"))
 		update_cms_config_table(cms, tmpNode);
+	if(tmpNode = FindNode(curNode, "sat_config"))
+		update_cms_sat_config(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "enhance"))
 		update_cms_version(cms, tmpNode);
 
@@ -644,6 +697,8 @@ int CmsParser::parse_xml(uint08_t *ctx)
 		parse_cms_rgbmap_table(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "cm_cfg"))
 		parse_cms_config_table(cms, tmpNode);
+	if(tmpNode = FindNode(curNode, "sat_config"))
+		parse_cms_sat(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "enhance"))
 		parse_cms_version(cms, tmpNode);
 

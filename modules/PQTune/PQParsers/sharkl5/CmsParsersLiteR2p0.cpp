@@ -25,12 +25,12 @@
 
 #define PARSE_CMS_CM_CFG(I, X) \
 ({ \
-        if (xmlHasProp(propNode, BAD_CAST #X)) { \
-                szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
-                cms->cm[I].X = strtoul((char *)szPropity, NULL, 0); \
-				xmlFree(szPropity); \
-                propNode = propNode->next; \
-        } \
+	if (xmlHasProp(propNode, BAD_CAST #X)) { \
+		szPropity = xmlGetProp(propNode, (const xmlChar*) #X); \
+		cms->cm[I].X = strtoul((char *)szPropity, NULL, 0); \
+		xmlFree(szPropity); \
+		propNode = propNode->next; \
+	} \
 })
 
 #define PARSE_CMS_SLP(I, X) \
@@ -78,12 +78,12 @@
 
 #define UPDATE_CMS_CM_CFG(I, X) \
 ({      \
-        if (xmlHasProp(propNode, BAD_CAST #X)) {        \
-                snprintf(numStr, sizeof(numStr), "%d", cms->cm[I].X); \
-                xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
+	if (xmlHasProp(propNode, BAD_CAST #X)) {        \
+		snprintf(numStr, sizeof(numStr), "%d", cms->cm[I].X); \
+		xmlSetProp(propNode, BAD_CAST #X, (const xmlChar*)numStr); \
 		ALOGD("pqpqpq cm_cfg wwww %d %s i= %d",cms->cm[I].X, #X, I); \
-                propNode = propNode->next; \
-        }       \
+		propNode = propNode->next; \
+	}       \
 })
 
 #define UPDATE_CMS_SLP(I, X) \
@@ -125,18 +125,18 @@
 
 #define PARSE_CMS_CM_CFG_ARRAYS(i) \
 ({ \
-        PARSE_CMS_CM_CFG(i, coef00); \
-        PARSE_CMS_CM_CFG(i, coef01); \
-        PARSE_CMS_CM_CFG(i, coef02); \
-        PARSE_CMS_CM_CFG(i, coef03); \
-        PARSE_CMS_CM_CFG(i, coef10); \
-        PARSE_CMS_CM_CFG(i, coef11); \
-        PARSE_CMS_CM_CFG(i, coef12); \
-        PARSE_CMS_CM_CFG(i, coef13); \
-        PARSE_CMS_CM_CFG(i, coef20); \
-        PARSE_CMS_CM_CFG(i, coef21); \
-        PARSE_CMS_CM_CFG(i, coef22); \
-        PARSE_CMS_CM_CFG(i, coef23); \
+	PARSE_CMS_CM_CFG(i, coef00); \
+	PARSE_CMS_CM_CFG(i, coef01); \
+	PARSE_CMS_CM_CFG(i, coef02); \
+	PARSE_CMS_CM_CFG(i, coef03); \
+	PARSE_CMS_CM_CFG(i, coef10); \
+	PARSE_CMS_CM_CFG(i, coef11); \
+	PARSE_CMS_CM_CFG(i, coef12); \
+	PARSE_CMS_CM_CFG(i, coef13); \
+	PARSE_CMS_CM_CFG(i, coef20); \
+	PARSE_CMS_CM_CFG(i, coef21); \
+	PARSE_CMS_CM_CFG(i, coef22); \
+	PARSE_CMS_CM_CFG(i, coef23); \
 })
 
 #define PARSE_CMS_EPF_ARRAYS(i) \
@@ -190,18 +190,18 @@
 
 #define UPDATE_CMS_CM_CFG_ARRAYS(i) \
 ({ \
-        UPDATE_CMS_CM_CFG(i, coef00); \
-        UPDATE_CMS_CM_CFG(i, coef01); \
-        UPDATE_CMS_CM_CFG(i, coef02); \
-        UPDATE_CMS_CM_CFG(i, coef03); \
-        UPDATE_CMS_CM_CFG(i ,coef10); \
-        UPDATE_CMS_CM_CFG(i, coef11); \
-        UPDATE_CMS_CM_CFG(i, coef12); \
-        UPDATE_CMS_CM_CFG(i, coef13); \
-        UPDATE_CMS_CM_CFG(i, coef20); \
-        UPDATE_CMS_CM_CFG(i, coef21); \
-        UPDATE_CMS_CM_CFG(i, coef22); \
-        UPDATE_CMS_CM_CFG(i, coef23); \
+	UPDATE_CMS_CM_CFG(i, coef00); \
+	UPDATE_CMS_CM_CFG(i, coef01); \
+	UPDATE_CMS_CM_CFG(i, coef02); \
+	UPDATE_CMS_CM_CFG(i, coef03); \
+	UPDATE_CMS_CM_CFG(i ,coef10); \
+	UPDATE_CMS_CM_CFG(i, coef11); \
+	UPDATE_CMS_CM_CFG(i, coef12); \
+	UPDATE_CMS_CM_CFG(i, coef13); \
+	UPDATE_CMS_CM_CFG(i, coef20); \
+	UPDATE_CMS_CM_CFG(i, coef21); \
+	UPDATE_CMS_CM_CFG(i, coef22); \
+	UPDATE_CMS_CM_CFG(i, coef23); \
 })
 
 #define UPDATE_CMS_EPF_ARRAYS(i) \
@@ -414,6 +414,30 @@ static int parse_cms_hsvcm_epf_slp_ltm(cms_common_sharkl5 *cms, xmlNodePtr curNo
 	return 0;
 }
 
+static int parse_cms_sat(cms_common_sharkl5 *cms, xmlNodePtr subNode)
+{
+	xmlNodePtr propNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	char *endptr = NULL;
+	char mm_buf[36] = {0};
+	int i = 0;
+
+	propNode = subNode->children; //param
+	for (i = 0; i < 36; i++) {
+		sprintf(mm_buf, "sat_%d", i * 10);
+		if (xmlHasProp(propNode, BAD_CAST mm_buf)) {
+			szPropity = xmlGetProp(propNode, (const xmlChar*) mm_buf);
+			cms->sat[i] = strtod((char *)szPropity, NULL);
+			ALOGD("pqpqpq cm rrrr %f %s i = %d",cms->sat[i], mm_buf, i);
+			xmlFree(szPropity);
+			propNode = propNode->next;
+		}
+	}
+
+	return 0;
+}
+
 static int parse_cms_rgbmap_table(cms_common_sharkl5 *cms, xmlNodePtr curNode)
 {
 	int i = 0;
@@ -525,6 +549,34 @@ static int parse_cms_config_table(cms_common_sharkl5 *cms, xmlNodePtr curNode)
 		subNode = subNode->next;
 		if(subNode)
 			propNode = subNode->children;
+	}
+
+	return 0;
+}
+
+static int update_cms_sat_config(cms_common_sharkl5 *cms, xmlNodePtr curNode)
+{
+	xmlNodePtr propNode;
+	xmlAttrPtr attrPtr;
+	xmlChar* szPropity;
+	char *endptr = NULL;
+	int i = 0;
+	char numStr[10];
+	char mm_buf[36] = {0};
+
+	propNode = curNode->children;
+	while (NULL != propNode) {
+		attrPtr = propNode->properties;
+		while (NULL != attrPtr) {
+			sprintf(mm_buf, "sat_%d", i * 10);
+			if (!xmlStrcmp(attrPtr->name, (const xmlChar*)mm_buf)) {
+				snprintf(numStr, sizeof(numStr), "%f", cms->sat[i]);
+				xmlSetProp(propNode, BAD_CAST mm_buf, (const xmlChar*)numStr);
+			}
+			attrPtr = attrPtr->next;
+ 		}
+		i++;
+		propNode = propNode->next;
 	}
 
 	return 0;
@@ -940,6 +992,8 @@ int CmsParserLiteR2p0::update_xml(uint08_t *ctx)
 		update_cms_rgbmap_table(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "cm_cfg"))
 		update_cms_config_table(cms, tmpNode);
+	if(tmpNode = FindNode(curNode, "sat_config"))
+		update_cms_sat_config(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "enhance"))
 		update_cms_version(cms, tmpNode);
 
@@ -948,7 +1002,6 @@ int CmsParserLiteR2p0::update_xml(uint08_t *ctx)
 	ALOGD("this is pq\n");
 	return 0;
 }
-
 
 int CmsParserLiteR2p0::parse_xml(uint08_t *ctx)
 {
@@ -982,6 +1035,8 @@ int CmsParserLiteR2p0::parse_xml(uint08_t *ctx)
 		parse_cms_rgbmap_table(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "cm_cfg"))
 		parse_cms_config_table(cms, tmpNode);
+	if(tmpNode = FindNode(curNode, "sat_config"))
+		parse_cms_sat(cms, tmpNode);
 	if(tmpNode = FindNode(curNode, "enhance"))
 		parse_cms_version(cms, tmpNode);
 

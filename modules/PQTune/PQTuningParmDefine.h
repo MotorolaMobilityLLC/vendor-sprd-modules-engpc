@@ -156,8 +156,8 @@ typedef struct
 typedef struct
 {
     subversion          version;
-    uint32_t            mode;  // 1:default; 2:middle; 3:high
-    hsv_cm              hsvcm[3];
+    uint32_t            nMajorVersion;
+    cm_range            cmrange;
 } bld_common;
 
 typedef struct
@@ -168,6 +168,7 @@ typedef struct
     rgb_cm_mapping      rgbcm[10];
     uint16_t            cm_mode;   // 1:cold; 2:warm; 3-12:rgb auto
     cm_cfg              cm[12];
+    float               sat[36];
 } cms_common;
 
 typedef struct
@@ -252,6 +253,7 @@ typedef struct
     rgb_cm_mapping      rgbcm[10];
     uint16_t            cm_mode;   // 1:cold; 2:warm; 3-12:rgb auto
     cm_cfg              cm[12];
+    float               sat[36];
 } cms_common_sharkl5;
 
 typedef struct
@@ -492,5 +494,3 @@ typedef struct
 {
     uint32_t light;
 } ambient_light;
-
-

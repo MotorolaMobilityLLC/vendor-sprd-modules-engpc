@@ -44,6 +44,8 @@ endif
 
 ifeq ($(KERNEL_PATH), kernel4.4)
 LOCAL_CFLAGS += -DKERNEL_OLD
+else ifeq ($(KERNEL_PATH), kernel4.14)
+LOCAL_CFLAGS += -DKERNEL_4_14
 else
 LOCAL_CFLAGS += -DKERNEL_NEW
 endif

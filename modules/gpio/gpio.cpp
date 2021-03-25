@@ -231,7 +231,7 @@ int testGpio(char *buf, int len, char *rsp, int rsplen)
 	ret =0,表示测试OK，无需返回数据。
 	ret >0,表示测试OK，获取ret个数据，此时，ret的大小表示data中保存的数据的个数。
 	***********************************************************************/
-	int i, base, fd, gpio_data = 0;
+	int i, base = 0, fd, gpio_data = 0;
 	char cmd[255] = {0};
 	char export_cmd[255] = {0};
 	char pin_addr[15] = {0};
@@ -304,14 +304,16 @@ int testGpio(char *buf, int len, char *rsp, int rsplen)
 		close(fd);
 		goto exit;
 	}
-	usleep(500);
 
+#ifdef KERNEL_4_14
+	usleep(500);
 	base = get_ap_gpio_base();
 	if (base < 0) {
 		ret = -1;
 		close(fd);
 		goto exit;
 	}
+#endif
 #endif
 	usleep(200);
 

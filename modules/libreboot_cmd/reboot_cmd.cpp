@@ -53,6 +53,29 @@ int reboot_into_recovery(const std::vector<std::string>& options) {
     LOGE("Rebooting into recovery fail!");
         return -1;
     }
+
+    // reset success, write reset flag to "b".
+    FILE *fd = fopen("/dev/block/by-name/factory", "rb+");
+    if (fd == NULL) {
+        LOGD("Failed to open factory partition\n");
+        return -1;
+    }
+    if (fseek(fd, 209, SEEK_SET) != 0) {
+        LOGD("Failed to fseek factory partition %d\n", 209);
+        fclose(fd);
+        return -1;
+    }
+    uint8_t buffer[1] = {98};
+    if (1 != fwrite(buffer, sizeof(buffer), 1, fd)) {
+        LOGD("Failed to write_len < %zu factory partition\n", sizeof(buffer));
+        fclose(fd);
+        return -1;
+    } else {
+        LOGD("reset flag value is b");
+        fsync(fileno(fd));
+    }
+    fclose(fd);
+
     property_set("sys.powerctl", "reboot,recovery");
     return 0;
 }

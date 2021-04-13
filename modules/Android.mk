@@ -37,6 +37,7 @@ common_engpc_modules_dirs := charge \
                              libucpubench \
                              libapcomm \
                              libtouchscreen \
+			     libsettime \
                              libylogtopc \
                              libpartinfo \
                              libetb

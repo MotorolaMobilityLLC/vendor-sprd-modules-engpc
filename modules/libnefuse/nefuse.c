@@ -22,9 +22,12 @@
 #define EFUSE_PARA "GET_EFUSE"
 #define RSP_PMICEFUSE "+SPPMICTEST:EFUSE="
 #define RSP_APEFUSE "+SPBBTEST:EFUSE="
+//ap write efuse define AT+SPBBWRTEST=GET_EFUSE,BLOCK ID,BIT
+//AT+SPBBWRTEST=GET_EFUSE,018,01
+#define AT_WEFUSE "AT+SPBBWRTEST="
 
-#define AP_EFUSE "/sys/bus/nvmem/devices/sprd-cache-efuse0/nvmem"
-//#define AP_EFUSE "/sys/bus/nvmem/devices/sprd-efuse0/nvmem"
+#define AP_CACHE_EFUSE "/sys/bus/nvmem/devices/sprd-cache-efuse0/nvmem"
+#define AP_EFUSE "/sys/bus/nvmem/devices/sprd-efuse0/nvmem"
 #define PMIC_EFUSE "/sys/bus/nvmem/devices/sc27xx-efuse0/nvmem"
 
 #define AP_BLOCK_SIZE (4)
@@ -35,6 +38,7 @@
 static char pmic_efuse_cmd_param[64] = {0};
 static char ap_efuse_cmd_param[64] = {0};
 static char ap_efuse_blk_param[8] = {0};
+static char ap_efuse_value_param[8] = {0};
 static char pmic_efuse_blk_param[8] = {0};
 
 static int pmic_efuse_read(unsigned int blk, char *data) {
@@ -103,6 +107,44 @@ static int ap_efuse_read(unsigned int blk, char *data) {
   return 1;
 }
 
+static int ap_efuse_write(unsigned int blk, unsigned int val) {
+    char buf[16] = {0};
+    off_t curpos, offset;
+    int fd = -1;
+    int len = 0, ret = 0;
+    char *pBuf = (char *)&val;
+
+    ALOGD("%s()->Line:%d; blk = %d, val = 0x%08x \n", __FUNCTION__, __LINE__,
+        blk, val);
+    fd = open(AP_EFUSE, O_RDWR);
+    if (fd < 0) {
+        ALOGE("%s()->Line:%d; %s open error, fd = %d. \n", __FUNCTION__, __LINE__,
+            AP_EFUSE, fd);
+        return -2;
+    }
+    sprintf(buf, "%08x", val);
+
+    offset = blk * AP_BLOCK_SIZE;
+    curpos = lseek(fd, offset, SEEK_CUR);
+    if (curpos == -1) {
+        ALOGE("%s()->Line:%d; lseek error\n", __FUNCTION__, __LINE__);
+        close(fd);
+        return -3;
+    }
+    ALOGD("val=%x,buf=%s\n", val, buf);
+    len = write(fd, pBuf, 4);
+    ALOGD("pBuf[0~3]=%02x,%02x,%02x,%02x\n", pBuf[0], pBuf[1], pBuf[2], pBuf[3]);
+    if (len <= 0) {
+        ALOGE(
+            "%s()->Line:%d; write efuse block(%d) data(%s) error, retcode = %d; \n",
+            __FUNCTION__, __LINE__, blk, buf, len);
+        close(fd);
+        return -4;
+    }
+    close(fd);
+    return 1;
+}
+
 static int pmic_efuse_handle(char *buf, char *rsp)
 {
     char value[10] = {0};
@@ -114,9 +156,7 @@ static int pmic_efuse_handle(char *buf, char *rsp)
     {
         ALOGE("%s,null pointer", __FUNCTION__);
         sprintf(rsp, "\r\nERROR\r\n");
-	if(rsp == NULL)
-	    return 0;
-        return strlen(rsp);
+        return rsp != NULL ? strlen(rsp) : 0;
     }
 
     if(buf[0] == PROTOCOL_HEAD)
@@ -168,9 +208,7 @@ static int ap_efuse_handle(char *buf, char *rsp)
     {
         ALOGE("%s,null pointer", __FUNCTION__);
         sprintf(rsp, "\r\nERROR\r\n");
-	if(rsp == NULL)
-            return 0;
-        return strlen(rsp);
+        return rsp != NULL ? strlen(rsp) : 0;
     }
 
     if(buf[0] == PROTOCOL_HEAD)
@@ -189,12 +227,67 @@ static int ap_efuse_handle(char *buf, char *rsp)
         nlen = (nlen >= sizeof(ap_efuse_cmd_param)-1)?(sizeof(ap_efuse_cmd_param)-1):nlen;
         strncpy(ap_efuse_cmd_param, ptr+strlen(AT_APEFUSE), strlen(EFUSE_PARA));
         ENG_LOG("%s ap efuse param  = %s", __FUNCTION__, ap_efuse_cmd_param);
-	strncpy(ap_efuse_blk_param, ptr+strlen(AT_APEFUSE) + strlen(EFUSE_PARA) + 1, 2);
+	strncpy(ap_efuse_blk_param, ptr+strlen(AT_APEFUSE) + strlen(EFUSE_PARA) + 1, 3);
         ENG_LOG("%s ap efuse  blk param  = %s", __FUNCTION__, ap_efuse_blk_param);
 	index = atoi(ap_efuse_blk_param);
 	ret = ap_efuse_read(index, value);
 	if(ret == 1){
 		sprintf(rsp, "%s0x%s\r\nOK\r\n", RSP_APEFUSE, value);
+		ENG_LOG("%s ap efuse index = %d, rsp: %s", __FUNCTION__, index, rsp);
+	}else{
+		sprintf(rsp, "\r\n+CME ERROR:%d\r\n", ret);
+	}
+    }else{
+	sprintf(rsp, "\r\n+CME ERROR:4\r\n");
+    }
+
+    if(buf[0] != PROTOCOL_HEAD){
+	  free(ptr);
+	  ptr = NULL;
+    }
+    return strlen(rsp);
+}
+
+static int ap_efuse_write_handle(char *buf, char *rsp)
+{
+    char *ptr = NULL;
+    unsigned int nlen = 0;
+    int index, val, ret;
+
+    if (NULL == buf)
+    {
+        ALOGE("%s,null pointer", __FUNCTION__);
+        sprintf(rsp, "\r\nERROR\r\n");
+	if(rsp == NULL)
+            return 0;
+        return strlen(rsp);
+    }
+
+    if(buf[0] == PROTOCOL_HEAD)
+    {
+        ptr = buf + 1 + sizeof(MSG_HEAD_T);
+    }
+    else
+    {
+        ptr = strdup(buf);
+    }
+    ENG_LOG("%s ap efuse ptr = %s", __FUNCTION__, ptr);
+
+    if (strncasecmp(ptr, AT_WEFUSE,strlen(AT_WEFUSE)) == 0){
+        memset(ap_efuse_cmd_param, 0, sizeof(ap_efuse_cmd_param));
+        nlen = strlen(buf)-strlen(AT_WEFUSE);
+        nlen = (nlen >= sizeof(ap_efuse_cmd_param)-1)?(sizeof(ap_efuse_cmd_param)-1):nlen;
+        strncpy(ap_efuse_cmd_param, ptr+strlen(AT_WEFUSE), strlen(EFUSE_PARA));
+        ENG_LOG("%s ap efuse param  = %s", __FUNCTION__, ap_efuse_cmd_param);
+	strncpy(ap_efuse_blk_param, ptr+strlen(AT_WEFUSE) + strlen(EFUSE_PARA) + 1, 3);
+        ENG_LOG("%s ap efuse  blk param  = %s", __FUNCTION__, ap_efuse_blk_param);
+	index = atoi(ap_efuse_blk_param);
+	strncpy(ap_efuse_value_param, ptr+strlen(AT_WEFUSE) + strlen(EFUSE_PARA) + 1 + 3 + 1, 2);
+	val = atoi(ap_efuse_value_param);
+	val = 1 << val;
+	ret = ap_efuse_write(index, val);
+	if(ret == 1){
+		sprintf(rsp, "%s0x%x\r\nOK\r\n", RSP_APEFUSE, val);
 		ENG_LOG("%s ap efuse index = %d, rsp: %s", __FUNCTION__, index, rsp);
 	}else{
 		sprintf(rsp, "\r\n+CME ERROR:%d\r\n", ret);
@@ -222,6 +315,10 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
     sprintf((reg + moudles_num)->at_cmd, "%s", AT_APEFUSE);
     (reg + moudles_num)->eng_linuxcmd_func = ap_efuse_handle;
+    moudles_num++;
+
+    sprintf((reg + moudles_num)->at_cmd, "%s", AT_WEFUSE);
+    (reg + moudles_num)->eng_linuxcmd_func = ap_efuse_write_handle;
     moudles_num++;
 
     *num = moudles_num;

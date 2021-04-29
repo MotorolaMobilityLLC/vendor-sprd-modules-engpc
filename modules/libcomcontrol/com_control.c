@@ -21,7 +21,7 @@
 int open_diag_port (char *req, char *rsp){
 
    ENG_LOG("dylib :enter function test :AT+DIAGOPEN!");
-   property_set("persist.vendor.sys.modem.diag", ",gser");
+   property_set("persist.vendor.sys.modem.diag", ",vser");
    sprintf(rsp, "%s", "AT+DIAGOPEN open");
    return 0;
 }

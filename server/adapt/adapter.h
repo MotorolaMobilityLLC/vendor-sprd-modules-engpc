@@ -15,6 +15,11 @@ int usb_getConf(char* buff, int nlen);
 const char* getChargeStopPath();
 int is_data_dir_ready();
 
+const char* getBridgeCtlPath();
+int slog_bridge_enable();
+int slog_bridge_disable();
+
+
 // log_type :
 // 1: modem log 2: wcn log
 // location :

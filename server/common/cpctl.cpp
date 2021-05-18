@@ -198,6 +198,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     ret = -1;
                 } else { // notice slogomodem success
                     m_lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, true);
+                    m_lpChnlMgr->resetWithDevName(DEV_AGDSP_NAME, true);
                     memset(bufLoc, 0, sizeof(bufLoc));
                     *bufLoc = LOG_LOCATION_PC;
                     sys_setlogdest(&log_type, bufLoc);
@@ -218,6 +219,7 @@ int CCPCtl::logLocation(char log_type, char location, int diagportswitch){
                     ret = -1;
                 } else {
                     m_lpChnlMgr->resetWithDevName(DEV_MODEM_NAME, false);
+                    m_lpChnlMgr->resetWithDevName(DEV_AGDSP_NAME, false);
                     memset(bufLoc, 0, sizeof(bufLoc));
                     *bufLoc = LOG_LOCATION_TCARD;
                     sys_setlogdest(&log_type, bufLoc);

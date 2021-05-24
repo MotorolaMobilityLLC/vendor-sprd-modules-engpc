@@ -36,6 +36,7 @@ protected:
 	int version;
 	uint08_t *ctx;
 	uint32_t offset;
+	uint16_t maxBrightness;
 	uint32_t tune_sizes;
 	uint32_t gamma_size;
 	uint32_t bld_size;

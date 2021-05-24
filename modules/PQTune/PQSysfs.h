@@ -45,6 +45,7 @@
 
 #define ChipInfo		"/proc/cmdline"
 #define Brightness		"/sys/class/backlight/sprd_backlight/brightness"
+#define MaxBrightness	"/sys/class/backlight/sprd_backlight/max_brightness"
 
 #define DispState		"/sys/class/adf/sprd-adf-dev-interface0/dpms_state"
 #define DispOn			0

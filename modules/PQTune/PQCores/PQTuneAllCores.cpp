@@ -41,6 +41,7 @@ PQTuneCoreLiteR2p0::PQTuneCoreLiteR2p0(int ver):PQTuneCore(DPU_LITE_R2P0)
 	cms_size = sizeof(cms_common_sharkl5);
 	abc_size = sizeof(abc_common_sharkl5);
 	offset = 0;
+	maxBrightness = 0;
 	version = ver;
 }
 
@@ -67,6 +68,7 @@ PQTuneCoreR3p0::PQTuneCoreR3p0(int ver):PQTuneCoreLiteR2p0(DPU_R3P0)
 	cms_size = sizeof(cms_common_sharkl5);
 	abc_size = sizeof(abc_common_roc1);
 	offset = 0;
+	maxBrightness = 0;
 	version = ver;
 }
 
@@ -99,6 +101,7 @@ PQTuneCoreR4p0::PQTuneCoreR4p0(int ver):PQTuneCoreLiteR2p0(DPU_R4P0)
 	hsv_size = sizeof(hsv_common_sharkl5Pro);
 	dci_size = sizeof(dci_common_sharkl5Pro);
 	offset = 0;
+	maxBrightness = 0;
 	version = ver;
 }
 
@@ -131,6 +134,7 @@ PQTuneCoreR5p0::PQTuneCoreR5p0(int ver):PQTuneCoreR4p0(DPU_R5P0)
 	hsv_size = sizeof(hsv_common_sharkl5Pro);
 	dci_size = sizeof(dci_common_sharkl5Pro);
 	offset = 0;
+	maxBrightness = 0;
 	version = ver;
 }
 

@@ -280,12 +280,10 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	MSG_HEAD_T *rsp_head;
 	uint32_t rsp_len = 0;
 	char info[1024] = {0};
-	char backlight[10] = {0};
+	char maxBacklight[20] = {0};
+	char backlight[20] = {0};
 	int sizes = 0;
-	int fd;
-	int fd1;
-	int fd2;
-	int fd3;
+	int fd, fd1, fd2, fd3, fd4;
 	char *pchar;
 	char *ptemp;
 	unsigned long status = 0;
@@ -296,7 +294,8 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	fd1 = open(ChipInfo, O_RDONLY);
 	fd2 = open(PQStatus, O_RDONLY);
 	fd3 = open(Brightness, O_RDWR);
-	if (fd < 0 || fd1 < 0 || fd2 < 0 || fd3 < 0) {
+	fd4 = open(MaxBrightness, O_RDONLY);
+	if (fd < 0 || fd1 < 0 || fd2 < 0 || fd3 < 0 || fd4 < 0) {
 		ALOGD("%s: open file failed, err: %s\n", __func__,
 			strerror(errno));
 		if (fd >= 0)
@@ -307,6 +306,8 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 			close(fd2);
 		if (fd3 >= 0)
 			close(fd3);
+		if (fd4 >= 0)
+			close(fd4);
 		return errno;
 	}
 
@@ -318,17 +319,29 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 			ALOGD("PQ display init fail\n");
 	}
 
-	dut_info =  (DUT_INFO_T  *)malloc(sizeof(DUT_INFO_T));
+	dut_info =  (DUT_INFO_T *)malloc(sizeof(DUT_INFO_T));
 	if(!dut_info) {
 		close(fd);
 		close(fd1);
 		close(fd2);
 		close(fd3);
+		close(fd4);
 		printf("PQ dut info alloc fail\n");
 		return -1;
 	}
 
-	snprintf(backlight, sizeof(backlight), "%d", 255);
+	sizes = read(fd4, maxBacklight, sizeof(maxBacklight));
+	if (sizes < 0) {
+		close(fd);
+		close(fd1);
+		close(fd2);
+		close(fd3);
+		close(fd4);
+		free(dut_info);
+		return -1;
+	}
+	maxBrightness = atoi(maxBacklight);
+	snprintf(backlight, sizeof(backlight), "%d", maxBrightness);
 	write(fd3, backlight, sizeof(backlight));
 
 	ret = read(fd2, info, 100);
@@ -351,6 +364,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 		close(fd1);
 		close(fd2);
 		close(fd3);
+		close(fd4);
 		free(dut_info);
 		return -1;
 	}
@@ -360,6 +374,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 		close(fd1);
 		close(fd2);
 		close(fd3);
+		close(fd4);
 		free(dut_info);
 		return -1;
 	}
@@ -369,6 +384,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 		close(fd1);
 		close(fd2);
 		close(fd3);
+		close(fd4);
 		free(dut_info);
 		return -1;
 	}
@@ -386,6 +402,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 		close(fd1);
 		close(fd2);
 		close(fd3);
+		close(fd4);
 		free(dut_info);
 		return -1;
 	}
@@ -400,6 +417,7 @@ int PQTuneCore::tune_connect(char *buf, int len, char *rsp, int rsplen)
 	close(fd1);
 	close(fd2);
 	close(fd3);
+	close(fd4);
 	ALOGD("pq_cmd_connect sucess v1\n");
 	return rsp_len;
 }
@@ -456,7 +474,7 @@ int PQTuneCore::tune_wr_backlight(char *buf, int len, char *rsp, int rsplen)
 {
 	int fd;
 	int ret = 0;
-	char brightness[10] = {0};
+	char brightness[20] = {0};
 	uint32_t *pdata = NULL;
 	uint32_t *rsp_pdata = NULL;
 	MSG_HEAD_T *rsp_head;
@@ -472,11 +490,11 @@ int PQTuneCore::tune_wr_backlight(char *buf, int len, char *rsp, int rsplen)
 	pdata = (uint32_t *)(buf + DIAG_HEADER_LENGTH + 5);
 	rsp_pdata = (uint32_t *)(rsp + DIAG_HEADER_LENGTH + 5);
 	rsp_head = (MSG_HEAD_T *)(rsp + 1);
-	if ((*pdata >= 0) && (*pdata <= 255)) {
+	if ((*pdata >= 0) && (*pdata <= maxBrightness)) {
 		sprintf(brightness, "%d", *pdata);
 		ret = write(fd, brightness, sizeof(brightness));
 	} else if (*pdata == 0xffffffff) {
-		sprintf(brightness, "%d", 255);
+		sprintf(brightness, "%d", maxBrightness);
 		ret = write(fd, brightness, sizeof(brightness));
 	}
 

@@ -211,14 +211,12 @@ void handle_device_event(struct uevent *uevent) {
     if (0 == strncmp(uevent->usb_connect, "CONFIGURED", 10)) {
         // start cp log
         EngLog::info("%s: enable arm log\n", __FUNCTION__);
-        slog_bridge_enable();
         if (s_ptrNotify != NULL){
             s_ptrNotify(USB_CONNECT, (void*)g_lpDevMgr);
         }
     } else if (0 == strncmp(uevent->usb_connect, "DISCONNECTED", 12)) {
         // stop cp log
         EngLog::info("%s: disable arm log\n", __FUNCTION__);
-        slog_bridge_disable();
         if (s_ptrNotify != NULL){
             s_ptrNotify(USB_DISCONNECT, (void*)g_lpDevMgr);
         }
@@ -253,13 +251,6 @@ void *eng_uevt_thread(void *x) {
     }
 
     int usb_plugin = eng_usb_state();
-
-    if(usb_plugin) {
-      slog_bridge_enable();
-    } else {
-      slog_bridge_disable();
-    }
-
     if (s_ptrNotify != NULL){
         s_ptrNotify(usb_plugin?USB_CONNECT:USB_DISCONNECT, (void*)g_lpDevMgr);
     }

@@ -50,14 +50,3 @@ void sys_restart_self(){
 int sys_gettid(){
     return OS_sys_gettid();
 }
-
-const char* getBridgeCtlPath(){
-    return Os_getBridgeCtlPath();
-}
-
-int slog_bridge_enable() {
-    return Os_slog_bridge_enable();
-}
-int slog_bridge_disable() {
-    return Os_slog_bridge_disable();
-}

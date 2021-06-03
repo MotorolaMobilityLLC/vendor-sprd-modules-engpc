@@ -33,9 +33,6 @@ extern "C" {
 #define DEVICE_SOC_USB_MAXIMUM_SPEED "sys/devices/platform/soc/soc:ap-ahb/20200000.usb/maximum_speed"
 #define DEVICE_SOC_USB_MAXIMUM_SPEED_NEW "/sys/devices/platform/soc/soc:aon/5fff0000.usb/maximum_speed"
 
-#define SYS_MODULE_SLOG_BRIDGE_TRANSPORT "/sys/module/slog_bridge/parameters/log_transport"
-
-
 void OS_usb_vser_enable(int mode);
 const char* OS_usb_getEnablePath();
 const char* OS_usb_getMaxSpeedPath();
@@ -43,12 +40,6 @@ const char* OS_usb_getStatePath();
 int OS_usb_getConf(char* buff, int nlen);
 
 const char* OS_getChargeStopPath();
-
-const char* Os_getBridgeCtlPath();
-
-int Os_slog_bridge_enable();
-
-int Os_slog_bridge_disable();
 
 int OS_is_data_dir_ready();
 

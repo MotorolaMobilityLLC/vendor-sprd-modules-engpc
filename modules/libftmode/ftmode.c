@@ -18,8 +18,17 @@
 
 #define MAX_CMDLIEN_LEN 3096
 
+
+#define CALI_DPU_STOP "/sys/class/display/dispc0/cali_dpu_stop"
+#define PANEL_SUSPEND "/sys/class/display/panel0/suspend"
+#define CALI_DPHY_SUSPEND "/sys/class/display/dphy0/cali_dphy_suspend"
+#define CALI_DSI_SUSPEND "/sys/class/display/dsi0/cali_dsi_suspend"
+#define DPMS_STATE "/sys/class/display/dispc0/dpms_state"
+#define BRIGHTNESS "/sys/class/backlight/sprd_backlight/brightness"
+
 #define AT_CMD_GETTESTMODE "AT+GETTESTMODE?"
 #define AT_CMD_SETTESTMODE "AT+SETTESTMODE="
+#define AT_LCDOFF "AT+LCD=OFF"
 
 #define TESTMODE_OFFSET (9*1024+32)
 #define UBOOT_TESTMOD_CHECKSUM 0x53464d00
@@ -279,6 +288,210 @@ int modeRsp_match(char* buff, int len){
     }
 }
 
+static int set_cali_dpu_stop(int cali_dpu_stop, char *rsp)
+{
+    int ret = -1;
+    int fd;
+    char value[8] = {};
+    fd = open(CALI_DPU_STOP, O_WRONLY);
+    if (fd > 0) {
+        sprintf(value, "%d",cali_dpu_stop);
+        ret = write(fd, value, strlen(value));
+        close(fd);
+        if (ret < 0) {
+            ENG_LOG("%s set dpu_stop(%d) fail:%d\n", __FUNCTION__, cali_dpu_stop, errno);
+            sprintf(rsp, "+LCD:set cali_dpu_stop fail");
+        }
+    } else {
+        ENG_LOG("%s open %s fail:%s\n", __FUNCTION__,
+                        CALI_DPU_STOP, strerror(errno));
+        sprintf(rsp, "+LCD:open dpu_stop fail");
+    }
+
+    return (ret < 0) ? -errno : 0;
+}
+
+static int set_panel_suspend(int suspend, char *rsp)
+{
+    int ret = -1;
+    int fd;
+    char value[8] = {};
+
+    fd = open(PANEL_SUSPEND, O_WRONLY);
+    if (fd > 0) {
+        sprintf(value, "%d", suspend);
+        ret = write(fd, value, strlen(value));
+        close(fd);
+        if (ret < 0) {
+            ENG_LOG("%s set suspend(%d) fail:%d\n", __FUNCTION__, suspend, errno);
+            sprintf(rsp, "+LCD:set suspend fail");
+        }
+    } else {
+        ENG_LOG("%s open %s fail:%s\n", __FUNCTION__,
+                        PANEL_SUSPEND, strerror(errno));
+        sprintf(rsp, "+LCD:open suspend fail");
+    }
+
+    return (ret < 0) ? -errno : 0;
+}
+
+static int set_cali_dphy_suspend(int cali_dphy_suspend, char *rsp)
+{
+    int ret = -1;
+    int fd;
+    char value[8] = {};
+    fd = open(CALI_DPHY_SUSPEND, O_WRONLY);
+    if (fd > 0) {
+        sprintf(value, "%d", cali_dphy_suspend);
+        ret = write(fd, value, strlen(value));
+        close(fd);
+        if (ret < 0) {
+            ENG_LOG("%s set cali_dphy_suspend(%d) fail:%d\n", __FUNCTION__, cali_dphy_suspend, errno);
+            sprintf(rsp, "+LCD:set cali_dphy_suspend fail");
+        }
+    } else {
+        ENG_LOG("%s open %s fail:%s\n", __FUNCTION__,
+                        CALI_DPHY_SUSPEND, strerror(errno));
+        sprintf(rsp, "+LCD:open cali_dphy_suspend fail");
+    }
+
+    return (ret < 0) ? -errno : 0;
+}
+
+static int set_cali_dsi_suspend(int cali_dsi_suspend, char *rsp)
+{
+    int ret = -1;
+    int fd;
+    char value[8] = {};
+
+    fd = open(CALI_DSI_SUSPEND, O_WRONLY);
+    if (fd > 0) {
+        sprintf(value, "%d",cali_dsi_suspend);
+        ret = write(fd, value, strlen(value));
+        close(fd);
+        if (ret < 0) {
+            ENG_LOG("%s set cali_dsi_suspend(%d) fail:%d\n", __FUNCTION__, cali_dsi_suspend, errno);
+            sprintf(rsp, "+LCD:set cali_dsi_suspend fail");
+        }
+    } else {
+        ENG_LOG("%s open %s fail:%s\n", __FUNCTION__,
+                        CALI_DSI_SUSPEND, strerror(errno));
+        sprintf(rsp, "+LCD:open cali_dsi_suspend fail");
+    }
+
+    return (ret < 0) ? -errno : 0;
+}
+
+static int set_dpms_state(int dpms_state, char *rsp)
+{
+    int ret = -1;
+    int fd;
+    char value[8] = {};
+    fd = open(DPMS_STATE, O_WRONLY);
+    if (fd > 0) {
+        sprintf(value, "%d", dpms_state);
+        ret = write(fd, value, strlen(value));
+        close(fd);
+        if (ret < 0) {
+            ENG_LOG("%s set dpms_state(%d) fail:%d\n", __FUNCTION__, dpms_state, errno);
+            sprintf(rsp, "+LCD:set dpms_state fail");
+        }
+    } else {
+        ENG_LOG("%s open %s fail:%s\n", __FUNCTION__,
+                        DPMS_STATE, strerror(errno));
+        sprintf(rsp, "+LCD:open dpms_state fail");
+    }
+
+    return (ret < 0) ? -errno : 0;
+}
+
+static int set_backlight_brightness(int brightness, char *rsp)
+{
+    int ret = -1;
+    int fd;
+    char value[8] = {};
+    fd = open(BRIGHTNESS, O_WRONLY);
+    if (fd > 0) {
+        sprintf(value, "%d", brightness);
+        ret = write(fd, value, strlen(value));
+        close(fd);
+        if (ret < 0) {
+            ENG_LOG("%s set brightness(%d) fail:%d\n", __FUNCTION__, brightness, errno);
+            sprintf(rsp, "+LCD:set brightness fail");
+        }
+    } else {
+        ENG_LOG("%s open %s fail:%s\n", __FUNCTION__,
+                        BRIGHTNESS, strerror(errno));
+        sprintf(rsp, "+LCD:open brightness fail");
+    }
+
+    return (ret < 0) ? -errno : 0;
+}
+
+static int lcd_power(char *req, char *rsp)
+{
+    unsigned long brightness;
+    char *ptr = NULL;
+    int ret;
+
+    if (NULL == req) {
+        ENG_LOG("%s null pointer", __FUNCTION__);
+        if(rsp != NULL) {
+            sprintf(rsp, "+LCD:null req");
+            return strlen(rsp);
+        } else
+            return 0;
+    }
+
+    ptr = req + 1 + sizeof(MSG_HEAD_T);
+ if (strncasecmp(ptr, AT_LCDOFF, strlen(AT_LCDOFF)) == 0) {
+        ret = set_cali_dpu_stop(0, rsp);
+        if (ret) {
+            sprintf(rsp, "+LCD:set cali_dpu_stop fail");
+            return strlen(rsp);
+        }
+        sprintf(rsp, "+LCD:OK");
+
+        ret = set_panel_suspend(1, rsp);
+        if (ret) {
+            sprintf(rsp, "+LCD:set panel suspend fail");
+            return strlen(rsp);
+        }
+        sprintf(rsp, "+LCD:OK");
+
+        ret = set_cali_dphy_suspend(1, rsp);
+        if (ret) {
+            sprintf(rsp, "+LCD:set cali_dphy_suspend fail");
+            return strlen(rsp);
+        }
+        sprintf(rsp, "+LCD:OK");
+
+        ret = set_cali_dsi_suspend(1, rsp);
+        if (ret) {
+            sprintf(rsp, "+LCD:set cali_dsi_suspend fail");
+            return strlen(rsp);
+        }
+        sprintf(rsp, "+LCD:OK");
+
+        ret = set_dpms_state(1, rsp);
+        if (ret) {
+            sprintf(rsp, "+LCD:set dpms fail");
+            return strlen(rsp);
+        }
+        sprintf(rsp, "+LCD:OK");
+
+        ret = set_backlight_brightness(0, rsp);
+        if (ret) {
+            sprintf(rsp, "+LCD:set brightness fail");
+            return strlen(rsp);
+        }
+        sprintf(rsp, "+LCD:OK");
+    } else
+        sprintf(rsp, "+LCD:unknown cmd");
+
+    return strlen(rsp);
+}
+
 void register_this_module_ext(struct eng_callback *reg, int *num)
 {
     int i = 0;
@@ -287,6 +500,10 @@ void register_this_module_ext(struct eng_callback *reg, int *num)
 
     sprintf(reg->at_cmd, "%s", AT_CMD_GETTESTMODE);
     reg->eng_linuxcmd_func = getTestMode;
+    moudles_num++;
+
+    sprintf((reg+moudles_num)->at_cmd, "%s", AT_LCDOFF);
+    (reg+moudles_num)->eng_linuxcmd_func = lcd_power;
     moudles_num++;
 
     sprintf((reg+moudles_num)->at_cmd, "%s", AT_CMD_SETTESTMODE);

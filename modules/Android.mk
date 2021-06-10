@@ -36,6 +36,7 @@ common_engpc_modules_dirs := charge \
                              libnefuse \
                              libucpubench \
                              libapcomm \
+                             libusb \
                              libtouchscreen \
 			     libsettime \
                              libylogtopc \

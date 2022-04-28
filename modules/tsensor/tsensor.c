@@ -284,7 +284,7 @@ static int tsensor_get_pmic_path(void)
 				TSEN_LOG("current pmic type is :%s", local_pmic_type_set[i].name);
 				local_pmic = &local_pmic_type_set[i];
 				snprintf(pmic_reg_path, sizeof(pmic_reg_path), "%s/%s/pmic_reg",PMIC_GLB_DIR, pdirent->d_name);
-				snprintf(pmic_val_path, sizeof(pmic_val_path), "%s/%s/pmic_value",PMIC_GLB_DIR, pdirent->d_name);
+				snprintf(pmic_val_path, sizeof(pmic_val_path), "%s/%s/pmic_val",PMIC_GLB_DIR, pdirent->d_name);
 				TSEN_LOG("pmic reg path:%s\n", pmic_reg_path);
 				TSEN_LOG("pmic value path:%s\n", pmic_val_path);
 				break;
